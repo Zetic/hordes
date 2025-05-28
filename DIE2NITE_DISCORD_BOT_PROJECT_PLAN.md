@@ -29,7 +29,6 @@ Based on analysis of the [original Hordes source code](https://github.com/motion
 
 4. **Community Features**
    - Shared city with defensive buildings
-   - Elections for city leaders (Shaman, Guide)
    - Community resource sharing
    - Collaborative building projects
 
@@ -43,10 +42,12 @@ Based on analysis of the [original Hordes source code](https://github.com/motion
 
 ### Core Gameplay Adaptations
 
-#### 1. **Turn-Based Daily Cycles**
+#### 1. **Real-Time Daily Cycles**
 - **Original**: Real-time with automatic daily progression
-- **Adaptation**: Turn-based rounds with admin-triggered day progressions
-- **Benefits**: Better suited for Discord's async nature, allows for strategic planning
+- **Adaptation**: Real-time schedule with two distinct phases:
+  - **Play Mode** (9:00pm–7:59pm next day): Players can freely perform in-game actions
+  - **Horde Mode** (8:00pm–8:59pm): Players wait and see results of night attacks
+- **Benefits**: Maintains the original's tension while working with Discord's nature
 
 #### 2. **Text-Based Map System**
 - **Original**: Visual 2D grid map
@@ -62,16 +63,15 @@ Based on analysis of the [original Hordes source code](https://github.com/motion
 
 #### 3. **Slash Command Interface**
 - **Primary Actions**: `/explore`, `/build`, `/craft`, `/trade`, `/status`
-- **Secondary Actions**: `/vote`, `/give`, `/attack`, `/rest`
+- **Secondary Actions**: `/give`, `/attack`, `/rest`
 - **Admin Commands**: `/advance-day`, `/trigger-event`, `/game-status`
 
 ### User Flow Design
 
 #### New Player Onboarding
-1. `/join-game` - Register as new survivor
-2. Choose starting profession/stats
-3. Receive starting equipment and tutorial
-4. Assigned to existing city or help found new one
+1. `/join` - Register as new survivor and join the town
+2. Receive basic starting equipment
+3. Begin playing immediately during Play Mode hours
 
 #### Daily Player Routine
 1. Check status with `/status` (health, water, inventory)
@@ -81,13 +81,12 @@ Based on analysis of the [original Hordes source code](https://github.com/motion
    - `/build` - Contribute to city defenses
    - `/craft` - Create tools/items
    - `/social` - Interact with other players
-4. Prepare for night phase (zombie attacks)
+4. Take actions during Play Mode hours (9:00pm–7:59pm next day)
 
 #### City Management
 1. Players collaborate on building defenses
 2. Resource sharing through `/trade` and `/give`
-3. Elections for leadership roles
-4. Strategic planning for survival
+3. Strategic planning for survival
 
 ## Technical Architecture
 
@@ -110,7 +109,6 @@ CREATE TABLE players (
   health INT,
   thirst INT,
   action_points INT,
-  profession VARCHAR(20),
   x_coord INT,
   y_coord INT,
   status VARCHAR(20), -- alive, dead, ghost
@@ -142,7 +140,7 @@ CREATE TABLE player_inventory (
 #### Command Structure
 ```
 /game
-├── /join-game [profession]
+├── /join
 ├── /status [target_player]
 ├── /inventory [category]
 └── /leave-game
@@ -158,7 +156,6 @@ CREATE TABLE player_inventory (
 /social
 ├── /trade [player] [offer] [request]
 ├── /give [player] [item] [quantity]
-├── /vote [candidate] [position]
 ├── /message [type] [content]
 └── /city-info
 
@@ -180,10 +177,9 @@ CREATE TABLE player_inventory (
 ### State Management
 
 #### Game Phases
-1. **Planning Phase**: Players can take actions, plan strategies
-2. **Resolution Phase**: All actions processed simultaneously
-3. **Event Phase**: Random events, zombie attacks, resource depletion
-4. **Status Phase**: Update displays, check win/lose conditions
+1. **Play Mode** (9:00pm–7:59pm next day): Players can take actions, plan strategies
+2. **Horde Mode** (8:00pm–8:59pm): Automated zombie attacks and night events processed
+3. **Status Update**: Continuous updates to displays and game state
 
 #### Persistence Strategy
 - **Redis Cache**: Active game state, player sessions, temporary data
@@ -202,9 +198,9 @@ CREATE TABLE player_inventory (
 ### Challenge 2: Real-time Communication
 **Problem**: Discord's async nature vs game's need for coordination
 **Solution**:
-- Dedicated game channels per city
+- Dedicated game channel for the town
 - Thread-based private communications
-- Scheduled "action phases" with time limits
+- Clear Play Mode/Horde Mode schedule (9pm-8pm/8pm-9pm)
 
 ### Challenge 3: Visual Representation
 **Problem**: Complex game state in text-only format
@@ -246,21 +242,19 @@ CREATE TABLE player_inventory (
 ### Phase 3: Social Features (3-4 weeks)
 - [ ] Trading system between players
 - [ ] City management and shared resources
-- [ ] Voting and election systems
 - [ ] Player communication tools
 - [ ] Death and respawn mechanics
 
 ### Phase 4: Advanced Features (4-6 weeks)
 - [ ] Event system with random encounters
 - [ ] Advanced crafting and tool upgrades
-- [ ] Multiple city support
 - [ ] Achievement and progression systems
 - [ ] Admin tools and game management
 
 ### Phase 5: Polish & Enhancement (2-4 weeks)
 - [ ] Performance optimization
 - [ ] Advanced display formatting
-- [ ] Help system and tutorials
+- [ ] Help system and documentation
 - [ ] Game statistics and analytics
 - [ ] Backup and recovery systems
 
@@ -304,9 +298,9 @@ CREATE TABLE player_inventory (
 ## Open Questions for Further Research
 
 1. **Optimal Game Size**: What's the ideal number of players per city/game instance?
-2. **Time Scaling**: How should real-time elements be adapted for Discord's async nature?
+2. **Schedule Optimization**: How can the Play Mode/Horde Mode schedule be adjusted for different time zones?
 3. **Monetization**: Should premium features be considered for sustainability?
-4. **Cross-Server Play**: Can games span multiple Discord servers?
+4. **Single Town Focus**: How can we optimize the experience for one shared town per server?
 5. **Mobile Experience**: How well will complex commands work on mobile Discord clients?
 6. **Accessibility**: What accommodations are needed for players with disabilities?
 7. **Localization**: Should the bot support multiple languages from the start?
