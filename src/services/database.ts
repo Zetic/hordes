@@ -62,6 +62,8 @@ export class DatabaseService {
           water INTEGER DEFAULT 3,
           is_alive BOOLEAN DEFAULT true,
           location VARCHAR(50) DEFAULT 'city',
+          x INTEGER DEFAULT NULL,
+          y INTEGER DEFAULT NULL,
           last_action_time TIMESTAMP DEFAULT NOW(),
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
@@ -72,6 +74,17 @@ export class DatabaseService {
       await this.pool.query(`
         ALTER TABLE players 
         ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'healthy';
+      `);
+
+      // Add coordinate columns to existing tables if they don't exist
+      await this.pool.query(`
+        ALTER TABLE players 
+        ADD COLUMN IF NOT EXISTS x INTEGER DEFAULT NULL;
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE players 
+        ADD COLUMN IF NOT EXISTS y INTEGER DEFAULT NULL;
       `);
 
       await this.pool.query(`
