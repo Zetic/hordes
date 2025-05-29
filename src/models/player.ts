@@ -144,6 +144,7 @@ export class PlayerService {
             status = $1,
             location = $2,
             updated_at = NOW()
+        WHERE id IS NOT NULL
       `;
       await this.db.pool.query(query, [PlayerStatus.HEALTHY, Location.CITY]);
       console.log('✅ All players reset to default state');
