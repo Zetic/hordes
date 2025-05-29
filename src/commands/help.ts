@@ -51,6 +51,11 @@ module.exports = {
             name: '🤝 Community Gameplay',
             value: '• This is a cooperative survival game\n• Everyone wins or loses together\n• Share resources and coordinate building efforts\n• The goal is to survive as many days as possible',
             inline: false
+          },
+          {
+            name: '⚙️ Admin Commands',
+            value: '• `/admin reset password` - Resets the town (testing)\n• `/admin horde password` - Triggers horde attack results (testing)\n• `/admin refresh user password` - Refreshes player action points (testing)',
+            inline: false
           }
         ])
         .setFooter({ text: '🧟‍♂️ Good luck surviving the zombie apocalypse!' })

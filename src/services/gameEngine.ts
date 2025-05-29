@@ -63,17 +63,23 @@ export class GameEngine {
   }
 
   private schedulePhaseTransitions(): void {
-    // Schedule Play Mode start (9:00 PM)
-    cron.schedule('0 21 * * *', async () => {
+    const gameStartTime = process.env.GAME_START_TIME || '21:00';
+    const hordeStartTime = process.env.HORDE_START_TIME || '20:00';
+    
+    const [gameHour, gameMinute] = gameStartTime.split(':').map(Number);
+    const [hordeHour, hordeMinute] = hordeStartTime.split(':').map(Number);
+
+    // Schedule Play Mode start
+    cron.schedule(`${gameMinute} ${gameHour} * * *`, async () => {
       await this.transitionToPlayMode();
     });
 
-    // Schedule Horde Mode start (8:00 PM)
-    cron.schedule('0 20 * * *', async () => {
+    // Schedule Horde Mode start
+    cron.schedule(`${hordeMinute} ${hordeHour} * * *`, async () => {
       await this.transitionToHordeMode();
     });
 
-    console.log('⏰ Phase transition cron jobs scheduled');
+    console.log(`⏰ Phase transition cron jobs scheduled: Game Mode at ${gameStartTime}, Horde Mode at ${hordeStartTime}`);
   }
 
   private async transitionToPlayMode(): Promise<void> {
@@ -170,15 +176,21 @@ export class GameEngine {
     const now = new Date();
     const nextChange = new Date();
     
+    const gameStartTime = process.env.GAME_START_TIME || '21:00';
+    const hordeStartTime = process.env.HORDE_START_TIME || '20:00';
+    
+    const [gameHour, gameMinute] = gameStartTime.split(':').map(Number);
+    const [hordeHour, hordeMinute] = hordeStartTime.split(':').map(Number);
+    
     if (currentPhase === GamePhase.PLAY_MODE) {
-      // Next change is 8:00 PM (Horde Mode)
-      nextChange.setHours(20, 0, 0, 0);
+      // Next change is Horde Mode
+      nextChange.setHours(hordeHour, hordeMinute, 0, 0);
       if (nextChange <= now) {
         nextChange.setDate(nextChange.getDate() + 1);
       }
     } else {
-      // Next change is 9:00 PM (Play Mode)
-      nextChange.setHours(21, 0, 0, 0);
+      // Next change is Play Mode
+      nextChange.setHours(gameHour, gameMinute, 0, 0);
       if (nextChange <= now) {
         nextChange.setDate(nextChange.getDate() + 1);
       }
@@ -235,6 +247,61 @@ export class GameEngine {
     } catch (error) {
       console.error('Error checking action permission:', error);
       return { canAct: false, reason: 'Error checking permissions' };
+    }
+  }
+
+  // Admin methods for testing purposes
+  public async resetTown(): Promise<boolean> {
+    try {
+      if (!this.gameState) {
+        console.error('Game state not initialized');
+        return false;
+      }
+
+      // Reset all players to default state
+      await this.playerService.resetAllPlayers();
+      
+      // Reset city to default state
+      await this.cityService.resetCity(this.gameState.cityId);
+      
+      // Reset game state to day 1, play mode
+      this.gameState.currentDay = 1;
+      this.gameState.currentPhase = GamePhase.PLAY_MODE;
+      this.gameState.lastHordeAttack = new Date();
+      this.gameState.nextPhaseChange = this.calculateNextPhaseChange(GamePhase.PLAY_MODE);
+      
+      await this.db.redis.set('game_state', JSON.stringify(this.gameState));
+      
+      console.log('🔄 Town has been reset to initial state');
+      return true;
+    } catch (error) {
+      console.error('Error resetting town:', error);
+      return false;
+    }
+  }
+
+  public async triggerHordeResults(): Promise<boolean> {
+    try {
+      console.log('🧟‍♂️ Manually triggering horde attack results...');
+      await this.processHordeAttack();
+      console.log('✅ Horde attack results processed');
+      return true;
+    } catch (error) {
+      console.error('Error triggering horde results:', error);
+      return false;
+    }
+  }
+
+  public async refreshPlayerActionPoints(discordId: string): Promise<boolean> {
+    try {
+      const success = await this.playerService.resetPlayerActionPoints(discordId);
+      if (success) {
+        console.log(`⚡ Action points refreshed for player ${discordId}`);
+      }
+      return success;
+    } catch (error) {
+      console.error('Error refreshing player action points:', error);
+      return false;
     }
   }
 }

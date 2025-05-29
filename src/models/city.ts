@@ -140,6 +140,32 @@ export class CityService {
     }
   }
 
+  async resetCity(cityId: string): Promise<boolean> {
+    try {
+      // Reset city to day 1, play mode, no defense
+      const updateCityQuery = `
+        UPDATE cities 
+        SET day = 1,
+            game_phase = 'play_mode',
+            defense_level = 0,
+            population = (SELECT COUNT(*) FROM players WHERE is_alive = true),
+            updated_at = NOW()
+        WHERE id = $1
+      `;
+      await this.db.pool.query(updateCityQuery, [cityId]);
+
+      // Delete all buildings
+      const deleteBuildingsQuery = 'DELETE FROM buildings WHERE city_id = $1';
+      await this.db.pool.query(deleteBuildingsQuery, [cityId]);
+
+      console.log('✅ City reset to initial state');
+      return true;
+    } catch (error) {
+      console.error('Error resetting city:', error);
+      return false;
+    }
+  }
+
   private mapRowToCity(row: any): City {
     return {
       id: row.id,
