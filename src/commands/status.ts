@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
+import { PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -41,7 +42,18 @@ module.exports = {
       // Determine status emoji and text
       const statusEmoji = player.isAlive ? '💚' : '💀';
       const statusText = player.isAlive ? 'Alive' : 'Dead';
-      const healthEmoji = player.health > 70 ? '💚' : player.health > 30 ? '💛' : '❤️';
+      
+      // Player status display
+      const statusEmojis = {
+        [PlayerStatus.HEALTHY]: '💚',
+        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerStatus.DEAD]: '💀'
+      };
+      const statusTexts = {
+        [PlayerStatus.HEALTHY]: 'Healthy',
+        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.DEAD]: 'Dead'
+      };
       
       // Location display
       const locationEmojis = {
@@ -63,8 +75,8 @@ module.exports = {
         .setThumbnail(targetUser.displayAvatarURL())
         .addFields([
           { 
-            name: '💚 Health', 
-            value: `${healthEmoji} ${player.health}/${player.maxHealth}`, 
+            name: '💚 Status', 
+            value: `${statusEmojis[player.status]} ${statusTexts[player.status]}`, 
             inline: true 
           },
           { 
@@ -83,7 +95,7 @@ module.exports = {
             inline: true 
           },
           { 
-            name: '🎯 Status', 
+            name: '🎯 Alive', 
             value: statusText, 
             inline: true 
           },
@@ -115,7 +127,7 @@ module.exports = {
 
         // Add warnings
         const warnings = [];
-        if (player.health <= 30) warnings.push('⚠️ Low health!');
+        if (player.status === PlayerStatus.WOUNDED) warnings.push('🩸 You are wounded! Another injury could be fatal.');
         if (player.water <= 1) warnings.push('🚨 Running out of water!');
         if (player.actionPoints <= 2) warnings.push('💤 Low action points');
         

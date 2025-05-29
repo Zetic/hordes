@@ -14,7 +14,7 @@ module.exports = {
         .addFields([
           {
             name: '🎮 Getting Started',
-            value: '• Use `/join` to enter the game\n• Use `/status` to check your health and stats\n• Use `/city-info` to see your town\'s defenses',
+            value: '• Use `/join` to enter the game\n• Use `/status` to check your condition and stats\n• Use `/city-info` to see your town\'s defenses',
             inline: false
           },
           {
@@ -39,12 +39,12 @@ module.exports = {
           },
           {
             name: '💡 Survival Tips',
-            value: '• Work together with other players to build defenses\n• Explore during the day to gather resources\n• Build watchtowers and walls before night falls\n• Keep an eye on your health and water supply\n• Return to the city before Horde Mode starts',
+            value: '• Work together with other players to build defenses\n• Explore during the day to gather resources\n• Build watchtowers and walls before night falls\n• Monitor your status and water supply\n• Return to the city before Horde Mode starts',
             inline: false
           },
           {
             name: '⚔️ Combat & Death',
-            value: '• Exploring outside is dangerous - you may encounter zombies\n• If your health reaches 0, you die and cannot act until the next day\n• City defenses help protect everyone during Horde Mode\n• Dead players are revived at the start of each new day',
+            value: '• Exploring outside is dangerous - you may encounter zombies\n• Getting hurt while wounded will kill you\n• City defenses help protect everyone during Horde Mode\n• Dead players are revived at the start of each new day',
             inline: false
           },
           {

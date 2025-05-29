@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
-import { Location } from '../types/game';
+import { Location, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 
@@ -84,11 +84,11 @@ module.exports = {
         .setTimestamp();
 
       // Add healing message if player is wounded
-      if (player.health < player.maxHealth) {
+      if (player.status === PlayerStatus.WOUNDED) {
         embed.addFields([
           {
             name: '🏥 Medical Care',
-            value: 'You receive basic medical attention in the city. Consider finding medical supplies or building a hospital for better healing.',
+            value: 'You receive basic medical attention in the city. Your wounds are treated, but you\'re still vulnerable. Another injury could be fatal.',
             inline: false
           }
         ]);

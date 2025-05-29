@@ -1,8 +1,28 @@
-import { GameState, GamePhase, Player, City, Location } from '../types/game';
+import { GameState, GamePhase, Player, City, Location, PlayerStatus } from '../types/game';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { DatabaseService } from '../services/database';
 import cron from 'node-cron';
+
+interface AttackResult {
+  playerName: string;
+  discordId: string;
+  attacksReceived: number;
+  previousStatus: PlayerStatus;
+  newStatus: PlayerStatus;
+  location: Location;
+}
+
+interface HordeAttackReport {
+  day: number;
+  hordeSize: number;
+  cityDefense: number;
+  townBreached: boolean;
+  zombiesBreached: number;
+  playersKilledOutside: AttackResult[];
+  playersInTown: AttackResult[];
+  totalAttacks: number;
+}
 
 export class GameEngine {
   private static instance: GameEngine;
@@ -169,41 +189,120 @@ export class GameEngine {
       console.log(`⚔️ Horde Attack - Day ${this.gameState!.currentDay}`);
       console.log(`🧟‍♂️ Horde Size: ${hordeSize}, City Defense: ${cityDefense}`);
 
-      // Determine if the town is breached (defense insufficient to hold back horde)
-      const townBreached = cityDefense < hordeSize;
+      // Initialize attack report
+      const attackReport: HordeAttackReport = {
+        day: this.gameState!.currentDay,
+        hordeSize,
+        cityDefense,
+        townBreached: cityDefense < hordeSize,
+        zombiesBreached: Math.max(0, hordeSize - cityDefense),
+        playersKilledOutside: [],
+        playersInTown: [],
+        totalAttacks: 0
+      };
 
-      if (townBreached) {
-        console.log('💥 Town defenses breached! All players are in danger.');
+      // First: Kill all players outside the town during horde event
+      const playersOutside = await this.playerService.getPlayersByLocation(Location.OUTSIDE);
+      const playersGreaterOutside = await this.playerService.getPlayersByLocation(Location.GREATER_OUTSIDE);
+      const playersOutsideTown = [...playersOutside, ...playersGreaterOutside];
+
+      for (const player of playersOutsideTown) {
+        const previousStatus = player.status;
+        await this.playerService.updatePlayerStatus(player.discordId, PlayerStatus.DEAD);
         
-        // Calculate casualties based on how badly the town was breached
-        const breachSeverity = (hordeSize - cityDefense) / hordeSize;
-        const maxCasualties = Math.floor(alivePlayers.length * 0.8); // Max 80% casualties
-        const casualties = Math.floor(maxCasualties * breachSeverity);
+        attackReport.playersKilledOutside.push({
+          playerName: player.name,
+          discordId: player.discordId,
+          attacksReceived: 0, // They're killed automatically for being outside
+          previousStatus,
+          newStatus: PlayerStatus.DEAD,
+          location: player.location
+        });
         
-        console.log(`⚔️ Breach severity: ${(breachSeverity * 100).toFixed(1)}% - ${casualties} casualties expected`);
-        
-        // Apply damage to random players regardless of location (town is breached)
-        await this.applyHordeDamage(alivePlayers, casualties, 'All players are in danger - town defenses have been breached!');
-      } else {
-        console.log('🛡️ Town defenses hold! Only players outside the safety of the city are in danger.');
-        
-        // Only players outside the city are at risk
-        const playersOutside = await this.playerService.getPlayersByLocation(Location.OUTSIDE);
-        const playersGreaterOutside = await this.playerService.getPlayersByLocation(Location.GREATER_OUTSIDE);
-        const vulnerablePlayers = [...playersOutside, ...playersGreaterOutside];
-        
-        if (vulnerablePlayers.length > 0) {
-          // Calculate casualties based on horde size vs vulnerable players
-          const casualtyRate = Math.min(hordeSize / 20, 0.6); // Max 60% of outside players
-          const casualties = Math.floor(vulnerablePlayers.length * casualtyRate);
-          
-          console.log(`⚔️ ${vulnerablePlayers.length} players outside city safety - ${casualties} casualties expected`);
-          
-          await this.applyHordeDamage(vulnerablePlayers, casualties, 'Players outside the city were caught by the horde!');
-        } else {
-          console.log('✅ All players are safe within the city walls.');
-        }
+        console.log(`💀 ${player.name} was killed for being outside the town during the horde attack`);
       }
+
+      // Second: Handle breach attacks on players in town
+      if (attackReport.townBreached && attackReport.zombiesBreached > 0) {
+        console.log(`💥 Town defenses breached! ${attackReport.zombiesBreached} zombies made it into the town.`);
+        
+        // Get all players in town (city and home locations)
+        const playersInCity = await this.playerService.getPlayersByLocation(Location.CITY);
+        const playersInHome = await this.playerService.getPlayersByLocation(Location.HOME);
+        const playersInTown = [...playersInCity, ...playersInHome];
+
+        if (playersInTown.length > 0) {
+          // Each zombie that breached makes one attack attempt
+          attackReport.totalAttacks = attackReport.zombiesBreached;
+          
+          // Initialize attack tracking for all players in town
+          const playerAttacks: Map<string, number> = new Map();
+          for (const player of playersInTown) {
+            playerAttacks.set(player.discordId, 0);
+            attackReport.playersInTown.push({
+              playerName: player.name,
+              discordId: player.discordId,
+              attacksReceived: 0,
+              previousStatus: player.status,
+              newStatus: player.status,
+              location: player.location
+            });
+          }
+
+          // Distribute zombie attacks randomly
+          for (let i = 0; i < attackReport.zombiesBreached; i++) {
+            const randomPlayer = playersInTown[Math.floor(Math.random() * playersInTown.length)];
+            const currentAttacks = playerAttacks.get(randomPlayer.discordId) || 0;
+            playerAttacks.set(randomPlayer.discordId, currentAttacks + 1);
+          }
+
+          // Process attacks with 50% hit chance
+          for (const [playerId, attackCount] of playerAttacks) {
+            const player = playersInTown.find(p => p.discordId === playerId)!;
+            const playerReportEntry = attackReport.playersInTown.find(p => p.discordId === playerId)!;
+            playerReportEntry.attacksReceived = attackCount;
+            
+            let successfulHits = 0;
+            let currentStatus = player.status;
+            
+            // Each attack has 50% chance to hit
+            for (let attack = 0; attack < attackCount; attack++) {
+              if (Math.random() < 0.5) { // 50% chance
+                successfulHits++;
+                
+                if (currentStatus === PlayerStatus.HEALTHY) {
+                  currentStatus = PlayerStatus.WOUNDED;
+                  console.log(`🩸 ${player.name} was wounded by a zombie attack (${successfulHits}/${attackCount} hits)`);
+                } else if (currentStatus === PlayerStatus.WOUNDED) {
+                  currentStatus = PlayerStatus.DEAD;
+                  console.log(`💀 ${player.name} was killed by a zombie attack (${successfulHits}/${attackCount} hits)`);
+                  break; // No point in continuing attacks on a dead player
+                }
+              }
+            }
+            
+            // Update player status if it changed
+            if (currentStatus !== player.status) {
+              await this.playerService.updatePlayerStatus(player.discordId, currentStatus);
+            }
+            
+            playerReportEntry.newStatus = currentStatus;
+            
+            if (successfulHits > 0) {
+              console.log(`⚔️ ${player.name} received ${attackCount} attacks, ${successfulHits} hit (${player.status} → ${currentStatus})`);
+            } else if (attackCount > 0) {
+              console.log(`🛡️ ${player.name} evaded all ${attackCount} zombie attacks`);
+            }
+          }
+        } else {
+          console.log('🏙️ No players in town to attack.');
+        }
+      } else {
+        console.log('🛡️ Town defenses hold! No zombies breached the defenses.');
+      }
+
+      // Generate and send attack report
+      await this.sendAttackReport(attackReport);
       
       // Update city population
       await this.cityService.updateCityPopulation(city.id);
@@ -213,24 +312,54 @@ export class GameEngine {
     }
   }
 
-  private async applyHordeDamage(targetPlayers: any[], casualties: number, reason: string): Promise<void> {
-    console.log(`💀 Applying horde damage: ${reason}`);
-    
-    // Shuffle players to randomize damage
-    const shuffledPlayers = [...targetPlayers].sort(() => Math.random() - 0.5);
-    
-    for (let i = 0; i < casualties && i < shuffledPlayers.length; i++) {
-      const player = shuffledPlayers[i];
-      const damage = Math.floor(Math.random() * 40) + 30; // 30-70 damage
-      const newHealth = Math.max(0, player.health - damage);
+  private async sendAttackReport(report: HordeAttackReport): Promise<void> {
+    try {
+      console.log('\n🧟‍♂️ HORDE ATTACK REPORT 🧟‍♂️');
+      console.log(`📅 Day ${report.day}`);
+      console.log(`🛡️ City Defense: ${report.cityDefense}`);
+      console.log(`🧟‍♂️ Horde Size: ${report.hordeSize}`);
       
-      await this.playerService.updatePlayerHealth(player.discordId, newHealth);
-      
-      if (newHealth === 0) {
-        console.log(`💀 ${player.name} was killed in the horde attack`);
+      if (report.townBreached) {
+        console.log(`💥 TOWN BREACHED! ${report.zombiesBreached} zombies entered the town.`);
+        console.log(`⚔️ Total zombie attacks made: ${report.totalAttacks}`);
+        
+        if (report.playersInTown.length > 0) {
+          console.log('\n🏙️ PLAYERS IN TOWN:');
+          for (const playerResult of report.playersInTown) {
+            const statusChange = playerResult.previousStatus !== playerResult.newStatus 
+              ? ` (${playerResult.previousStatus} → ${playerResult.newStatus})`
+              : '';
+            
+            if (playerResult.attacksReceived > 0) {
+              console.log(`  ${playerResult.playerName}: ${playerResult.attacksReceived} attacks${statusChange}`);
+            } else {
+              console.log(`  ${playerResult.playerName}: No attacks received`);
+            }
+          }
+        }
       } else {
-        console.log(`🩸 ${player.name} took ${damage} damage (${newHealth}/${player.maxHealth} health remaining)`);
+        console.log('🛡️ Town defenses held strong - no zombies breached.');
       }
+      
+      if (report.playersKilledOutside.length > 0) {
+        console.log('\n💀 PLAYERS KILLED OUTSIDE TOWN:');
+        for (const playerResult of report.playersKilledOutside) {
+          const locationName = playerResult.location === Location.OUTSIDE ? 'Outside' : 'Greater Outside';
+          console.log(`  ${playerResult.playerName} (was in ${locationName})`);
+        }
+      }
+      
+      // Summary
+      const totalWounded = [...report.playersInTown].filter(p => p.newStatus === PlayerStatus.WOUNDED && p.previousStatus !== PlayerStatus.WOUNDED).length;
+      const totalKilled = [...report.playersInTown, ...report.playersKilledOutside].filter(p => p.newStatus === PlayerStatus.DEAD).length;
+      
+      console.log('\n📊 SUMMARY:');
+      console.log(`🩸 Players wounded: ${totalWounded}`);
+      console.log(`💀 Players killed: ${totalKilled}`);
+      console.log('🧟‍♂️ Attack report complete.\n');
+      
+    } catch (error) {
+      console.error('Error sending attack report:', error);
     }
   }
 
