@@ -1,6 +1,7 @@
 import { GameState, GamePhase, Player, City, Location, PlayerStatus } from '../types/game';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
+import { ItemService } from '../models/item';
 import { DatabaseService } from '../services/database';
 import { Client, EmbedBuilder } from 'discord.js';
 import cron from 'node-cron';
@@ -29,6 +30,7 @@ export class GameEngine {
   private static instance: GameEngine;
   private playerService: PlayerService;
   private cityService: CityService;
+  private itemService: ItemService;
   private db: DatabaseService;
   private gameState: GameState | null = null;
   private discordClient: Client | null = null;
@@ -36,6 +38,7 @@ export class GameEngine {
   private constructor() {
     this.playerService = new PlayerService();
     this.cityService = new CityService();
+    this.itemService = new ItemService();
     this.db = DatabaseService.getInstance();
     this.initializeGameEngine();
   }
@@ -53,6 +56,9 @@ export class GameEngine {
 
   private async initializeGameEngine(): Promise<void> {
     try {
+      // Initialize default items
+      await this.itemService.initializeDefaultItems();
+      
       // Load or create game state
       await this.loadGameState();
       
