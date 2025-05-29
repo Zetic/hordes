@@ -115,6 +115,42 @@ export class PlayerService {
     }
   }
 
+  async resetAllPlayers(): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE players 
+        SET health = max_health,
+            action_points = max_action_points,
+            water = 10,
+            is_alive = true,
+            location = 'city',
+            updated_at = NOW()
+      `;
+      await this.db.pool.query(query);
+      console.log('✅ All players reset to default state');
+      return true;
+    } catch (error) {
+      console.error('Error resetting all players:', error);
+      return false;
+    }
+  }
+
+  async resetPlayerActionPoints(discordId: string): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE players 
+        SET action_points = max_action_points,
+            updated_at = NOW()
+        WHERE discord_id = $1
+      `;
+      const result = await this.db.pool.query(query, [discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error resetting player action points:', error);
+      return false;
+    }
+  }
+
   private mapRowToPlayer(row: any): Player {
     return {
       id: row.id,
