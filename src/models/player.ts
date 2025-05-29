@@ -74,14 +74,14 @@ export class PlayerService {
     }
   }
 
-  async updatePlayerLocation(discordId: string, location: Location): Promise<boolean> {
+  async updatePlayerLocation(discordId: string, location: Location, x?: number, y?: number): Promise<boolean> {
     try {
       const query = `
         UPDATE players 
-        SET location = $1, updated_at = NOW()
-        WHERE discord_id = $2
+        SET location = $1, x = $2, y = $3, updated_at = NOW()
+        WHERE discord_id = $4
       `;
-      const result = await this.db.pool.query(query, [location, discordId]);
+      const result = await this.db.pool.query(query, [location, x || null, y || null, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error updating player location:', error);
@@ -214,6 +214,8 @@ export class PlayerService {
       water: row.water,
       isAlive: row.is_alive,
       location: row.location as Location,
+      x: row.x,
+      y: row.y,
       inventory: [], // Will be loaded separately
       lastActionTime: row.last_action_time
     };

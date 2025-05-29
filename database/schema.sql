@@ -95,9 +95,10 @@ INSERT INTO cities (name, day, game_phase)
 SELECT 'Sanctuary', 1, 'play_mode'
 WHERE NOT EXISTS (SELECT 1 FROM cities);
 
--- Add status column migration for existing data
+-- Add grid coordinates and gate status migration
 DO $$
 BEGIN
+    -- Add status column migration for existing data
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'status') THEN
         ALTER TABLE players ADD COLUMN status VARCHAR(10) DEFAULT 'healthy';
         
@@ -107,6 +108,20 @@ BEGIN
             WHEN health < max_health THEN 'wounded'
             ELSE 'healthy'
         END;
+    END IF;
+
+    -- Add coordinates to players table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'x') THEN
+        ALTER TABLE players ADD COLUMN x INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'y') THEN
+        ALTER TABLE players ADD COLUMN y INTEGER;
+    END IF;
+    
+    -- Add gate status to cities table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'cities' AND column_name = 'gate_open') THEN
+        ALTER TABLE cities ADD COLUMN gate_open BOOLEAN DEFAULT true;
     END IF;
 END $$;
 

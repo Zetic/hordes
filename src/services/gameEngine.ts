@@ -230,9 +230,10 @@ export class GameEngine {
       };
 
       // First: Kill all players outside the town during horde event
-      const playersOutside = await this.playerService.getPlayersByLocation(Location.OUTSIDE);
-      const playersGreaterOutside = await this.playerService.getPlayersByLocation(Location.GREATER_OUTSIDE);
-      const playersOutsideTown = [...playersOutside, ...playersGreaterOutside];
+      const playersWaste = await this.playerService.getPlayersByLocation(Location.WASTE);
+      const playersGreaterWaste = await this.playerService.getPlayersByLocation(Location.GREATER_WASTE);
+      const playersAtGate = await this.playerService.getPlayersByLocation(Location.GATE);
+      const playersOutsideTown = [...playersWaste, ...playersGreaterWaste, ...playersAtGate];
 
       for (const player of playersOutsideTown) {
         const previousStatus = player.status;
@@ -414,7 +415,9 @@ export class GameEngine {
       if (report.playersKilledOutside.length > 0) {
         const outsideDeaths = [];
         for (const playerResult of report.playersKilledOutside) {
-          const locationName = playerResult.location === Location.OUTSIDE ? 'Outside' : 'Greater Outside';
+          const locationName = playerResult.location === Location.WASTE ? 'Waste' : 
+                              playerResult.location === Location.GREATER_WASTE ? 'Greater Waste' :
+                              playerResult.location === Location.GATE ? 'Gate' : 'Outside Area';
           outsideDeaths.push(`${playerResult.playerName} (was in ${locationName})`);
         }
         

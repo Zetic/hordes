@@ -8,8 +8,9 @@ describe('Game Types', () => {
 
   test('should define locations', () => {
     expect(Location.CITY).toBe('city');
-    expect(Location.OUTSIDE).toBe('outside');
-    expect(Location.GREATER_OUTSIDE).toBe('greater_outside');
+    expect(Location.GATE).toBe('gate');
+    expect(Location.WASTE).toBe('waste');
+    expect(Location.GREATER_WASTE).toBe('greater_waste');
   });
 
   test('should define item types', () => {

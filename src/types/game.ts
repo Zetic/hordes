@@ -17,6 +17,8 @@ export interface Player {
   water: number;
   isAlive: boolean;
   location: Location;
+  x?: number; // Grid X coordinate (null when in city/home)
+  y?: number; // Grid Y coordinate (null when in city/home)
   inventory: InventoryItem[];
   lastActionTime: Date;
 }
@@ -50,9 +52,10 @@ export interface ItemEffect {
 
 export enum Location {
   CITY = 'city',
-  OUTSIDE = 'outside',
   HOME = 'home',
-  GREATER_OUTSIDE = 'greater_outside'
+  GATE = 'gate',
+  WASTE = 'waste',
+  GREATER_WASTE = 'greater_waste'
 }
 
 export interface City {
@@ -64,6 +67,7 @@ export interface City {
   population: number;
   day: number;
   gamePhase: GamePhase;
+  gateOpen: boolean;
 }
 
 export interface Building {
@@ -116,4 +120,27 @@ export interface AreaInventory {
 export interface Bank {
   cityId: string;
   items: InventoryItem[];
+}
+
+export interface GridCoordinate {
+  x: number;
+  y: number;
+}
+
+export enum Direction {
+  NORTH = 'north',
+  NORTHEAST = 'northeast', 
+  EAST = 'east',
+  SOUTHEAST = 'southeast',
+  SOUTH = 'south',
+  SOUTHWEST = 'southwest',
+  WEST = 'west',
+  NORTHWEST = 'northwest'
+}
+
+export interface WorldMapTile {
+  x: number;
+  y: number;
+  location: Location;
+  playersPresent: number;
 }

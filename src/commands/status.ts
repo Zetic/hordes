@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
-import { PlayerStatus } from '../types/game';
+import { PlayerStatus, Location } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -53,16 +53,18 @@ module.exports = {
       
       // Location display
       const locationEmojis = {
-        city: '🏠',
-        outside: '🌲',
-        home: '🏡',
-        greater_outside: '🌍'
+        [Location.CITY]: '🏠',
+        [Location.WASTE]: '🌲',
+        [Location.GATE]: '🚪',
+        [Location.HOME]: '🏡',
+        [Location.GREATER_WASTE]: '🌍'
       };
       const locationNames = {
-        city: 'City (Safe Zone)',
-        outside: 'Outside (Dangerous)',
-        home: 'Home',
-        greater_outside: 'Greater Outside (Very Dangerous)'
+        [Location.CITY]: 'City (Safe Zone)',
+        [Location.WASTE]: 'Waste (Dangerous)',
+        [Location.GATE]: 'Gate',
+        [Location.HOME]: 'Home',
+        [Location.GREATER_WASTE]: 'Greater Waste (Very Dangerous)'
       };
 
       const embed = new EmbedBuilder()
@@ -87,7 +89,7 @@ module.exports = {
           },
           { 
             name: '📍 Location', 
-            value: `${locationEmojis[player.location]} ${locationNames[player.location]}`, 
+            value: `${locationEmojis[player.location]} ${locationNames[player.location]}${player.x !== null && player.y !== null ? ` (${player.x}, ${player.y})` : ''}`, 
             inline: true 
           },
           { 

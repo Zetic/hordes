@@ -32,7 +32,7 @@ module.exports = {
       // Check if player is in an exploration area
       if (player.location === Location.CITY || player.location === Location.HOME) {
         await interaction.reply({
-          content: '❌ You must be in an exploration area to search. Use `/explore` to venture outside the city.',
+          content: '❌ You must be in an exploration area to search. Use `/depart` and `/move` to venture outside the city.',
           ephemeral: true
         });
         return;
@@ -115,7 +115,7 @@ module.exports = {
             
             if (currentCount >= maxItems) {
               // Add item to area inventory instead of discarding it
-              const addToAreaSuccess = await areaInventoryService.addItemToArea(player.location, item.id, 1);
+              const addToAreaSuccess = await areaInventoryService.addItemToArea(player.location, item.id, 1, player.x || undefined, player.y || undefined);
               if (addToAreaSuccess) {
                 embed.addFields([
                   {
@@ -163,14 +163,14 @@ interface SearchResult {
 }
 
 function generateSearchResult(location: Location, playerStatus: PlayerStatus): SearchResult {
-  const isGreaterOutside = location === Location.GREATER_OUTSIDE;
-  const baseDanger = isGreaterOutside ? 0.4 : 0.2;
+  const isGreaterWaste = location === Location.GREATER_WASTE;
+  const baseDanger = isGreaterWaste ? 0.4 : 0.2;
   const random = Math.random();
 
   // Determine outcome based on area danger and random chance
   if (random < baseDanger) {
     // Dangerous encounter - player gets hurt
-    const encounters = isGreaterOutside 
+    const encounters = isGreaterWaste 
       ? [
           'You encounter a pack of zombies and barely escape with your life!',
           'A massive zombie horde forces you to flee through dangerous terrain!',
@@ -191,7 +191,7 @@ function generateSearchResult(location: Location, playerStatus: PlayerStatus): S
     };
   } else if (random < baseDanger + 0.3) {
     // Neutral outcome
-    const neutralEvents = isGreaterOutside
+    const neutralEvents = isGreaterWaste
       ? [
           'You carefully navigate through the ruins but find nothing of value.',
           'The area has been picked clean by other survivors.',
@@ -213,10 +213,10 @@ function generateSearchResult(location: Location, playerStatus: PlayerStatus): S
   } else {
     // Successful search
     const items: string[] = [];
-    const itemChance = isGreaterOutside ? 0.8 : 0.6;
+    const itemChance = isGreaterWaste ? 0.8 : 0.6;
     
     if (Math.random() < itemChance) {
-      const possibleItems = isGreaterOutside
+      const possibleItems = isGreaterWaste
         ? ['Sturdy Wood', 'Oil Barrel', 'Metal Scraps', 'Water Bottle', 'Weapon Parts']
         : ['Wood', 'Metal Scraps', 'Water Bottle', 'Tools', 'Canned Food'];
       
@@ -231,7 +231,7 @@ function generateSearchResult(location: Location, playerStatus: PlayerStatus): S
 
     // Only return success messages if items were actually found
     if (items.length > 0) {
-      const successEvents = isGreaterOutside
+      const successEvents = isGreaterWaste
         ? [
             'You successfully navigate the dangerous ruins and find valuable supplies!',
             'After carefully avoiding zombie patrols, you locate an untouched supply cache!',
@@ -252,7 +252,7 @@ function generateSearchResult(location: Location, playerStatus: PlayerStatus): S
       };
     } else {
       // No items found, return neutral outcome
-      const neutralEvents = isGreaterOutside
+      const neutralEvents = isGreaterWaste
         ? [
             'You carefully navigate through the ruins but find nothing of value.',
             'The area has been picked clean by other survivors.',

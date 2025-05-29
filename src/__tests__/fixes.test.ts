@@ -92,17 +92,18 @@ describe('Issue #20 Fixes', () => {
   });
 
   describe('Player Locations', () => {
-    test('should support exploration from any location', () => {
+    test('should support movement between locations', () => {
       const validLocations = [
         Location.CITY,
-        Location.OUTSIDE,
-        Location.GREATER_OUTSIDE,
+        Location.GATE,
+        Location.WASTE,
+        Location.GREATER_WASTE,
         Location.HOME
       ];
       
-      // Test that all locations are valid (no restriction logic)
+      // Test that all locations are valid in the new grid system
       validLocations.forEach(location => {
-        // Previously there was a restriction to only allow CITY
+        // New system uses grid-based movement instead of direct exploration
         // Now all locations should be valid for exploration
         const canExplore = true; // No location restriction
         expect(canExplore).toBe(true);

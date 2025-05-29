@@ -19,7 +19,7 @@ module.exports = {
           },
           {
             name: '🔍 Core Commands',
-            value: '• `/explore` - Search for resources outside the city\n• `/build` - Construct defenses and facilities\n• `/return` - Go back to the safety of the city\n• `/help` - Show this help message',
+            value: '• `/depart` - Leave the city through the gate\n• `/move <direction>` - Navigate the world map\n• `/return` - Return to the city from the gate\n• `/gate` - Control or check the city gate status\n• `/build` - Construct defenses and facilities\n• `/help` - Show this help message',
             inline: false
           },
           {
@@ -33,18 +33,18 @@ module.exports = {
             inline: false
           },
           {
-            name: '🌍 Exploration Areas',
-            value: '🌲 **Outside** - Nearby areas (1 AP, moderate danger)\n🌍 **Greater Outside** - Distant areas (2 AP, high danger, better rewards)',
+            name: '🗺️ Grid-Based World',
+            value: '🚪 **Gate** - Center tile, entrance to town\n🌲 **Waste** - Inner exploration areas (moderate danger)\n🌍 **Greater Waste** - Border areas (high danger, better rewards)\n\n**Directions**: North, Northeast, East, Southeast, South, Southwest, West, Northwest',
             inline: false
           },
           {
             name: '💡 Survival Tips',
-            value: '• Work together with other players to build defenses\n• Explore during the day to gather resources\n• Build watchtowers and walls before night falls\n• Monitor your status and water supply\n• Return to the city before Horde Mode starts',
+            value: '• Work together with other players to build defenses\n• Use `/gate open` to allow exploration outside the city\n• Navigate step by step using `/move <direction>`\n• Build watchtowers and walls before night falls\n• Monitor your status and water supply\n• Return to the gate before Horde Mode starts',
             inline: false
           },
           {
             name: '⚔️ Combat & Death',
-            value: '• Exploring outside is dangerous - you may encounter zombies\n• Getting hurt while wounded will kill you\n• City defenses help protect everyone during Horde Mode\n• Dead players are revived at the start of each new day',
+            value: '• Moving through the wasteland is dangerous - you may encounter zombies\n• Getting hurt while wounded will kill you\n• City defenses help protect everyone during Horde Mode\n• Dead players are revived at the start of each new day\n• The gate must be open to enter or leave the city',
             inline: false
           },
           {
