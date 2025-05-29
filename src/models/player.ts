@@ -44,12 +44,13 @@ export class PlayerService {
 
   async updatePlayerHealth(discordId: string, health: number): Promise<boolean> {
     try {
+      const isAlive = health > 0;
       const query = `
         UPDATE players 
-        SET health = $1, updated_at = NOW()
-        WHERE discord_id = $2
+        SET health = $1, is_alive = $2, updated_at = NOW()
+        WHERE discord_id = $3
       `;
-      const result = await this.db.pool.query(query, [health, discordId]);
+      const result = await this.db.pool.query(query, [health, isAlive, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error updating player health:', error);
@@ -91,6 +92,7 @@ export class PlayerService {
 
   async resetDailyActionPoints(): Promise<void> {
     try {
+      // Only reset action points for alive players - dead players stay dead until town reset
       const query = `
         UPDATE players 
         SET action_points = max_action_points,
@@ -98,7 +100,7 @@ export class PlayerService {
         WHERE is_alive = true
       `;
       await this.db.pool.query(query);
-      console.log('✅ Daily action points reset for all players');
+      console.log('✅ Daily action points reset for alive players (dead players remain dead)');
     } catch (error) {
       console.error('Error resetting action points:', error);
     }
@@ -123,10 +125,10 @@ export class PlayerService {
             action_points = max_action_points,
             water = 10,
             is_alive = true,
-            location = 'city',
+            location = $1,
             updated_at = NOW()
       `;
-      await this.db.pool.query(query);
+      await this.db.pool.query(query, [Location.CITY]);
       console.log('✅ All players reset to default state');
       return true;
     } catch (error) {
@@ -148,6 +150,35 @@ export class PlayerService {
     } catch (error) {
       console.error('Error resetting player action points:', error);
       return false;
+    }
+  }
+
+  async revivePlayer(discordId: string): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE players 
+        SET health = max_health,
+            is_alive = true,
+            location = $1,
+            updated_at = NOW()
+        WHERE discord_id = $2
+      `;
+      const result = await this.db.pool.query(query, [Location.CITY, discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error reviving player:', error);
+      return false;
+    }
+  }
+
+  async getPlayersByLocation(location: Location): Promise<Player[]> {
+    try {
+      const query = 'SELECT * FROM players WHERE location = $1 AND is_alive = true';
+      const result = await this.db.pool.query(query, [location]);
+      return result.rows.map(row => this.mapRowToPlayer(row));
+    } catch (error) {
+      console.error('Error getting players by location:', error);
+      return [];
     }
   }
 

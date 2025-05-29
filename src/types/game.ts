@@ -98,4 +98,5 @@ export interface GameState {
   currentPhase: GamePhase;
   lastHordeAttack: Date;
   nextPhaseChange: Date;
+  hordeSize: number;
 }
