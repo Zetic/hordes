@@ -2,11 +2,13 @@ import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.j
 import { PlayerService } from '../models/player';
 import { InventoryService } from '../models/inventory';
 import { ItemService } from '../models/item';
+import { AreaInventoryService } from '../models/areaInventory';
 import { Location, PlayerStatus, ItemType } from '../types/game';
 
 const playerService = new PlayerService();
 const inventoryService = new InventoryService();
 const itemService = new ItemService();
+const areaInventoryService = new AreaInventoryService();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -112,13 +114,17 @@ module.exports = {
             const maxItems = InventoryService.getMaxInventorySize();
             
             if (currentCount >= maxItems) {
-              embed.addFields([
-                {
-                  name: '📦 Item Found but Can\'t Carry',
-                  value: `You found **${item.name}** but your inventory is full! Use \`/drop <item>\` to make room.`,
-                  inline: false
-                }
-              ]);
+              // Add item to area inventory instead of discarding it
+              const addToAreaSuccess = await areaInventoryService.addItemToArea(player.location, item.id, 1);
+              if (addToAreaSuccess) {
+                embed.addFields([
+                  {
+                    name: '📦 Item Found but Inventory Full',
+                    value: `You found **${item.name}** but your inventory is full! The item has been left on the ground. Use \`/drop <item>\` to make room or come back later.`,
+                    inline: false
+                  }
+                ]);
+              }
             } else {
               // Add item to inventory
               const addSuccess = await inventoryService.addItemToInventory(player.id, item.id, 1);
@@ -223,25 +229,49 @@ function generateSearchResult(location: Location, playerStatus: PlayerStatus): S
       }
     }
 
-    const successEvents = isGreaterOutside
-      ? [
-          'You successfully navigate the dangerous ruins and find valuable supplies!',
-          'After carefully avoiding zombie patrols, you locate an untouched supply cache!',
-          'You discover a hidden stash in an abandoned building!',
-          'Your cautious approach pays off as you find rare materials!'
-        ]
-      : [
-          'You successfully scavenge the area and find useful items!',
-          'Your search pays off as you discover supplies!',
-          'You find an overlooked stash of resources!',
-          'A thorough search reveals hidden supplies!'
-        ];
+    // Only return success messages if items were actually found
+    if (items.length > 0) {
+      const successEvents = isGreaterOutside
+        ? [
+            'You successfully navigate the dangerous ruins and find valuable supplies!',
+            'After carefully avoiding zombie patrols, you locate an untouched supply cache!',
+            'You discover a hidden stash in an abandoned building!',
+            'Your cautious approach pays off as you find rare materials!'
+          ]
+        : [
+            'You successfully scavenge the area and find useful items!',
+            'Your search pays off as you discover supplies!',
+            'You find an overlooked stash of resources!',
+            'A thorough search reveals hidden supplies!'
+          ];
 
-    return {
-      description: successEvents[Math.floor(Math.random() * successEvents.length)],
-      statusChange: false,
-      itemsFound: items
-    };
+      return {
+        description: successEvents[Math.floor(Math.random() * successEvents.length)],
+        statusChange: false,
+        itemsFound: items
+      };
+    } else {
+      // No items found, return neutral outcome
+      const neutralEvents = isGreaterOutside
+        ? [
+            'You carefully navigate through the ruins but find nothing of value.',
+            'The area has been picked clean by other survivors.',
+            'You spot zombies in the distance and decide to retreat.',
+            'Heavy fog makes exploration too dangerous to continue.'
+          ]
+        : [
+            'You search the area but find nothing useful.',
+            'The location has already been thoroughly searched.',
+            'You hear zombie groans nearby and decide to leave.',
+            'The area appears to be picked clean.'
+          ];
+
+      return {
+        description: neutralEvents[Math.floor(Math.random() * neutralEvents.length)],
+        statusChange: false,
+        itemsFound: []
+      };
+    }
   }
 }
 

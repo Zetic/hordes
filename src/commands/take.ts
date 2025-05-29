@@ -63,10 +63,25 @@ module.exports = {
       const currentCount = await inventoryService.getInventoryCount(player.id);
       const maxItems = InventoryService.getMaxInventorySize();
       if (currentCount + quantity > maxItems) {
-        await interaction.reply({
-          content: `❌ Taking ${quantity} item(s) would exceed your carrying capacity (${currentCount}/${maxItems}). Drop some items first.`,
-          ephemeral: true
-        });
+        const embed = new EmbedBuilder()
+          .setColor('#ff6b6b')
+          .setTitle('❌ Inventory Full')
+          .setDescription(`Taking ${quantity} item(s) would exceed your carrying capacity.`)
+          .addFields([
+            {
+              name: '🎒 Current Inventory',
+              value: `${currentCount}/${maxItems} items`,
+              inline: true
+            },
+            {
+              name: '💡 What you can do',
+              value: `• Use \`/drop <item>\` to discard items\n• Use \`/bank deposit\` when in town`,
+              inline: false
+            }
+          ])
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
         return;
       }
 
