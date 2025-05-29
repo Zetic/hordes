@@ -56,6 +56,7 @@ export class DatabaseService {
           name VARCHAR(255) NOT NULL,
           health INTEGER DEFAULT 100,
           max_health INTEGER DEFAULT 100,
+          status VARCHAR(50) DEFAULT 'healthy',
           action_points INTEGER DEFAULT 10,
           max_action_points INTEGER DEFAULT 10,
           water INTEGER DEFAULT 3,
@@ -65,6 +66,12 @@ export class DatabaseService {
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         );
+      `);
+
+      // Add status column to existing tables if it doesn't exist
+      await this.pool.query(`
+        ALTER TABLE players 
+        ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'healthy';
       `);
 
       await this.pool.query(`
