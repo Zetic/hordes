@@ -166,6 +166,21 @@ export class CityService {
     }
   }
 
+  async updateGateStatus(cityId: string, gateOpen: boolean): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE cities 
+        SET gate_open = $1, updated_at = NOW() 
+        WHERE id = $2
+      `;
+      const result = await this.db.pool.query(query, [gateOpen, cityId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error updating gate status:', error);
+      return false;
+    }
+  }
+
   private mapRowToCity(row: any): City {
     return {
       id: row.id,
@@ -175,7 +190,8 @@ export class CityService {
       resources: [], // Will be loaded separately
       population: row.population,
       day: row.day,
-      gamePhase: row.game_phase as GamePhase
+      gamePhase: row.game_phase as GamePhase,
+      gateOpen: row.gate_open !== false // Default to true if not set
     };
   }
 

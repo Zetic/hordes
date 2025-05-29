@@ -89,7 +89,9 @@ module.exports = {
       } else {
         // Outside town - drop goes to area inventory
         depositSuccess = await areaInventoryService.addItemToArea(player.location, item.id, quantity);
-        const locationName = player.location === Location.GREATER_OUTSIDE ? 'Greater Outside' : 'Outside';
+        const locationName = player.location === Location.GREATER_WASTE ? 'Greater Waste' : 
+                           player.location === Location.WASTE ? 'Waste' : 
+                           player.location === Location.GATE ? 'Gate' : 'Outside Area';
         depositLocation = locationName;
       }
 
