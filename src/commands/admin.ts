@@ -16,7 +16,9 @@ module.exports = {
         .addChoices(
           { name: 'reset', value: 'reset' },
           { name: 'horde', value: 'horde' },
-          { name: 'refresh', value: 'refresh' }
+          { name: 'refresh', value: 'refresh' },
+          { name: 'hordesize', value: 'hordesize' },
+          { name: 'revive', value: 'revive' }
         )
     )
     .addStringOption(option =>
@@ -26,7 +28,12 @@ module.exports = {
     )
     .addUserOption(option =>
       option.setName('user')
-        .setDescription('Target user (required for refresh command)')
+        .setDescription('Target user (required for refresh and revive commands)')
+        .setRequired(false)
+    )
+    .addIntegerOption(option =>
+      option.setName('value')
+        .setDescription('Value (required for hordesize command)')
         .setRequired(false)
     ),
     
@@ -35,6 +42,7 @@ module.exports = {
       const command = interaction.options.get('command')?.value as string;
       const password = interaction.options.get('password')?.value as string;
       const targetUser = interaction.options.get('user')?.user;
+      const value = interaction.options.get('value')?.value as number;
 
       // Validate admin password
       const adminPassword = process.env.ADMIN_PASSWORD;
@@ -68,6 +76,12 @@ module.exports = {
           break;
         case 'refresh':
           await handleRefreshCommand(interaction, targetUser);
+          break;
+        case 'hordesize':
+          await handleHordeSizeCommand(interaction, value);
+          break;
+        case 'revive':
+          await handleReviveCommand(interaction, targetUser);
           break;
         default:
           const embed = new EmbedBuilder()
@@ -110,7 +124,7 @@ async function handleHordeCommand(interaction: CommandInteraction) {
     .setColor(success ? '#ff9f43' : '#ff6b6b')
     .setTitle(success ? '🧟‍♂️ Horde Attack Triggered' : '❌ Horde Attack Failed')
     .setDescription(success 
-      ? 'A horde attack has been manually triggered. The results have been applied as if the horde phase just ended.'
+      ? 'A horde attack has been manually triggered. The results have been applied as if the horde phase just ended. The day has been advanced by 1.'
       : 'Failed to trigger horde attack. Check the server logs for details.'
     )
     .setTimestamp();
@@ -148,6 +162,87 @@ async function handleRefreshCommand(interaction: CommandInteraction, targetUser:
     .setDescription(success 
       ? `${targetUser.username}'s action points have been refreshed to maximum.`
       : `Failed to refresh action points for ${targetUser.username}. Check the server logs for details.`
+    )
+    .setTimestamp();
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handleHordeSizeCommand(interaction: CommandInteraction, value: number | undefined) {
+  if (value === undefined) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Missing Value')
+      .setDescription('You must specify a value for the hordesize command.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  if (value < 1) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Invalid Value')
+      .setDescription('Horde size must be at least 1.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  const success = await gameEngine.setHordeSize(value);
+  
+  const embed = new EmbedBuilder()
+    .setColor(success ? '#4ecdc4' : '#ff6b6b')
+    .setTitle(success ? '🧟‍♂️ Horde Size Updated' : '❌ Update Failed')
+    .setDescription(success 
+      ? `Horde size has been set to ${value}.`
+      : 'Failed to update horde size. Check the server logs for details.'
+    )
+    .setTimestamp();
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handleReviveCommand(interaction: CommandInteraction, targetUser: any) {
+  if (!targetUser) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Missing User')
+      .setDescription('You must specify a user for the revive command.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  const player = await playerService.getPlayer(targetUser.id);
+  if (!player) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Not Found')
+      .setDescription(`Player ${targetUser.username} is not registered in the game.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  if (player.isAlive) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Already Alive')
+      .setDescription(`${targetUser.username} is already alive.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  const success = await gameEngine.revivePlayer(targetUser.id);
+  
+  const embed = new EmbedBuilder()
+    .setColor(success ? '#4ecdc4' : '#ff6b6b')
+    .setTitle(success ? '⚕️ Player Revived' : '❌ Revival Failed')
+    .setDescription(success 
+      ? `${targetUser.username} has been revived and returned to the city with full health.`
+      : `Failed to revive ${targetUser.username}. Check the server logs for details.`
     )
     .setTimestamp();
 

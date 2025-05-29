@@ -53,12 +53,59 @@ describe('Admin Functionality', () => {
 
   describe('Admin Command Structure', () => {
     test('should define admin command choices', () => {
-      const adminCommands = ['reset', 'horde', 'refresh'];
+      const adminCommands = ['reset', 'horde', 'refresh', 'hordesize', 'revive'];
       
       expect(adminCommands).toContain('reset');
       expect(adminCommands).toContain('horde');
       expect(adminCommands).toContain('refresh');
-      expect(adminCommands.length).toBe(3);
+      expect(adminCommands).toContain('hordesize');
+      expect(adminCommands).toContain('revive');
+      expect(adminCommands.length).toBe(5);
+    });
+
+    test('should define horde configuration environment variables', () => {
+      process.env.INITIAL_HORDE_SIZE = '10';
+      process.env.HORDE_SCALING_FACTOR = '1.2';
+      process.env.HORDE_SCALING_RANDOMNESS = '0.3';
+      
+      const initialHordeSize = parseInt(process.env.INITIAL_HORDE_SIZE || '10');
+      const scalingFactor = parseFloat(process.env.HORDE_SCALING_FACTOR || '1.2');
+      const scalingRandomness = parseFloat(process.env.HORDE_SCALING_RANDOMNESS || '0.3');
+      
+      expect(initialHordeSize).toBe(10);
+      expect(scalingFactor).toBe(1.2);
+      expect(scalingRandomness).toBe(0.3);
+    });
+  });
+
+  describe('Horde Size Calculations', () => {
+    test('should scale horde size with randomness factor', () => {
+      const baseSize = 10;
+      const scalingFactor = 1.2;
+      const randomness = 0.3;
+      
+      // Test multiple iterations to ensure randomness is working
+      const results = [];
+      for (let i = 0; i < 10; i++) {
+        const randomMultiplier = 1 + (Math.random() - 0.5) * randomness;
+        const newSize = Math.floor(baseSize * scalingFactor * randomMultiplier);
+        results.push(newSize);
+      }
+      
+      // Results should vary due to randomness
+      const uniqueResults = [...new Set(results)];
+      expect(uniqueResults.length).toBeGreaterThan(1);
+      
+      // All results should be positive
+      results.forEach(result => {
+        expect(result).toBeGreaterThan(0);
+      });
+    });
+
+    test('should ensure minimum horde size of 1', () => {
+      const testSize = 0;
+      const validSize = Math.max(1, testSize);
+      expect(validSize).toBe(1);
     });
   });
 });
