@@ -64,11 +64,31 @@ CREATE TABLE IF NOT EXISTS buildings (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Area inventories table (for dropped items in exploration areas)
+CREATE TABLE IF NOT EXISTS area_inventories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  location VARCHAR(50) NOT NULL,
+  item_id UUID REFERENCES items(id),
+  quantity INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Bank inventories table (for town bank)
+CREATE TABLE IF NOT EXISTS bank_inventories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_id UUID REFERENCES cities(id) ON DELETE CASCADE,
+  item_id UUID REFERENCES items(id),
+  quantity INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_players_discord_id ON players(discord_id);
 CREATE INDEX IF NOT EXISTS idx_players_alive ON players(is_alive);
 CREATE INDEX IF NOT EXISTS idx_inventory_player_id ON inventory(player_id);
 CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id);
+CREATE INDEX IF NOT EXISTS idx_area_inventories_location ON area_inventories(location);
+CREATE INDEX IF NOT EXISTS idx_bank_inventories_city_id ON bank_inventories(city_id);
 
 -- Insert default city if it doesn't exist
 INSERT INTO cities (name, day, game_phase)
@@ -95,3 +115,5 @@ COMMENT ON TABLE cities IS 'Stores city/town information';
 COMMENT ON TABLE items IS 'Stores item definitions';
 COMMENT ON TABLE inventory IS 'Stores player inventories';
 COMMENT ON TABLE buildings IS 'Stores city buildings and defenses';
+COMMENT ON TABLE area_inventories IS 'Stores items dropped in exploration areas';
+COMMENT ON TABLE bank_inventories IS 'Stores items in the town bank';
