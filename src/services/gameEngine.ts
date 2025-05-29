@@ -1,6 +1,7 @@
 import { GameState, GamePhase, Player, City, Location, PlayerStatus } from '../types/game';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
+import { ItemService } from '../models/item';
 import { DatabaseService } from '../services/database';
 import { Client, EmbedBuilder } from 'discord.js';
 import cron from 'node-cron';
@@ -29,6 +30,7 @@ export class GameEngine {
   private static instance: GameEngine;
   private playerService: PlayerService;
   private cityService: CityService;
+  private itemService: ItemService;
   private db: DatabaseService;
   private gameState: GameState | null = null;
   private discordClient: Client | null = null;
@@ -36,6 +38,7 @@ export class GameEngine {
   private constructor() {
     this.playerService = new PlayerService();
     this.cityService = new CityService();
+    this.itemService = new ItemService();
     this.db = DatabaseService.getInstance();
     this.initializeGameEngine();
   }
@@ -53,6 +56,9 @@ export class GameEngine {
 
   private async initializeGameEngine(): Promise<void> {
     try {
+      // Initialize default items
+      await this.itemService.initializeDefaultItems();
+      
       // Load or create game state
       await this.loadGameState();
       
@@ -571,14 +577,23 @@ export class GameEngine {
       console.log('🧟‍♂️ Manually triggering horde attack results...');
       await this.processHordeAttack();
       
-      // Advance the day by 1 as requested
+      // Apply horde scaling just like in the automatic transition
       if (this.gameState) {
+        // Scale horde size for next attack with randomness
+        const scalingFactor = parseFloat(process.env.HORDE_SCALING_FACTOR || '1.2');
+        const randomness = parseFloat(process.env.HORDE_SCALING_RANDOMNESS || '0.3');
+        const randomMultiplier = 1 + (Math.random() - 0.5) * randomness;
+        const newHordeSize = Math.floor(this.gameState.hordeSize * scalingFactor * randomMultiplier);
+        
+        // Advance the day by 1 and apply scaling
         this.gameState.currentDay += 1;
+        this.gameState.hordeSize = newHordeSize;
+        
         await this.db.redis.set('game_state', JSON.stringify(this.gameState));
-        console.log(`📅 Day advanced to ${this.gameState.currentDay}`);
+        console.log(`📅 Day advanced to ${this.gameState.currentDay}, Horde size scaled to ${newHordeSize}`);
       }
       
-      console.log('✅ Horde attack results processed');
+      console.log('✅ Horde attack results processed with scaling');
       return true;
     } catch (error) {
       console.error('Error triggering horde results:', error);

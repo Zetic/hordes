@@ -1,8 +1,10 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
+import { InventoryService } from '../models/inventory';
 import { Location, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
+const inventoryService = new InventoryService();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,6 +20,16 @@ module.exports = {
       if (!player) {
         await interaction.reply({
           content: '❌ Player not found. Use `/join` to start playing.',
+          ephemeral: true
+        });
+        return;
+      }
+
+      // Check if player is encumbered
+      const isEncumbered = await inventoryService.isPlayerEncumbered(player.id);
+      if (isEncumbered) {
+        await interaction.reply({
+          content: '❌ You are encumbered and cannot return to the city. Use `/drop <item>` to free up space first.',
           ephemeral: true
         });
         return;
@@ -77,7 +89,7 @@ module.exports = {
         .addFields([
           {
             name: '🎮 What\'s Next?',
-            value: '• Use `/explore` to venture out again\n• Use `/build` to help construct defenses\n• Use `/status` to check your condition\n• Use `/city-info` to see the town status',
+            value: '• Use `/explore` to venture out again\n• Use `/build` to help construct defenses\n• Use `/inventory` to check your items\n• Use `/bank` to access the town bank\n• Use `/status` to check your condition\n• Use `/city-info` to see the town status',
             inline: false
           }
         ])

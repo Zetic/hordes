@@ -107,3 +107,13 @@ export interface GameState {
   nextPhaseChange: Date;
   hordeSize: number;
 }
+
+export interface AreaInventory {
+  location: Location;
+  items: InventoryItem[];
+}
+
+export interface Bank {
+  cityId: string;
+  items: InventoryItem[];
+}
