@@ -83,17 +83,6 @@ module.exports = {
         ])
         .setTimestamp();
 
-      // Add healing message if player is wounded
-      if (player.status === PlayerStatus.WOUNDED) {
-        embed.addFields([
-          {
-            name: '🏥 Medical Care',
-            value: 'You receive basic medical attention in the city. Your wounds are treated, but you\'re still vulnerable. Another injury could be fatal.',
-            inline: false
-          }
-        ]);
-      }
-
       await interaction.reply({ embeds: [embed] });
 
     } catch (error) {
