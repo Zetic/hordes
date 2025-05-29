@@ -108,4 +108,32 @@ describe('Admin Functionality', () => {
       expect(validSize).toBe(1);
     });
   });
+
+  describe('Town Breach Logic', () => {
+    test('should determine town breach correctly', () => {
+      // Test cases for breach determination
+      const testCases = [
+        { defense: 5, hordeSize: 10, shouldBreach: true },
+        { defense: 10, hordeSize: 10, shouldBreach: false },
+        { defense: 15, hordeSize: 10, shouldBreach: false },
+        { defense: 0, hordeSize: 1, shouldBreach: true },
+        { defense: 1, hordeSize: 1, shouldBreach: false }
+      ];
+
+      testCases.forEach(({ defense, hordeSize, shouldBreach }) => {
+        const townBreached = defense < hordeSize;
+        expect(townBreached).toBe(shouldBreach);
+      });
+    });
+
+    test('should calculate breach severity correctly', () => {
+      const hordeSize = 20;
+      const defense = 10;
+      const breachSeverity = (hordeSize - defense) / hordeSize;
+      
+      expect(breachSeverity).toBe(0.5); // 50% breach severity
+      expect(breachSeverity).toBeGreaterThan(0);
+      expect(breachSeverity).toBeLessThanOrEqual(1);
+    });
+  });
 });

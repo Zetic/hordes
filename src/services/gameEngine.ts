@@ -1,4 +1,4 @@
-import { GameState, GamePhase, Player, City } from '../types/game';
+import { GameState, GamePhase, Player, City, Location } from '../types/game';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { DatabaseService } from '../services/database';
@@ -188,8 +188,8 @@ export class GameEngine {
         console.log('🛡️ Town defenses hold! Only players outside the safety of the city are in danger.');
         
         // Only players outside the city are at risk
-        const playersOutside = await this.playerService.getPlayersByLocation('outside' as any);
-        const playersGreaterOutside = await this.playerService.getPlayersByLocation('greater_outside' as any);
+        const playersOutside = await this.playerService.getPlayersByLocation(Location.OUTSIDE);
+        const playersGreaterOutside = await this.playerService.getPlayersByLocation(Location.GREATER_OUTSIDE);
         const vulnerablePlayers = [...playersOutside, ...playersGreaterOutside];
         
         if (vulnerablePlayers.length > 0) {

@@ -125,10 +125,10 @@ export class PlayerService {
             action_points = max_action_points,
             water = 10,
             is_alive = true,
-            location = 'city',
+            location = $1,
             updated_at = NOW()
       `;
-      await this.db.pool.query(query);
+      await this.db.pool.query(query, [Location.CITY]);
       console.log('✅ All players reset to default state');
       return true;
     } catch (error) {
@@ -159,11 +159,11 @@ export class PlayerService {
         UPDATE players 
         SET health = max_health,
             is_alive = true,
-            location = 'city',
+            location = $1,
             updated_at = NOW()
-        WHERE discord_id = $1
+        WHERE discord_id = $2
       `;
-      const result = await this.db.pool.query(query, [discordId]);
+      const result = await this.db.pool.query(query, [Location.CITY, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error reviving player:', error);
