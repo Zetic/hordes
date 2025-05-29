@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
+import { PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 const cityService = new CityService();
@@ -18,12 +19,23 @@ module.exports = {
       // Check if player already exists
       const existingPlayer = await playerService.getPlayer(discordId);
       if (existingPlayer) {
+        const statusEmojis = {
+          [PlayerStatus.HEALTHY]: '💚',
+          [PlayerStatus.WOUNDED]: '🩸',
+          [PlayerStatus.DEAD]: '💀'
+        };
+        const statusTexts = {
+          [PlayerStatus.HEALTHY]: 'Healthy',
+          [PlayerStatus.WOUNDED]: 'Wounded',
+          [PlayerStatus.DEAD]: 'Dead'
+        };
+
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('🧟‍♂️ Already Registered')
           .setDescription(`You're already part of the survival group, ${existingPlayer.name}!`)
           .addFields([
-            { name: '💚 Health', value: `${existingPlayer.health}/${existingPlayer.maxHealth}`, inline: true },
+            { name: '💚 Status', value: `${statusEmojis[existingPlayer.status]} ${statusTexts[existingPlayer.status]}`, inline: true },
             { name: '⚡ Action Points', value: `${existingPlayer.actionPoints}/${existingPlayer.maxActionPoints}`, inline: true },
             { name: '💧 Water', value: `${existingPlayer.water}`, inline: true }
           ])
@@ -54,11 +66,11 @@ module.exports = {
         .setTitle('🎮 Welcome to DIE2NITE!')
         .setDescription(`Welcome to the zombie apocalypse, **${newPlayer.name}**! You have joined the survivors in their fight against the undead horde.`)
         .addFields([
-          { name: '💚 Health', value: `${newPlayer.health}/${newPlayer.maxHealth}`, inline: true },
+          { name: '💚 Status', value: `💚 Healthy`, inline: true },
           { name: '⚡ Action Points', value: `${newPlayer.actionPoints}/${newPlayer.maxActionPoints}`, inline: true },
           { name: '💧 Water', value: `${newPlayer.water}`, inline: true },
           { name: '📍 Location', value: `🏠 City (Safe Zone)`, inline: true },
-          { name: '🎯 Status', value: `Alive and Ready`, inline: true },
+          { name: '🎯 Alive', value: `Alive and Ready`, inline: true },
           { name: '\u200B', value: '\u200B', inline: true }
         ])
         .addFields([
