@@ -2,6 +2,7 @@ import { GameState, GamePhase, Player, City, Location, PlayerStatus } from '../t
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { DatabaseService } from '../services/database';
+import { Client, EmbedBuilder } from 'discord.js';
 import cron from 'node-cron';
 
 interface AttackResult {
@@ -30,6 +31,7 @@ export class GameEngine {
   private cityService: CityService;
   private db: DatabaseService;
   private gameState: GameState | null = null;
+  private discordClient: Client | null = null;
 
   private constructor() {
     this.playerService = new PlayerService();
@@ -43,6 +45,10 @@ export class GameEngine {
       GameEngine.instance = new GameEngine();
     }
     return GameEngine.instance;
+  }
+
+  public setDiscordClient(client: Client): void {
+    this.discordClient = client;
   }
 
   private async initializeGameEngine(): Promise<void> {
@@ -314,48 +320,120 @@ export class GameEngine {
 
   private async sendAttackReport(report: HordeAttackReport): Promise<void> {
     try {
+      // Log to console for debugging
       console.log('\n🧟‍♂️ HORDE ATTACK REPORT 🧟‍♂️');
       console.log(`📅 Day ${report.day}`);
       console.log(`🛡️ City Defense: ${report.cityDefense}`);
       console.log(`🧟‍♂️ Horde Size: ${report.hordeSize}`);
       
+      // Create Discord embed for attack report
+      const embed = new EmbedBuilder()
+        .setColor(report.townBreached ? '#ff6b6b' : '#4ecdc4')
+        .setTitle('🧟‍♂️ HORDE ATTACK REPORT 🧟‍♂️')
+        .setDescription(`**Day ${report.day} Results**`)
+        .addFields([
+          { 
+            name: '🛡️ City Defense', 
+            value: `${report.cityDefense}`, 
+            inline: true 
+          },
+          { 
+            name: '🧟‍♂️ Horde Size', 
+            value: `${report.hordeSize}`, 
+            inline: true 
+          }
+        ])
+        .setTimestamp();
+
+      // Town breach information
       if (report.townBreached) {
-        console.log(`💥 TOWN BREACHED! ${report.zombiesBreached} zombies entered the town.`);
-        console.log(`⚔️ Total zombie attacks made: ${report.totalAttacks}`);
-        
+        embed.addFields([
+          { 
+            name: '💥 TOWN BREACHED!', 
+            value: `${report.zombiesBreached} zombies entered the town.\n⚔️ Total zombie attacks made: ${report.totalAttacks}`, 
+            inline: false 
+          }
+        ]);
+
+        // Players in town results
         if (report.playersInTown.length > 0) {
-          console.log('\n🏙️ PLAYERS IN TOWN:');
+          const townResults = [];
           for (const playerResult of report.playersInTown) {
             const statusChange = playerResult.previousStatus !== playerResult.newStatus 
               ? ` (${playerResult.previousStatus} → ${playerResult.newStatus})`
               : '';
             
             if (playerResult.attacksReceived > 0) {
-              console.log(`  ${playerResult.playerName}: ${playerResult.attacksReceived} attacks${statusChange}`);
+              townResults.push(`${playerResult.playerName}: ${playerResult.attacksReceived} attacks${statusChange}`);
             } else {
-              console.log(`  ${playerResult.playerName}: No attacks received`);
+              townResults.push(`${playerResult.playerName}: No attacks received`);
             }
           }
+          
+          embed.addFields([
+            { 
+              name: '🏙️ PLAYERS IN TOWN', 
+              value: townResults.join('\n'), 
+              inline: false 
+            }
+          ]);
         }
       } else {
-        console.log('🛡️ Town defenses held strong - no zombies breached.');
+        embed.addFields([
+          { 
+            name: '🛡️ Defense Success', 
+            value: 'Town defenses held strong - no zombies breached.', 
+            inline: false 
+          }
+        ]);
       }
       
+      // Players killed outside
       if (report.playersKilledOutside.length > 0) {
-        console.log('\n💀 PLAYERS KILLED OUTSIDE TOWN:');
+        const outsideDeaths = [];
         for (const playerResult of report.playersKilledOutside) {
           const locationName = playerResult.location === Location.OUTSIDE ? 'Outside' : 'Greater Outside';
-          console.log(`  ${playerResult.playerName} (was in ${locationName})`);
+          outsideDeaths.push(`${playerResult.playerName} (was in ${locationName})`);
         }
+        
+        embed.addFields([
+          { 
+            name: '💀 PLAYERS KILLED OUTSIDE TOWN', 
+            value: outsideDeaths.join('\n'), 
+            inline: false 
+          }
+        ]);
       }
       
       // Summary
       const totalWounded = [...report.playersInTown].filter(p => p.newStatus === PlayerStatus.WOUNDED && p.previousStatus !== PlayerStatus.WOUNDED).length;
       const totalKilled = [...report.playersInTown, ...report.playersKilledOutside].filter(p => p.newStatus === PlayerStatus.DEAD).length;
       
-      console.log('\n📊 SUMMARY:');
-      console.log(`🩸 Players wounded: ${totalWounded}`);
-      console.log(`💀 Players killed: ${totalKilled}`);
+      embed.addFields([
+        { 
+          name: '📊 SUMMARY', 
+          value: `🩸 Players wounded: ${totalWounded}\n💀 Players killed: ${totalKilled}`, 
+          inline: false 
+        }
+      ]);
+
+      // Send to Discord channel if client and channel are available
+      if (this.discordClient && process.env.DISCORD_ATTACK_REPORT_CHANNEL_ID) {
+        try {
+          const channel = await this.discordClient.channels.fetch(process.env.DISCORD_ATTACK_REPORT_CHANNEL_ID);
+          if (channel && channel.isTextBased() && 'send' in channel) {
+            await channel.send({ embeds: [embed] });
+            console.log('✅ Attack report sent to Discord channel');
+          } else {
+            console.log('⚠️ Discord channel not found or not text-based');
+          }
+        } catch (discordError) {
+          console.error('❌ Failed to send attack report to Discord:', discordError);
+        }
+      } else {
+        console.log('⚠️ Discord client or channel ID not configured, skipping Discord message');
+      }
+      
       console.log('🧟‍♂️ Attack report complete.\n');
       
     } catch (error) {
@@ -427,7 +505,7 @@ export class GameEngine {
       }
 
       if (!player.isAlive) {
-        return { canAct: false, reason: 'Player is dead' };
+        return { canAct: false, reason: 'You are dead!' };
       }
 
       if (player.actionPoints <= 0) {

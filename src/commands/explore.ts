@@ -30,7 +30,7 @@ module.exports = {
       if (!actionCheck.canAct) {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
-          .setTitle('❌ Cannot Explore')
+          .setTitle('Cannot Explore')
           .setDescription(actionCheck.reason || 'Unknown error');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -51,7 +51,7 @@ module.exports = {
       if (player.location !== Location.CITY) {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
-          .setTitle('❌ Cannot Explore')
+          .setTitle('Cannot Explore')
           .setDescription('You must be in the city to start an exploration. Use `/return` to go back to the city first.');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
