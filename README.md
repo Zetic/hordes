@@ -9,6 +9,7 @@ A Discord bot adaptation of the classic browser survival game DIE2NITE (Hordes),
 ## Documentation
 
 - **[📋 Project Plan](./DIE2NITE_DISCORD_BOT_PROJECT_PLAN.md)** - Detailed analysis, design, and implementation roadmap
+- **[📊 Feature Status](./FEATURE_STATUS.md)** - Current implementation status, working features, and development priorities
 - **[🎮 Original Game](https://github.com/motion-twin/WebGamesArchives/tree/main/Hordes)** - Reference source code for the original DIE2NITE game
 
 ## About DIE2NITE
@@ -101,6 +102,7 @@ REDIS_URL=redis://localhost:6379
 ## Documentation
 
 - **[📋 Project Plan](./DIE2NITE_DISCORD_BOT_PROJECT_PLAN.md)** - Detailed analysis, design, and implementation roadmap
+- **[📊 Feature Status](./FEATURE_STATUS.md)** - Current implementation status, working features, and development priorities
 - **[🎮 Original Game](https://github.com/motion-twin/WebGamesArchives/tree/main/Hordes)** - Reference source code for the original DIE2NITE game
 
 ## About DIE2NITE
