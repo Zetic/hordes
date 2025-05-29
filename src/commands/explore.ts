@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
-import { Location } from '../types/game';
+import { Location, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -76,7 +76,7 @@ module.exports = {
       await playerService.updatePlayerLocation(discordId, targetLocation);
 
       // Generate exploration results
-      const explorationResult = generateExplorationResult(area, player.health);
+      const explorationResult = generateExplorationResult(area, player.status);
 
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')
@@ -101,27 +101,36 @@ module.exports = {
         ]);
 
       // Apply results
-      if (explorationResult.healthLoss > 0) {
-        const newHealth = Math.max(0, player.health - explorationResult.healthLoss);
-        await playerService.updatePlayerHealth(discordId, newHealth);
+      if (explorationResult.statusChange) {
+        let newStatus: PlayerStatus;
+        let statusMessage: string;
+        
+        if (player.status === PlayerStatus.HEALTHY) {
+          newStatus = PlayerStatus.WOUNDED;
+          statusMessage = 'You have been wounded! Another injury could be fatal.';
+        } else if (player.status === PlayerStatus.WOUNDED) {
+          newStatus = PlayerStatus.DEAD;
+          statusMessage = 'You have died from your wounds! You can no longer take actions until the next day.';
+        } else {
+          // Player is already dead, shouldn't happen but handle gracefully
+          newStatus = player.status;
+          statusMessage = 'You are already dead.';
+        }
+        
+        await playerService.updatePlayerStatus(discordId, newStatus);
         
         embed.addFields([
           { 
-            name: '💔 Health Lost', 
-            value: `${explorationResult.healthLoss} (${player.health} → ${newHealth})`, 
-            inline: true 
+            name: newStatus === PlayerStatus.DEAD ? '💀 DEATH' : '🩸 WOUNDED', 
+            value: statusMessage, 
+            inline: false 
           }
         ]);
 
-        if (newHealth === 0) {
+        if (newStatus === PlayerStatus.DEAD) {
           embed.setColor('#ff6b6b');
-          embed.addFields([
-            { 
-              name: '💀 DEATH', 
-              value: 'You have died from your wounds! You can no longer take actions until the next day.', 
-              inline: false 
-            }
-          ]);
+        } else {
+          embed.setColor('#ff9f43');
         }
       }
 
@@ -136,7 +145,7 @@ module.exports = {
       }
 
       // Add return instruction
-      if (explorationResult.healthLoss === 0) {
+      if (!explorationResult.statusChange) {
         embed.addFields([
           { 
             name: '🏠 Returning', 
@@ -162,19 +171,18 @@ module.exports = {
 
 interface ExplorationResult {
   description: string;
-  healthLoss: number;
+  statusChange: boolean; // true if player gets hurt
   resourcesFound: string[];
 }
 
-function generateExplorationResult(area: string, playerHealth: number): ExplorationResult {
+function generateExplorationResult(area: string, playerStatus: PlayerStatus): ExplorationResult {
   const isGreaterOutside = area === 'greater_outside';
   const baseDanger = isGreaterOutside ? 0.4 : 0.2;
   const random = Math.random();
 
   // Determine outcome based on area danger and random chance
   if (random < baseDanger) {
-    // Dangerous encounter
-    const healthLoss = Math.floor(Math.random() * (isGreaterOutside ? 40 : 25)) + 10;
+    // Dangerous encounter - player gets hurt
     const encounters = isGreaterOutside 
       ? [
           'You encounter a pack of zombies and barely escape with your life!',
@@ -191,7 +199,7 @@ function generateExplorationResult(area: string, playerHealth: number): Explorat
     
     return {
       description: encounters[Math.floor(Math.random() * encounters.length)],
-      healthLoss,
+      statusChange: true,
       resourcesFound: []
     };
   } else if (random < baseDanger + 0.3) {
@@ -212,7 +220,7 @@ function generateExplorationResult(area: string, playerHealth: number): Explorat
 
     return {
       description: neutralEvents[Math.floor(Math.random() * neutralEvents.length)],
-      healthLoss: 0,
+      statusChange: false,
       resourcesFound: []
     };
   } else {
@@ -250,7 +258,7 @@ function generateExplorationResult(area: string, playerHealth: number): Explorat
 
     return {
       description: successEvents[Math.floor(Math.random() * successEvents.length)],
-      healthLoss: 0,
+      statusChange: false,
       resourcesFound: resources
     };
   }

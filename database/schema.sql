@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS players (
   name VARCHAR(255) NOT NULL,
   health INTEGER DEFAULT 100,
   max_health INTEGER DEFAULT 100,
+  status VARCHAR(10) DEFAULT 'healthy',
   action_points INTEGER DEFAULT 10,
   max_action_points INTEGER DEFAULT 10,
   water INTEGER DEFAULT 3,
@@ -73,6 +74,21 @@ CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id);
 INSERT INTO cities (name, day, game_phase)
 SELECT 'Sanctuary', 1, 'play_mode'
 WHERE NOT EXISTS (SELECT 1 FROM cities);
+
+-- Add status column migration for existing data
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'status') THEN
+        ALTER TABLE players ADD COLUMN status VARCHAR(10) DEFAULT 'healthy';
+        
+        -- Migrate existing data: set status based on current health and is_alive
+        UPDATE players SET status = CASE 
+            WHEN NOT is_alive THEN 'dead'
+            WHEN health < max_health THEN 'wounded'
+            ELSE 'healthy'
+        END;
+    END IF;
+END $$;
 
 COMMENT ON TABLE players IS 'Stores player data and stats';
 COMMENT ON TABLE cities IS 'Stores city/town information';

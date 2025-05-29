@@ -1,4 +1,4 @@
-import { Player, Location, GamePhase } from '../types/game';
+import { Player, Location, GamePhase, PlayerStatus } from '../types/game';
 import { DatabaseService } from '../services/database';
 
 export class PlayerService {
@@ -54,6 +54,22 @@ export class PlayerService {
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error updating player health:', error);
+      return false;
+    }
+  }
+
+  async updatePlayerStatus(discordId: string, status: PlayerStatus): Promise<boolean> {
+    try {
+      const isAlive = status !== PlayerStatus.DEAD;
+      const query = `
+        UPDATE players 
+        SET status = $1, is_alive = $2, updated_at = NOW()
+        WHERE discord_id = $3
+      `;
+      const result = await this.db.pool.query(query, [status, isAlive, discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error updating player status:', error);
       return false;
     }
   }
@@ -125,10 +141,11 @@ export class PlayerService {
             action_points = max_action_points,
             water = 10,
             is_alive = true,
-            location = $1,
+            status = $1,
+            location = $2,
             updated_at = NOW()
       `;
-      await this.db.pool.query(query, [Location.CITY]);
+      await this.db.pool.query(query, [PlayerStatus.HEALTHY, Location.CITY]);
       console.log('✅ All players reset to default state');
       return true;
     } catch (error) {
@@ -159,11 +176,12 @@ export class PlayerService {
         UPDATE players 
         SET health = max_health,
             is_alive = true,
-            location = $1,
+            status = $1,
+            location = $2,
             updated_at = NOW()
-        WHERE discord_id = $2
+        WHERE discord_id = $3
       `;
-      const result = await this.db.pool.query(query, [Location.CITY, discordId]);
+      const result = await this.db.pool.query(query, [PlayerStatus.HEALTHY, Location.CITY, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error reviving player:', error);
@@ -189,6 +207,7 @@ export class PlayerService {
       name: row.name,
       health: row.health,
       maxHealth: row.max_health,
+      status: row.status as PlayerStatus,
       actionPoints: row.action_points,
       maxActionPoints: row.max_action_points,
       water: row.water,

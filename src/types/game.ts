@@ -1,10 +1,17 @@
 // Core game types and interfaces
+export enum PlayerStatus {
+  HEALTHY = 'healthy',
+  WOUNDED = 'wounded',
+  DEAD = 'dead'
+}
+
 export interface Player {
   id: string;
   discordId: string;
   name: string;
   health: number;
   maxHealth: number;
+  status: PlayerStatus;
   actionPoints: number;
   maxActionPoints: number;
   water: number;

@@ -1,4 +1,4 @@
-import { GamePhase, Location, ItemType } from '../types/game';
+import { GamePhase, Location, ItemType, PlayerStatus } from '../types/game';
 
 describe('Game Types', () => {
   test('should define game phases', () => {
@@ -15,6 +15,12 @@ describe('Game Types', () => {
   test('should define item types', () => {
     expect(ItemType.WEAPON).toBe('weapon');
     expect(ItemType.RESOURCE).toBe('resource');
+  });
+
+  test('should define player statuses', () => {
+    expect(PlayerStatus.HEALTHY).toBe('healthy');
+    expect(PlayerStatus.WOUNDED).toBe('wounded');
+    expect(PlayerStatus.DEAD).toBe('dead');
   });
 });
 
