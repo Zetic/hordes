@@ -32,7 +32,7 @@ module.exports = {
       // Check if player is in an exploration area
       if (player.location === Location.CITY || player.location === Location.HOME) {
         await interaction.reply({
-          content: '❌ You must be in an exploration area to search. Use `/explore` to venture outside the city.',
+          content: '❌ You must be in an exploration area to search. Use `/depart` and `/move` to venture outside the city.',
           ephemeral: true
         });
         return;
@@ -115,7 +115,7 @@ module.exports = {
             
             if (currentCount >= maxItems) {
               // Add item to area inventory instead of discarding it
-              const addToAreaSuccess = await areaInventoryService.addItemToArea(player.location, item.id, 1);
+              const addToAreaSuccess = await areaInventoryService.addItemToArea(player.location, item.id, 1, player.x || undefined, player.y || undefined);
               if (addToAreaSuccess) {
                 embed.addFields([
                   {

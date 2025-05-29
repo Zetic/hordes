@@ -2,12 +2,14 @@ import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.j
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
+import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
 import { Location, Direction, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
 const inventoryService = new InventoryService();
+const areaInventoryService = new AreaInventoryService();
 const worldMapService = WorldMapService.getInstance();
 
 module.exports = {
@@ -118,6 +120,9 @@ module.exports = {
       // Update player position
       await playerService.updatePlayerLocation(discordId, newLocation, newCoords.x, newCoords.y);
 
+      // Get items in the new area
+      const areaItems = await areaInventoryService.getAreaInventory(newLocation, newCoords.x, newCoords.y);
+
       // Create response embed
       const directionDisplay = worldMapService.getDirectionDisplayName(directionEnum);
       const locationDisplay = worldMapService.getLocationDisplay(newLocation);
@@ -174,10 +179,27 @@ module.exports = {
         }
       ]);
 
+      // Show items in area if any
+      if (areaItems.length > 0) {
+        const itemList = areaItems.map(item => 
+          `**${item.item.name}** x${item.quantity} - ${item.item.description}`
+        ).join('\n');
+
+        embed.addFields([
+          {
+            name: '📦 Items on the Ground',
+            value: itemList,
+            inline: false
+          }
+        ]);
+      }
+
       embed.addFields([
         {
           name: '🔍 Next Steps',
-          value: '• Use `/search` to look for items (risky)\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition',
+          value: areaItems.length > 0 
+            ? '• Use `/search` to look for items (risky)\n• Use `/take <item>` to pick up items from the ground\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition'
+            : '• Use `/search` to look for items (risky)\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition',
           inline: false
         }
       ]);

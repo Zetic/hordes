@@ -43,7 +43,7 @@ module.exports = {
       // Check if player is in an exploration area
       if (player.location === Location.CITY || player.location === Location.HOME) {
         await interaction.reply({
-          content: '❌ You must be in an exploration area to take items from the ground. Use `/explore` to venture outside the city.',
+          content: '❌ You must be in an exploration area to take items from the ground. Use `/depart` and `/move` to venture outside the city.',
           ephemeral: true
         });
         return;
@@ -86,7 +86,7 @@ module.exports = {
       }
 
       // Get area inventory
-      const areaItems = await areaInventoryService.getAreaInventory(player.location);
+      const areaItems = await areaInventoryService.getAreaInventory(player.location, player.x || undefined, player.y || undefined);
       
       // Find the item by name (case insensitive)
       const foundItem = areaItems.find(item => 
@@ -111,7 +111,7 @@ module.exports = {
       }
 
       // Remove from area
-      const removeSuccess = await areaInventoryService.removeItemFromArea(player.location, foundItem.itemId, quantity);
+      const removeSuccess = await areaInventoryService.removeItemFromArea(player.location, foundItem.itemId, quantity, player.x || undefined, player.y || undefined);
       if (!removeSuccess) {
         await interaction.reply({
           content: '❌ Failed to remove item from area.',
@@ -124,7 +124,7 @@ module.exports = {
       const addSuccess = await inventoryService.addItemToInventory(player.id, foundItem.itemId, quantity);
       if (!addSuccess) {
         // If adding to inventory failed, add item back to area
-        await areaInventoryService.addItemToArea(player.location, foundItem.itemId, quantity);
+        await areaInventoryService.addItemToArea(player.location, foundItem.itemId, quantity, player.x || undefined, player.y || undefined);
         await interaction.reply({
           content: '❌ Failed to add item to inventory.',
           ephemeral: true
