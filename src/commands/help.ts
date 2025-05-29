@@ -14,7 +14,7 @@ module.exports = {
         .addFields([
           {
             name: '🎮 Getting Started',
-            value: '• Use `/join` to enter the game\n• Use `/status` to check your condition and stats\n• Use `/city-info` to see your town\'s defenses',
+            value: '• Use `/join` to enter the game\n• Use `/status` to check your condition and stats\n• Use `/town` to see your town\'s defenses',
             inline: false
           },
           {

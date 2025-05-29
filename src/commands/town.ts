@@ -9,8 +9,8 @@ const gameEngine = GameEngine.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('city-info')
-    .setDescription('View information about your city and its defenses'),
+    .setName('town')
+    .setDescription('View information about your town and its defenses'),
     
   async execute(interaction: CommandInteraction) {
     try {

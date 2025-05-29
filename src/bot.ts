@@ -28,8 +28,9 @@ class Die2NiteBot {
     this.client.once('ready', async () => {
       console.log(`🧟‍♂️ DIE2NITE Bot is ready! Logged in as ${this.client.user?.tag}`);
       
-      // Initialize game engine
-      GameEngine.getInstance();
+      // Initialize game engine and set Discord client
+      const gameEngine = GameEngine.getInstance();
+      gameEngine.setDiscordClient(this.client);
       
       // Deploy commands on startup
       if (process.env.DISCORD_CLIENT_ID) {

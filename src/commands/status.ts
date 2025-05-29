@@ -39,10 +39,6 @@ module.exports = {
       // Get game state
       const gameState = await gameEngine.getCurrentGameState();
       
-      // Determine status emoji and text
-      const statusEmoji = player.isAlive ? '💚' : '💀';
-      const statusText = player.isAlive ? 'Alive' : 'Dead';
-      
       // Player status display
       const statusEmojis = {
         [PlayerStatus.HEALTHY]: '💚',
@@ -71,7 +67,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor(player.isAlive ? '#4ecdc4' : '#ff6b6b')
-        .setTitle(`${statusEmoji} ${player.name}'s Status`)
+        .setTitle(`${statusEmojis[player.status]} ${player.name}'s Status`)
         .setThumbnail(targetUser.displayAvatarURL())
         .addFields([
           { 
@@ -92,11 +88,6 @@ module.exports = {
           { 
             name: '📍 Location', 
             value: `${locationEmojis[player.location]} ${locationNames[player.location]}`, 
-            inline: true 
-          },
-          { 
-            name: '🎯 Alive', 
-            value: statusText, 
             inline: true 
           },
           { 

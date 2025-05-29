@@ -35,7 +35,7 @@ module.exports = {
       if (!actionCheck.canAct) {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
-          .setTitle('❌ Cannot Build')
+          .setTitle('Cannot Build')
           .setDescription(actionCheck.reason || 'Unknown error');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -56,7 +56,7 @@ module.exports = {
       if (player.location !== 'city') {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
-          .setTitle('❌ Cannot Build')
+          .setTitle('Cannot Build')
           .setDescription('You must be in the city to construct buildings. Use `/return` to go back to the city first.');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
