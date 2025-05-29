@@ -109,7 +109,7 @@ async function handleResetCommand(interaction: CommandInteraction) {
     .setColor(success ? '#4ecdc4' : '#ff6b6b')
     .setTitle(success ? '🔄 Town Reset' : '❌ Reset Failed')
     .setDescription(success 
-      ? 'The town has been reset to its initial state. All players have been revived and restored to full health and action points.'
+      ? 'The town has been reset to its initial state. All players have been revived and restored to healthy status with full action points.'
       : 'Failed to reset the town. Check the server logs for details.'
     )
     .setTimestamp();
@@ -241,7 +241,7 @@ async function handleReviveCommand(interaction: CommandInteraction, targetUser: 
     .setColor(success ? '#4ecdc4' : '#ff6b6b')
     .setTitle(success ? '⚕️ Player Revived' : '❌ Revival Failed')
     .setDescription(success 
-      ? `${targetUser.username} has been revived and returned to the city with full health.`
+      ? `${targetUser.username} has been revived and returned to the city with healthy status.`
       : `Failed to revive ${targetUser.username}. Check the server logs for details.`
     )
     .setTimestamp();
