@@ -47,17 +47,6 @@ module.exports = {
         return;
       }
 
-      // Check if player is in city (required to explore)
-      if (player.location !== Location.CITY) {
-        const embed = new EmbedBuilder()
-          .setColor('#ff6b6b')
-          .setTitle('Cannot Explore')
-          .setDescription('You must be in the city to start an exploration. Use `/return` to go back to the city first.');
-
-        await interaction.reply({ embeds: [embed], ephemeral: true });
-        return;
-      }
-
       // Spend action points
       const actionCost = area === 'greater_outside' ? 2 : 1;
       const success = await playerService.spendActionPoints(discordId, actionCost);
