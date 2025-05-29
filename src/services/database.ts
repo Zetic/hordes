@@ -120,6 +120,26 @@ export class DatabaseService {
         );
       `);
 
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS bank_inventories (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          city_id UUID REFERENCES cities(id) ON DELETE CASCADE,
+          item_id UUID REFERENCES items(id),
+          quantity INTEGER DEFAULT 1,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS area_inventories (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          location VARCHAR(50) NOT NULL,
+          item_id UUID REFERENCES items(id),
+          quantity INTEGER DEFAULT 1,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+
       console.log('✅ Database schema initialized');
     } catch (error) {
       console.error('❌ Failed to initialize schema:', error);
