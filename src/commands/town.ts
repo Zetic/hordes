@@ -3,6 +3,8 @@ import { CityService } from '../models/city';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const cityService = new CityService();
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();

@@ -4,6 +4,8 @@ import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
 import { Location } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const areaInventoryService = new AreaInventoryService();
 const worldMapService = WorldMapService.getInstance();

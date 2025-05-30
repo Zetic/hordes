@@ -4,6 +4,8 @@ import { CityService } from '../models/city';
 import { InventoryService } from '../models/inventory';
 import { Location, PlayerStatus } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const cityService = new CityService();
 const inventoryService = new InventoryService();

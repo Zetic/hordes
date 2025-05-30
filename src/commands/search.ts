@@ -5,6 +5,8 @@ import { ItemService } from '../models/item';
 import { AreaInventoryService } from '../models/areaInventory';
 import { Location, PlayerStatus, ItemType } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const inventoryService = new InventoryService();
 const itemService = new ItemService();
