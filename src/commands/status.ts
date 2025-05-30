@@ -1,12 +1,14 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
+import { WorldMapService } from '../services/worldMap';
 import { PlayerStatus, Location } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
+const worldMapService = WorldMapService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -54,7 +56,6 @@ module.exports = {
       };
       
       // Location display
-      const worldMapService = await import('../services/worldMap').then(module => module.WorldMapService.getInstance());
       const locationDisplay = worldMapService.getLocationDisplay(player.location);
       
       const locationNames = {
