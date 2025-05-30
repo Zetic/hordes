@@ -102,7 +102,7 @@ module.exports = {
         .addFields([
           { 
             name: '📍 Previous Location', 
-            value: `🚪 Gate (${player.x}, ${player.y})`, 
+            value: `<z_gate> Gate (${player.x}, ${player.y})`, 
             inline: true 
           },
           { 

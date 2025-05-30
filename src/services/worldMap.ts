@@ -187,7 +187,7 @@ export class WorldMapService {
   getLocationDisplay(location: Location): { name: string; emoji: string } {
     switch (location) {
       case Location.GATE:
-        return { name: 'Gate', emoji: '🚪' };
+        return { name: 'Gate', emoji: '<z_gate>' };
       case Location.WASTE:
         return { name: 'Waste', emoji: '<z_evergreen_tree>' };
       case Location.GREATER_WASTE:
@@ -221,7 +221,7 @@ export class WorldMapService {
       case Location.AMUSEMENT_PARK:
         return { name: 'Amusement Park', emoji: '<z_ferris_wheel>' };
       case Location.CONSTRUCTION_SITE:
-        return { name: 'Construction Site', emoji: '🏗️' };
+        return { name: 'Construction Site', emoji: '<z_construction_site>' };
       case Location.RADIO_TOWER:
         return { name: 'Radio Tower', emoji: '<z_tokyo_tower>' };
       case Location.CAMP_GROUNDS:
