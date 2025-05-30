@@ -225,7 +225,7 @@ export class WorldMapService {
       case Location.RADIO_TOWER:
         return { name: 'Radio Tower', emoji: '<z_tokyo_tower>' };
       case Location.CAMP_GROUNDS:
-        return { name: 'Camp Grounds', emoji: '🏕️' };
+        return { name: 'Camp Grounds', emoji: '<z_campsite>' };
       case Location.LAKE_SIDE:
         return { name: 'Lake Side', emoji: '<z_pond>' };
       default:
@@ -254,7 +254,7 @@ export class WorldMapService {
         }
         
         if (hasPlayer) {
-          line += '👤'; // Any player position
+          line += '<z_player>'; // Any player position
         } else {
           const location = this.getLocationAtCoordinate(x, y);
           const display = this.getLocationDisplay(location);
