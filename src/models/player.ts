@@ -201,6 +201,17 @@ export class PlayerService {
     }
   }
 
+  async getPlayersByCoordinates(x: number, y: number): Promise<Player[]> {
+    try {
+      const query = 'SELECT * FROM players WHERE x = $1 AND y = $2 AND is_alive = true';
+      const result = await this.db.pool.query(query, [x, y]);
+      return result.rows.map(row => this.mapRowToPlayer(row));
+    } catch (error) {
+      console.error('Error getting players by coordinates:', error);
+      return [];
+    }
+  }
+
   private mapRowToPlayer(row: any): Player {
     return {
       id: row.id,

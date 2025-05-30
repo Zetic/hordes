@@ -90,7 +90,7 @@ module.exports = {
       await playerService.updatePlayerLocation(discordId, Location.GATE, gateCoords.x, gateCoords.y);
 
       // Show map view
-      const mapView = worldMapService.generateMapView(gateCoords.x, gateCoords.y, gateCoords.x, gateCoords.y);
+      const mapView = await worldMapService.generateMapView(playerService);
 
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')

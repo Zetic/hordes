@@ -23,14 +23,14 @@ module.exports = {
         .setDescription('Direction to move')
         .setRequired(true)
         .addChoices(
-          { name: '⬆️ North', value: 'north' },
-          { name: '↗️ Northeast', value: 'northeast' },
-          { name: '➡️ East', value: 'east' },
-          { name: '↘️ Southeast', value: 'southeast' },
-          { name: '⬇️ South', value: 'south' },
-          { name: '↙️ Southwest', value: 'southwest' },
-          { name: '⬅️ West', value: 'west' },
-          { name: '↖️ Northwest', value: 'northwest' }
+          { name: 'North', value: 'north' },
+          { name: 'Northeast', value: 'northeast' },
+          { name: 'East', value: 'east' },
+          { name: 'Southeast', value: 'southeast' },
+          { name: 'South', value: 'south' },
+          { name: 'Southwest', value: 'southwest' },
+          { name: 'West', value: 'west' },
+          { name: 'Northwest', value: 'northwest' }
         )
     ),
     
@@ -172,7 +172,7 @@ module.exports = {
       }
 
       // Show map view
-      const mapView = worldMapService.generateMapView(newCoords.x, newCoords.y, newCoords.x, newCoords.y);
+      const mapView = await worldMapService.generateMapView(playerService);
       embed.addFields([
         {
           name: '🗺️ Area Map',

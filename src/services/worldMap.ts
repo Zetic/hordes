@@ -120,18 +120,28 @@ export class WorldMapService {
     }
   }
 
-  // Generate a visual representation of the map around a coordinate
-  generateMapView(centerX: number, centerY: number, playerX?: number, playerY?: number): string {
+  // Generate a visual representation of the full map
+  async generateMapView(playerService?: any): Promise<string> {
     const mapLines: string[] = [];
-    const viewRadius = 2; // Show 5x5 around player
 
-    for (let y = centerY - viewRadius; y <= centerY + viewRadius; y++) {
+    // Show the full 7x7 map
+    for (let y = 0; y < this.MAP_SIZE; y++) {
       let line = '';
-      for (let x = centerX - viewRadius; x <= centerX + viewRadius; x++) {
-        if (!this.isValidCoordinate(x, y)) {
-          line += '⬛'; // Out of bounds
-        } else if (playerX === x && playerY === y) {
-          line += '👤'; // Player position
+      for (let x = 0; x < this.MAP_SIZE; x++) {
+        // Check if any players are at this coordinate
+        let hasPlayer = false;
+        if (playerService) {
+          try {
+            const playersAtLocation = await playerService.getPlayersByCoordinates(x, y);
+            hasPlayer = playersAtLocation.length > 0;
+          } catch (error) {
+            // If playerService fails, continue without player markers
+            console.warn('Failed to check players at coordinates:', error);
+          }
+        }
+        
+        if (hasPlayer) {
+          line += '👤'; // Any player position
         } else {
           const location = this.getLocationAtCoordinate(x, y);
           const display = this.getLocationDisplay(location);
