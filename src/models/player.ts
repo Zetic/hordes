@@ -81,7 +81,7 @@ export class PlayerService {
         SET location = $1, x = $2, y = $3, updated_at = NOW()
         WHERE discord_id = $4
       `;
-      const result = await this.db.pool.query(query, [location, x || null, y || null, discordId]);
+      const result = await this.db.pool.query(query, [location, x !== undefined ? x : null, y !== undefined ? y : null, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error updating player location:', error);
