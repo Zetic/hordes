@@ -54,19 +54,31 @@ module.exports = {
       };
       
       // Location display
-      const locationEmojis = {
-        [Location.CITY]: '🏠',
-        [Location.WASTE]: '🌲',
-        [Location.GATE]: '🚪',
-        [Location.HOME]: '🏡',
-        [Location.GREATER_WASTE]: '🌲'
-      };
+      const worldMapService = await import('../services/worldMap').then(module => module.WorldMapService.getInstance());
+      const locationDisplay = worldMapService.getLocationDisplay(player.location);
+      
       const locationNames = {
         [Location.CITY]: 'City (Safe Zone)',
         [Location.WASTE]: 'Waste (Dangerous)',
         [Location.GATE]: 'Gate',
         [Location.HOME]: 'Home',
-        [Location.GREATER_WASTE]: 'Greater Waste (Very Dangerous)'
+        [Location.GREATER_WASTE]: 'Greater Waste (Very Dangerous)',
+        [Location.FACTORY]: 'Factory (Higher tier building materials)',
+        [Location.ABANDONED_MANSION]: 'Abandoned Mansion (Generic lower quality supplies)',
+        [Location.MODEST_NEIGHBORHOOD]: 'Modest Neighborhood (Generic home supplies)',
+        [Location.GATED_COMMUNITY]: 'Gated Community (Higher value supplies)',
+        [Location.CONVENIENCE_STORE]: 'Convenience Store Street (Convenience store supplies)',
+        [Location.OFFICE_DISTRICT]: 'Office District (Technical supplies)',
+        [Location.HOSPITAL]: 'Hospital (Medical Supplies)',
+        [Location.SCHOOL_CAMPUS]: 'School Campus (Niche supplies)',
+        [Location.SHOPPING_MALL]: 'Shopping Mall (Equipment and useful supplies)',
+        [Location.HOTEL]: 'Hotel (Generic/Technical supplies)',
+        [Location.CITY_PARK]: 'City Park (Generic/natural supplies)',
+        [Location.AMUSEMENT_PARK]: 'Amusement Park (Technical supplies)',
+        [Location.CONSTRUCTION_SITE]: 'Construction Site (Building materials)',
+        [Location.RADIO_TOWER]: 'Radio Tower (Technical supplies)',
+        [Location.CAMP_GROUNDS]: 'Camp Grounds (Generic/natural supplies)',
+        [Location.LAKE_SIDE]: 'Lake Side (Natural supplies)'
       };
 
       const embed = new EmbedBuilder()
@@ -91,7 +103,7 @@ module.exports = {
           },
           { 
             name: '📍 Location', 
-            value: `${locationEmojis[player.location]} ${locationNames[player.location]}${player.x !== null && player.y !== null ? ` (${player.x}, ${player.y})` : ''}`, 
+            value: `${locationDisplay.emoji} ${locationNames[player.location] || locationDisplay.name}${player.x !== null && player.y !== null ? ` (${player.x}, ${player.y})` : ''}`, 
             inline: true 
           },
           { 

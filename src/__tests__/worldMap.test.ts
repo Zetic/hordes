@@ -24,19 +24,28 @@ describe('WorldMapService', () => {
   });
 
   test('should have waste in inner areas', () => {
-    // Test some inner coordinates (not center, not border)
+    // Test some inner coordinates that are still waste
     expect(worldMapService.getLocationAtCoordinate(2, 2)).toBe(Location.WASTE);
     expect(worldMapService.getLocationAtCoordinate(4, 4)).toBe(Location.WASTE);
-    expect(worldMapService.getLocationAtCoordinate(1, 3)).toBe(Location.WASTE);
-    expect(worldMapService.getLocationAtCoordinate(3, 1)).toBe(Location.WASTE);
+    expect(worldMapService.getLocationAtCoordinate(4, 2)).toBe(Location.WASTE);
+    expect(worldMapService.getLocationAtCoordinate(2, 4)).toBe(Location.WASTE);
   });
 
-  test('should have greater waste on borders', () => {
-    // Test border coordinates
-    expect(worldMapService.getLocationAtCoordinate(0, 0)).toBe(Location.GREATER_WASTE);
-    expect(worldMapService.getLocationAtCoordinate(6, 6)).toBe(Location.GREATER_WASTE);
-    expect(worldMapService.getLocationAtCoordinate(0, 3)).toBe(Location.GREATER_WASTE);
+  test('should have new location types at specific coordinates', () => {
+    // Test new locations
+    expect(worldMapService.getLocationAtCoordinate(0, 0)).toBe(Location.FACTORY);
+    expect(worldMapService.getLocationAtCoordinate(3, 1)).toBe(Location.ABANDONED_MANSION);
+    expect(worldMapService.getLocationAtCoordinate(0, 3)).toBe(Location.MODEST_NEIGHBORHOOD);
+    expect(worldMapService.getLocationAtCoordinate(1, 3)).toBe(Location.CONVENIENCE_STORE);
+    expect(worldMapService.getLocationAtCoordinate(5, 0)).toBe(Location.LAKE_SIDE);
+  });
+
+  test('should have greater waste on borders that are not special locations', () => {
+    // Test border coordinates that should be greater waste
+    expect(worldMapService.getLocationAtCoordinate(2, 0)).toBe(Location.GREATER_WASTE);
+    expect(worldMapService.getLocationAtCoordinate(4, 0)).toBe(Location.GREATER_WASTE);
     expect(worldMapService.getLocationAtCoordinate(6, 3)).toBe(Location.GREATER_WASTE);
+    expect(worldMapService.getLocationAtCoordinate(3, 6)).toBe(Location.GREATER_WASTE);
   });
 
   test('should validate coordinates correctly', () => {
@@ -94,6 +103,19 @@ describe('WorldMapService', () => {
     const greaterWasteDisplay = worldMapService.getLocationDisplay(Location.GREATER_WASTE);
     expect(greaterWasteDisplay.name).toBe('Greater Waste');
     expect(greaterWasteDisplay.emoji).toBe('🌲');
+    
+    // Test some of the new locations
+    const factoryDisplay = worldMapService.getLocationDisplay(Location.FACTORY);
+    expect(factoryDisplay.name).toBe('Factory');
+    expect(factoryDisplay.emoji).toBe('🏭');
+    
+    const hospitalDisplay = worldMapService.getLocationDisplay(Location.HOSPITAL);
+    expect(hospitalDisplay.name).toBe('Hospital');
+    expect(hospitalDisplay.emoji).toBe('🏥');
+    
+    const lakeSideDisplay = worldMapService.getLocationDisplay(Location.LAKE_SIDE);
+    expect(lakeSideDisplay.name).toBe('Lake Side');
+    expect(lakeSideDisplay.emoji).toBe('💧');
   });
 
   test('should generate map view', async () => {
