@@ -49,21 +49,21 @@ describe('Map Display Fixes', () => {
     const mapView = await worldMapService.generateMapView(mockPlayerService);
     
     // Should contain player marker
-    expect(mapView).toContain('<z_player>');
+    expect(mapView).toContain('<:z_player:000000000000000000>');
   });
 
   test('should show location emojis when no players are present', async () => {
     const mapView = await worldMapService.generateMapView(mockPlayerService);
     
     // Map should contain gate emoji at center (3,3)
-    expect(mapView).toContain('<z_gate>');
+    expect(mapView).toContain('<:z_gate:000000000000000000>');
     
     // Should contain waste emojis in inner areas
-    expect(mapView).toContain('<z_evergreen_tree>');
+    expect(mapView).toContain('<:z_evergreen_tree:000000000000000000>');
     
     // Should contain some of our new location emojis
-    expect(mapView).toContain('<z_factory>'); // Factory
-    expect(mapView).toContain('<z_pond>'); // Lake Side
+    expect(mapView).toContain('<:z_factory:000000000000000000>'); // Factory
+    expect(mapView).toContain('<:z_pond:000000000000000000>'); // Lake Side
   });
 
   test('should work without player service parameter', async () => {
@@ -74,7 +74,7 @@ describe('Map Display Fixes', () => {
     expect(mapView.length).toBeGreaterThan(0);
     
     // Should not contain player markers when no service provided
-    expect(mapView).not.toContain('<z_player>');
+    expect(mapView).not.toContain('<:z_player:000000000000000000>');
   });
 
   test('should handle player service errors gracefully', async () => {
@@ -88,7 +88,7 @@ describe('Map Display Fixes', () => {
     // Should still generate map without player markers
     expect(typeof mapView).toBe('string');
     expect(mapView.length).toBeGreaterThan(0);
-    expect(mapView).not.toContain('<z_player>');
+    expect(mapView).not.toContain('<:z_player:000000000000000000>');
   });
 
   test('should maintain proper map structure', async () => {
@@ -101,10 +101,10 @@ describe('Map Display Fixes', () => {
     expect(lines.length).toBe(7);
     
     // Map should contain the gate
-    expect(mapView).toContain('<z_gate>');
+    expect(mapView).toContain('<:z_gate:000000000000000000>');
     
     // Map should contain some of our new locations
-    expect(mapView).toContain('<z_factory>'); // Factory
-    expect(mapView).toContain('<z_pond>'); // Lake Side
+    expect(mapView).toContain('<:z_factory:000000000000000000>'); // Factory
+    expect(mapView).toContain('<:z_pond:000000000000000000>'); // Lake Side
   });
 });

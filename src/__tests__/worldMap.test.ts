@@ -94,32 +94,32 @@ describe('WorldMapService', () => {
   test('should provide proper location display names', () => {
     const gateDisplay = worldMapService.getLocationDisplay(Location.GATE);
     expect(gateDisplay.name).toBe('Gate');
-    expect(gateDisplay.emoji).toBe('<z_gate>');
+    expect(gateDisplay.emoji).toBe('<:z_gate:000000000000000000>');
 
     const wasteDisplay = worldMapService.getLocationDisplay(Location.WASTE);
     expect(wasteDisplay.name).toBe('Waste');
-    expect(wasteDisplay.emoji).toBe('<z_evergreen_tree>');
+    expect(wasteDisplay.emoji).toBe('<:z_evergreen_tree:000000000000000000>');
 
     const greaterWasteDisplay = worldMapService.getLocationDisplay(Location.GREATER_WASTE);
     expect(greaterWasteDisplay.name).toBe('Greater Waste');
-    expect(greaterWasteDisplay.emoji).toBe('<z_evergreen_tree>');
+    expect(greaterWasteDisplay.emoji).toBe('<:z_evergreen_tree:000000000000000000>');
     
     // Test some of the new locations
     const factoryDisplay = worldMapService.getLocationDisplay(Location.FACTORY);
     expect(factoryDisplay.name).toBe('Factory');
-    expect(factoryDisplay.emoji).toBe('<z_factory>');
+    expect(factoryDisplay.emoji).toBe('<:z_factory:000000000000000000>');
     
     const hospitalDisplay = worldMapService.getLocationDisplay(Location.HOSPITAL);
     expect(hospitalDisplay.name).toBe('Hospital');
-    expect(hospitalDisplay.emoji).toBe('<z_hospital>');
+    expect(hospitalDisplay.emoji).toBe('<:z_hospital:000000000000000000>');
     
     const lakeSideDisplay = worldMapService.getLocationDisplay(Location.LAKE_SIDE);
     expect(lakeSideDisplay.name).toBe('Lake Side');
-    expect(lakeSideDisplay.emoji).toBe('<z_pond>');
+    expect(lakeSideDisplay.emoji).toBe('<:z_pond:000000000000000000>');
     
     const constructionDisplay = worldMapService.getLocationDisplay(Location.CONSTRUCTION_SITE);
     expect(constructionDisplay.name).toBe('Construction Site');
-    expect(constructionDisplay.emoji).toBe('<z_construction_site>');
+    expect(constructionDisplay.emoji).toBe('<:z_construction_site:000000000000000000>');
   });
 
   test('should generate map view', async () => {
@@ -128,7 +128,7 @@ describe('WorldMapService', () => {
     expect(typeof mapView).toBe('string');
     expect(mapView.length).toBeGreaterThan(0);
     // Should contain location emojis
-    expect(mapView).toMatch(/[<z_gate>]|<z_evergreen_tree>/); // Should contain gate or waste emojis
+    expect(mapView).toMatch(/<:z_gate:000000000000000000>|<:z_evergreen_tree:000000000000000000>/); // Should contain gate or waste emojis
   });
 
   test('should throw error for out of bounds coordinates', () => {
