@@ -6,6 +6,8 @@ import { InventoryService } from '../models/inventory';
 import { WorldMapService } from '../services/worldMap';
 import { Location, PlayerStatus } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const cityService = new CityService();
 const gameEngine = GameEngine.getInstance();
@@ -81,18 +83,6 @@ module.exports = {
         return;
       }
 
-      // Spend action points (1 AP to depart)
-      const success = await playerService.spendActionPoints(discordId, 1);
-      if (!success) {
-        const embed = new EmbedBuilder()
-          .setColor('#ff6b6b')
-          .setTitle('❌ Insufficient Action Points')
-          .setDescription('You need 1 action point to depart from the city.');
-
-        await interaction.reply({ embeds: [embed], ephemeral: true });
-        return;
-      }
-
       // Get gate coordinates
       const gateCoords = worldMapService.getGateCoordinates();
 
@@ -118,8 +108,8 @@ module.exports = {
             inline: true 
           },
           { 
-            name: '⚡ Action Points Used', 
-            value: '1', 
+            name: '✅ Status', 
+            value: 'Ready to explore', 
             inline: true 
           }
         ])

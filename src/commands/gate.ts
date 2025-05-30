@@ -4,6 +4,8 @@ import { CityService } from '../models/city';
 import { GameEngine } from '../services/gameEngine';
 import { Location, PlayerStatus } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const cityService = new CityService();
 const gameEngine = GameEngine.getInstance();
@@ -17,9 +19,9 @@ module.exports = {
         .setDescription('Action to perform')
         .setRequired(false)
         .addChoices(
-          { name: '🔓 Open the gate', value: 'open' },
-          { name: '🔒 Close the gate', value: 'close' },
-          { name: '👁️ Check gate status', value: 'status' }
+          { name: 'Open the gate', value: 'open' },
+          { name: 'Close the gate', value: 'close' },
+          { name: 'Check gate status', value: 'status' }
         )
     ),
     

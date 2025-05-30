@@ -6,6 +6,8 @@ import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
 import { Location, Direction, PlayerStatus } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
 const inventoryService = new InventoryService();
@@ -96,7 +98,7 @@ module.exports = {
       // Check if new coordinates are valid
       if (!worldMapService.isValidCoordinate(newCoords.x, newCoords.y)) {
         await interaction.reply({
-          content: '❌ You cannot move in that direction - you would leave the known world.',
+          content: 'The hordes rest beyond this point...',
           ephemeral: true
         });
         return;

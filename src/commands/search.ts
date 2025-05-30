@@ -5,6 +5,8 @@ import { ItemService } from '../models/item';
 import { AreaInventoryService } from '../models/areaInventory';
 import { Location, PlayerStatus, ItemType } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const inventoryService = new InventoryService();
 const itemService = new ItemService();
@@ -33,6 +35,15 @@ module.exports = {
       if (player.location === Location.CITY || player.location === Location.HOME) {
         await interaction.reply({
           content: '❌ You must be in an exploration area to search. Use `/depart` and `/move` to venture outside the city.',
+          ephemeral: true
+        });
+        return;
+      }
+
+      // Check if player is at the gate
+      if (player.location === Location.GATE) {
+        await interaction.reply({
+          content: '❌ You cannot search at the gate. Use `/move` to explore other areas.',
           ephemeral: true
         });
         return;

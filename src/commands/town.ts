@@ -3,6 +3,8 @@ import { CityService } from '../models/city';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const cityService = new CityService();
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -147,7 +149,7 @@ module.exports = {
       await interaction.reply({ embeds: [embed] });
 
     } catch (error) {
-      console.error('Error in city-info command:', error);
+      console.error('Error in town command:', error);
       await interaction.reply({
         content: '❌ An error occurred while getting city information.',
         ephemeral: true

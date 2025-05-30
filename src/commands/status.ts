@@ -3,6 +3,8 @@ import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { PlayerStatus, Location } from '../types/game';
 
+// IMPORTANT: No emojis must be added to any part of a command
+
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
 
@@ -57,7 +59,7 @@ module.exports = {
         [Location.WASTE]: '🌲',
         [Location.GATE]: '🚪',
         [Location.HOME]: '🏡',
-        [Location.GREATER_WASTE]: '🌍'
+        [Location.GREATER_WASTE]: '🌲'
       };
       const locationNames = {
         [Location.CITY]: 'City (Safe Zone)',
