@@ -59,6 +59,9 @@ module.exports = {
         return;
       }
 
+      // Defer reply since we're about to do complex search processing
+      await interaction.deferReply();
+
       // Generate search results
       const searchResult = generateSearchResult(player.location, player.status);
 
@@ -155,14 +158,22 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {
       console.error('Error in search command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while searching.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ An error occurred while searching.'
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ An error occurred while searching.',
+          ephemeral: true
+        });
+      }
     }
   }
 };

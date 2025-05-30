@@ -89,6 +89,9 @@ module.exports = {
         return;
       }
 
+      // Defer reply since we're about to do expensive operations (map generation and movement processing)
+      await interaction.deferReply();
+
       // Calculate new coordinates
       const currentX = player.x;
       const currentY = player.y;
@@ -97,9 +100,8 @@ module.exports = {
 
       // Check if new coordinates are valid
       if (!worldMapService.isValidCoordinate(newCoords.x, newCoords.y)) {
-        await interaction.reply({
-          content: 'The hordes rest beyond this point...',
-          ephemeral: true
+        await interaction.editReply({
+          content: 'The hordes rest beyond this point...'
         });
         return;
       }
@@ -112,7 +114,7 @@ module.exports = {
           .setTitle('❌ Insufficient Action Points')
           .setDescription('You need 1 action point to move.');
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.editReply({ embeds: [embed] });
         return;
       }
 
@@ -204,14 +206,22 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed], files: [mapAttachment] });
+      await interaction.editReply({ embeds: [embed], files: [mapAttachment] });
 
     } catch (error) {
       console.error('Error in move command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while moving.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ An error occurred while moving.'
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ An error occurred while moving.',
+          ephemeral: true
+        });
+      }
     }
   }
 };

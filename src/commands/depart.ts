@@ -83,6 +83,9 @@ module.exports = {
         return;
       }
 
+      // Defer reply since we're about to do expensive operations (map generation)
+      await interaction.deferReply();
+
       // Get gate coordinates
       const gateCoords = worldMapService.getGateCoordinates();
 
@@ -138,14 +141,22 @@ module.exports = {
         ])
         .setTimestamp();
 
-      await interaction.reply({ embeds: [embed], files: [mapAttachment] });
+      await interaction.editReply({ embeds: [embed], files: [mapAttachment] });
 
     } catch (error) {
       console.error('Error in depart command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while departing from the city.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ An error occurred while departing from the city.'
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ An error occurred while departing from the city.',
+          ephemeral: true
+        });
+      }
     }
   }
 };
