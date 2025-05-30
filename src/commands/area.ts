@@ -83,7 +83,7 @@ module.exports = {
       }
 
       // Show map view
-      const mapView = worldMapService.generateMapView(player.x, player.y, player.x, player.y);
+      const mapView = await worldMapService.generateMapView(playerService);
       embed.addFields([
         {
           name: 'Area Map',

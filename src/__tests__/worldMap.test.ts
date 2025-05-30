@@ -96,12 +96,13 @@ describe('WorldMapService', () => {
     expect(greaterWasteDisplay.emoji).toBe('🌲');
   });
 
-  test('should generate map view', () => {
+  test('should generate map view', async () => {
     // Test map view generation (should not throw)
-    const mapView = worldMapService.generateMapView(3, 3, 3, 3);
+    const mapView = await worldMapService.generateMapView();
     expect(typeof mapView).toBe('string');
     expect(mapView.length).toBeGreaterThan(0);
-    expect(mapView).toContain('👤'); // Should contain player marker
+    // Should contain location emojis
+    expect(mapView).toMatch(/[🚪🌲]/); // Should contain gate or waste emojis
   });
 
   test('should throw error for out of bounds coordinates', () => {
