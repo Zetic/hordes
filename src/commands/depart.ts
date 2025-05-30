@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { GameEngine } from '../services/gameEngine';
@@ -90,7 +90,8 @@ module.exports = {
       await playerService.updatePlayerLocation(discordId, Location.GATE, gateCoords.x, gateCoords.y);
 
       // Show map view
-      const mapView = await worldMapService.generateMapView(playerService);
+      const mapImageBuffer = await worldMapService.generateMapView(playerService);
+      const mapAttachment = new AttachmentBuilder(mapImageBuffer, { name: 'map.png' });
 
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')
@@ -120,13 +121,7 @@ module.exports = {
             inline: false
           }
         ])
-        .addFields([
-          {
-            name: '🗺️ Area Map',
-            value: `\`\`\`\n${mapView}\n\`\`\``,
-            inline: false
-          }
-        ])
+        .setImage('attachment://map.png')
         .addFields([
           {
             name: '⚠️ Warning',
@@ -143,7 +138,7 @@ module.exports = {
         ])
         .setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], files: [mapAttachment] });
 
     } catch (error) {
       console.error('Error in depart command:', error);

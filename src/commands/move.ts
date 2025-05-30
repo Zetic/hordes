@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
@@ -172,14 +172,10 @@ module.exports = {
       }
 
       // Show map view
-      const mapView = await worldMapService.generateMapView(playerService);
-      embed.addFields([
-        {
-          name: '🗺️ Area Map',
-          value: `\`\`\`\n${mapView}\n\`\`\``,
-          inline: false
-        }
-      ]);
+      const mapImageBuffer = await worldMapService.generateMapView(playerService);
+      const mapAttachment = new AttachmentBuilder(mapImageBuffer, { name: 'map.png' });
+      
+      embed.setImage('attachment://map.png');
 
       // Show items in area if any
       if (areaItems.length > 0) {
@@ -208,7 +204,7 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], files: [mapAttachment] });
 
     } catch (error) {
       console.error('Error in move command:', error);
