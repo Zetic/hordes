@@ -118,13 +118,16 @@ describe('WorldMapService', () => {
     expect(lakeSideDisplay.emoji).toBe('💧');
   });
 
-  test('should generate map view', async () => {
+  test('should generate map view as image buffer', async () => {
     // Test map view generation (should not throw)
-    const mapView = await worldMapService.generateMapView();
-    expect(typeof mapView).toBe('string');
-    expect(mapView.length).toBeGreaterThan(0);
-    // Should contain location emojis
-    expect(mapView).toMatch(/[🚪🌲]/); // Should contain gate or waste emojis
+    const mapBuffer = await worldMapService.generateMapView();
+    expect(Buffer.isBuffer(mapBuffer)).toBe(true);
+    expect(mapBuffer.length).toBeGreaterThan(0);
+    // Should be a PNG image buffer (starts with PNG signature)
+    expect(mapBuffer[0]).toBe(0x89); // PNG signature byte 1
+    expect(mapBuffer[1]).toBe(0x50); // PNG signature byte 2 ('P')
+    expect(mapBuffer[2]).toBe(0x4E); // PNG signature byte 3 ('N')
+    expect(mapBuffer[3]).toBe(0x47); // PNG signature byte 4 ('G')
   });
 
   test('should throw error for out of bounds coordinates', () => {

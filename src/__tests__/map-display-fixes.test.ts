@@ -14,97 +14,59 @@ describe('Map Display Fixes', () => {
     };
   });
 
-  test('should generate full 7x7 map instead of 5x5 view', async () => {
-    const mapView = await worldMapService.generateMapView(mockPlayerService);
+  test('should generate composite image map with correct dimensions', async () => {
+    const mapBuffer = await worldMapService.generateMapView(mockPlayerService);
     
-    // Count number of lines - should be 7 for a 7x7 map
-    const lines = mapView.split('\n');
-    expect(lines.length).toBe(7);
+    // Should return a Buffer
+    expect(Buffer.isBuffer(mapBuffer)).toBe(true);
+    expect(mapBuffer.length).toBeGreaterThan(0);
     
-    // The test is now less strict about the number of characters per line
-    // because some emoji have variation selectors that count as separate characters
-    lines.forEach(line => {
-      // Just check that there's some content on each line
-      expect(line.length).toBeGreaterThan(0);
-    });
+    // Should be a PNG image buffer (starts with PNG signature)
+    expect(mapBuffer[0]).toBe(0x89); // PNG signature byte 1
+    expect(mapBuffer[1]).toBe(0x50); // PNG signature byte 2 ('P')
+    expect(mapBuffer[2]).toBe(0x4E); // PNG signature byte 3 ('N')
+    expect(mapBuffer[3]).toBe(0x47); // PNG signature byte 4 ('G')
   });
 
-  test('should not contain out-of-bounds markers (⬛)', async () => {
-    const mapView = await worldMapService.generateMapView(mockPlayerService);
+  test('should generate map without player markers when no players present', async () => {
+    const mapBuffer = await worldMapService.generateMapView(mockPlayerService);
     
-    // Should not contain any ⬛ since we show the full map
-    expect(mapView).not.toContain('⬛');
-  });
-
-  test('should show player marker when players are present', async () => {
-    // Mock player service to return a player at coordinates (3,3)
-    mockPlayerService.getPlayersByCoordinates = jest.fn()
-      .mockImplementation(async (x: number, y: number) => {
-        if (x === 3 && y === 3) {
-          return [{ id: 1, name: 'TestPlayer', x: 3, y: 3 }];
-        }
-        return [];
-      });
-
-    const mapView = await worldMapService.generateMapView(mockPlayerService);
+    // Should still generate a valid image
+    expect(Buffer.isBuffer(mapBuffer)).toBe(true);
+    expect(mapBuffer.length).toBeGreaterThan(0);
     
-    // Should contain player marker
-    expect(mapView).toContain('👤');
-  });
-
-  test('should show location emojis when no players are present', async () => {
-    const mapView = await worldMapService.generateMapView(mockPlayerService);
-    
-    // Map should contain gate emoji at center (3,3)
-    expect(mapView).toContain('🚪');
-    
-    // Should contain waste emojis in inner areas
-    expect(mapView).toContain('🌲');
-    
-    // Should contain some of our new location emojis
-    expect(mapView).toContain('🏭'); // Factory
-    expect(mapView).toContain('💧'); // Lake Side
-  });
-
-  test('should work without player service parameter', async () => {
-    const mapView = await worldMapService.generateMapView();
-    
-    // Should generate map without errors
-    expect(typeof mapView).toBe('string');
-    expect(mapView.length).toBeGreaterThan(0);
-    
-    // Should not contain player markers when no service provided
-    expect(mapView).not.toContain('👤');
+    // Verify mock was called (means we checked for players)
+    expect(mockPlayerService.getPlayersByCoordinates).toHaveBeenCalled();
   });
 
   test('should handle player service errors gracefully', async () => {
-    // Mock player service that throws errors
+    // Create an error-throwing player service
     const errorPlayerService = {
       getPlayersByCoordinates: jest.fn().mockRejectedValue(new Error('Database error'))
     };
-
-    const mapView = await worldMapService.generateMapView(errorPlayerService);
     
-    // Should still generate map without player markers
-    expect(typeof mapView).toBe('string');
-    expect(mapView.length).toBeGreaterThan(0);
-    expect(mapView).not.toContain('👤');
+    const mapBuffer = await worldMapService.generateMapView(errorPlayerService);
+    
+    // Should still generate a valid image even when player service fails
+    expect(Buffer.isBuffer(mapBuffer)).toBe(true);
+    expect(mapBuffer.length).toBeGreaterThan(0);
   });
 
-  test('should maintain proper map structure', async () => {
-    const mapView = await worldMapService.generateMapView(mockPlayerService);
+  test('should work without player service (no player markers)', async () => {
+    const mapBuffer = await worldMapService.generateMapView();
     
-    // Split into lines and verify structure
-    const lines = mapView.split('\n');
+    // Should generate a valid image
+    expect(Buffer.isBuffer(mapBuffer)).toBe(true);
+    expect(mapBuffer.length).toBeGreaterThan(0);
+  });
+
+  test('should generate consistent output for same input', async () => {
+    const mapBuffer1 = await worldMapService.generateMapView(mockPlayerService);
+    const mapBuffer2 = await worldMapService.generateMapView(mockPlayerService);
     
-    // Should be exactly 7 lines
-    expect(lines.length).toBe(7);
-    
-    // Map should contain the gate
-    expect(mapView).toContain('🚪');
-    
-    // Map should contain some of our new locations
-    expect(mapView).toContain('🏭'); // Factory
-    expect(mapView).toContain('💧'); // Lake Side
+    // Both should be valid buffers of the same size
+    expect(Buffer.isBuffer(mapBuffer1)).toBe(true);
+    expect(Buffer.isBuffer(mapBuffer2)).toBe(true);
+    expect(mapBuffer1.length).toBe(mapBuffer2.length);
   });
 });

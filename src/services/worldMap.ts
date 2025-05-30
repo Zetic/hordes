@@ -1,4 +1,6 @@
 import { Location, Direction, GridCoordinate, WorldMapTile } from '../types/game';
+import { createCanvas, loadImage, Canvas, CanvasRenderingContext2D } from 'canvas';
+import * as path from 'path';
 
 export class WorldMapService {
   private static instance: WorldMapService;
@@ -7,6 +9,37 @@ export class WorldMapService {
   private readonly MAP_SIZE = 7;
   private readonly CENTER_X = 3;
   private readonly CENTER_Y = 3;
+  
+  // Tile configuration
+  private readonly TILE_SIZE = 64;
+  private readonly TILES_DIR = path.join(__dirname, '../../tiles');
+  
+  // Mapping of Location enum to tile filenames
+  private readonly LOCATION_TILES: Record<Location, string> = {
+    [Location.GATE]: 'z_gate.png',
+    [Location.WASTE]: 'z_evergreen_tree.png',
+    [Location.GREATER_WASTE]: 'z_evergreen_tree.png',
+    [Location.CITY]: 'z_house.png', // Not used in map but needed for completeness
+    [Location.HOME]: 'z_house_with_garden.png', // Not used in map but needed for completeness
+    [Location.FACTORY]: 'factory.png',
+    [Location.ABANDONED_MANSION]: 'z_house_abandoned.png',
+    [Location.MODEST_NEIGHBORHOOD]: 'z_house.png',
+    [Location.GATED_COMMUNITY]: 'z_house_with_garden.png',
+    [Location.CONVENIENCE_STORE]: 'z_convience_store.png',
+    [Location.OFFICE_DISTRICT]: 'z_office.png',
+    [Location.HOSPITAL]: 'z_hospital.png',
+    [Location.SCHOOL_CAMPUS]: 'z_school.png',
+    [Location.SHOPPING_MALL]: 'z_department_store.png',
+    [Location.HOTEL]: 'z_hotel.png',
+    [Location.CITY_PARK]: 'z_fountain.png',
+    [Location.AMUSEMENT_PARK]: 'z_ferris_wheel.png',
+    [Location.CONSTRUCTION_SITE]: 'z_construction_site.png',
+    [Location.RADIO_TOWER]: 'z_tokyo_tower.png',
+    [Location.CAMP_GROUNDS]: 'z_campsite.png',
+    [Location.LAKE_SIDE]: 'z_pond.png'
+  };
+  
+  private readonly PLAYER_TILE = 'z_player.png';
 
   private constructor() {}
 
@@ -233,13 +266,15 @@ export class WorldMapService {
     }
   }
 
-  // Generate a visual representation of the full map
-  async generateMapView(playerService?: any): Promise<string> {
-    const mapLines: string[] = [];
+  // Generate a composite image representation of the full map
+  async generateMapView(playerService?: any): Promise<Buffer> {
+    const canvasWidth = this.MAP_SIZE * this.TILE_SIZE;
+    const canvasHeight = this.MAP_SIZE * this.TILE_SIZE;
+    const canvas = createCanvas(canvasWidth, canvasHeight);
+    const ctx = canvas.getContext('2d');
 
     // Show the full 7x7 map
     for (let y = 0; y < this.MAP_SIZE; y++) {
-      let line = '';
       for (let x = 0; x < this.MAP_SIZE; x++) {
         // Check if any players are at this coordinate
         let hasPlayer = false;
@@ -253,17 +288,32 @@ export class WorldMapService {
           }
         }
         
-        if (hasPlayer) {
-          line += '👤'; // Any player position
-        } else {
-          const location = this.getLocationAtCoordinate(x, y);
-          const display = this.getLocationDisplay(location);
-          line += display.emoji;
+        const location = this.getLocationAtCoordinate(x, y);
+        const tileFilename = this.LOCATION_TILES[location];
+        const tilePath = path.join(this.TILES_DIR, tileFilename);
+        
+        try {
+          // Load and draw the base tile
+          const tileImage = await loadImage(tilePath);
+          const destX = x * this.TILE_SIZE;
+          const destY = y * this.TILE_SIZE;
+          ctx.drawImage(tileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+          
+          // If there's a player here, overlay the player tile
+          if (hasPlayer) {
+            const playerTilePath = path.join(this.TILES_DIR, this.PLAYER_TILE);
+            const playerImage = await loadImage(playerTilePath);
+            ctx.drawImage(playerImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+          }
+        } catch (error) {
+          console.error(`Failed to load tile ${tileFilename}:`, error);
+          // Draw a red square as fallback
+          ctx.fillStyle = '#ff0000';
+          ctx.fillRect(x * this.TILE_SIZE, y * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
         }
       }
-      mapLines.push(line);
     }
 
-    return mapLines.join('\n');
+    return canvas.toBuffer('image/png');
   }
 }

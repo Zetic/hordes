@@ -21,6 +21,7 @@
   "author": "Zetic",
   "license": "MIT",
   "dependencies": {
+    "canvas": "^3.1.0",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
     "node-cron": "^3.0.3",
