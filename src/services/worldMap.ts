@@ -1,14 +1,18 @@
 import { Location, Direction, GridCoordinate, WorldMapTile } from '../types/game';
+import { getEmojiConfig } from '../config/emojis';
 
 export class WorldMapService {
   private static instance: WorldMapService;
+  private emojiConfig: { [key: string]: string };
   
   // 7x7 grid with center at (3,3) = GATE
   private readonly MAP_SIZE = 7;
   private readonly CENTER_X = 3;
   private readonly CENTER_Y = 3;
 
-  private constructor() {}
+  private constructor() {
+    this.emojiConfig = getEmojiConfig();
+  }
 
   static getInstance(): WorldMapService {
     if (!WorldMapService.instance) {
@@ -187,47 +191,47 @@ export class WorldMapService {
   getLocationDisplay(location: Location): { name: string; emoji: string } {
     switch (location) {
       case Location.GATE:
-        return { name: 'Gate', emoji: '<z_gate>' };
+        return { name: 'Gate', emoji: this.emojiConfig.z_gate };
       case Location.WASTE:
-        return { name: 'Waste', emoji: '<z_evergreen_tree>' };
+        return { name: 'Waste', emoji: this.emojiConfig.z_evergreen_tree };
       case Location.GREATER_WASTE:
-        return { name: 'Greater Waste', emoji: '<z_evergreen_tree>' };
+        return { name: 'Greater Waste', emoji: this.emojiConfig.z_evergreen_tree };
       case Location.CITY:
-        return { name: 'City', emoji: '<z_house>' };
+        return { name: 'City', emoji: this.emojiConfig.z_house };
       case Location.HOME:
-        return { name: 'Home', emoji: '<z_house_with_garden>' };
+        return { name: 'Home', emoji: this.emojiConfig.z_house_with_garden };
       case Location.FACTORY:
-        return { name: 'Factory', emoji: '<z_factory>' };
+        return { name: 'Factory', emoji: this.emojiConfig.z_factory };
       case Location.ABANDONED_MANSION:
-        return { name: 'Abandoned Mansion', emoji: '<z_house_abandoned>' };
+        return { name: 'Abandoned Mansion', emoji: this.emojiConfig.z_house_abandoned };
       case Location.MODEST_NEIGHBORHOOD:
-        return { name: 'Modest Neighborhood', emoji: '<z_house>' };
+        return { name: 'Modest Neighborhood', emoji: this.emojiConfig.z_house };
       case Location.GATED_COMMUNITY:
-        return { name: 'Gated Community', emoji: '<z_house_with_garden>' };
+        return { name: 'Gated Community', emoji: this.emojiConfig.z_house_with_garden };
       case Location.CONVENIENCE_STORE:
-        return { name: 'Convenience Store Street', emoji: '<z_convience_store>' };
+        return { name: 'Convenience Store Street', emoji: this.emojiConfig.z_convience_store };
       case Location.OFFICE_DISTRICT:
-        return { name: 'Office District', emoji: '<z_office>' };
+        return { name: 'Office District', emoji: this.emojiConfig.z_office };
       case Location.HOSPITAL:
-        return { name: 'Hospital', emoji: '<z_hospital>' };
+        return { name: 'Hospital', emoji: this.emojiConfig.z_hospital };
       case Location.SCHOOL_CAMPUS:
-        return { name: 'School Campus', emoji: '<z_school>' };
+        return { name: 'School Campus', emoji: this.emojiConfig.z_school };
       case Location.SHOPPING_MALL:
-        return { name: 'Shopping Mall', emoji: '<z_department_store>' };
+        return { name: 'Shopping Mall', emoji: this.emojiConfig.z_department_store };
       case Location.HOTEL:
-        return { name: 'Hotel', emoji: '<z_hotel>' };
+        return { name: 'Hotel', emoji: this.emojiConfig.z_hotel };
       case Location.CITY_PARK:
-        return { name: 'City Park', emoji: '<z_fountain>' };
+        return { name: 'City Park', emoji: this.emojiConfig.z_fountain };
       case Location.AMUSEMENT_PARK:
-        return { name: 'Amusement Park', emoji: '<z_ferris_wheel>' };
+        return { name: 'Amusement Park', emoji: this.emojiConfig.z_ferris_wheel };
       case Location.CONSTRUCTION_SITE:
-        return { name: 'Construction Site', emoji: '<z_construction_site>' };
+        return { name: 'Construction Site', emoji: this.emojiConfig.z_construction_site };
       case Location.RADIO_TOWER:
-        return { name: 'Radio Tower', emoji: '<z_tokyo_tower>' };
+        return { name: 'Radio Tower', emoji: this.emojiConfig.z_tokyo_tower };
       case Location.CAMP_GROUNDS:
-        return { name: 'Camp Grounds', emoji: '<z_campsite>' };
+        return { name: 'Camp Grounds', emoji: this.emojiConfig.z_campsite };
       case Location.LAKE_SIDE:
-        return { name: 'Lake Side', emoji: '<z_pond>' };
+        return { name: 'Lake Side', emoji: this.emojiConfig.z_pond };
       default:
         return { name: 'Unknown', emoji: '❓' };
     }
@@ -254,7 +258,7 @@ export class WorldMapService {
         }
         
         if (hasPlayer) {
-          line += '<z_player>'; // Any player position
+          line += this.emojiConfig.z_player; // Any player position
         } else {
           const location = this.getLocationAtCoordinate(x, y);
           const display = this.getLocationDisplay(location);
