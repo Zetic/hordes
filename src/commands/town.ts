@@ -147,7 +147,7 @@ module.exports = {
       await interaction.reply({ embeds: [embed] });
 
     } catch (error) {
-      console.error('Error in city-info command:', error);
+      console.error('Error in town command:', error);
       await interaction.reply({
         content: '❌ An error occurred while getting city information.',
         ephemeral: true

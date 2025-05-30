@@ -110,7 +110,7 @@ export class WorldMapService {
       case Location.WASTE:
         return { name: 'Waste', emoji: '🌲' };
       case Location.GREATER_WASTE:
-        return { name: 'Greater Waste', emoji: '🌍' };
+        return { name: 'Greater Waste', emoji: '🌲' };
       case Location.CITY:
         return { name: 'City', emoji: '🏠' };
       case Location.HOME:

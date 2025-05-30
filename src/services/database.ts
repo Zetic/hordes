@@ -95,9 +95,16 @@ export class DatabaseService {
           population INTEGER DEFAULT 0,
           day INTEGER DEFAULT 1,
           game_phase VARCHAR(50) DEFAULT 'play_mode',
+          gate_open BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         );
+      `);
+
+      // Add gate_open column to existing cities table if it doesn't exist
+      await this.pool.query(`
+        ALTER TABLE cities 
+        ADD COLUMN IF NOT EXISTS gate_open BOOLEAN DEFAULT true;
       `);
 
       await this.pool.query(`

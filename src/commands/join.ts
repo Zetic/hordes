@@ -76,7 +76,7 @@ module.exports = {
         .addFields([
           { 
             name: '📋 Getting Started', 
-            value: '• Use `/status` to check your stats\n• Use `/explore` to search for resources\n• Use `/city-info` to see the town status\n• Survive the nightly zombie attacks!' 
+            value: '• Use `/status` to check your stats\n• Use `/explore` to search for resources\n• Use `/town` to see the town status\n• Survive the nightly zombie attacks!' 
           }
         ])
         .setFooter({ text: '💡 Tip: Work together with other survivors to build defenses and gather resources!' })

@@ -57,7 +57,7 @@ module.exports = {
         [Location.WASTE]: '🌲',
         [Location.GATE]: '🚪',
         [Location.HOME]: '🏡',
-        [Location.GREATER_WASTE]: '🌍'
+        [Location.GREATER_WASTE]: '🌲'
       };
       const locationNames = {
         [Location.CITY]: 'City (Safe Zone)',

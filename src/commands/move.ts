@@ -96,7 +96,7 @@ module.exports = {
       // Check if new coordinates are valid
       if (!worldMapService.isValidCoordinate(newCoords.x, newCoords.y)) {
         await interaction.reply({
-          content: '❌ You cannot move in that direction - you would leave the known world.',
+          content: 'The hordes rest beyond this point...',
           ephemeral: true
         });
         return;

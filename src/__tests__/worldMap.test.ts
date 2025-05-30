@@ -93,7 +93,7 @@ describe('WorldMapService', () => {
 
     const greaterWasteDisplay = worldMapService.getLocationDisplay(Location.GREATER_WASTE);
     expect(greaterWasteDisplay.name).toBe('Greater Waste');
-    expect(greaterWasteDisplay.emoji).toBe('🌍');
+    expect(greaterWasteDisplay.emoji).toBe('🌲');
   });
 
   test('should generate map view', () => {

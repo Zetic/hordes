@@ -38,6 +38,15 @@ module.exports = {
         return;
       }
 
+      // Check if player is at the gate
+      if (player.location === Location.GATE) {
+        await interaction.reply({
+          content: '❌ You cannot search at the gate. Use `/move` to explore other areas.',
+          ephemeral: true
+        });
+        return;
+      }
+
       // Check if player is encumbered
       const isEncumbered = await inventoryService.isPlayerEncumbered(player.id);
       if (isEncumbered) {
