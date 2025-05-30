@@ -56,7 +56,7 @@ describe('Map Display Fixes', () => {
     const mapView = await worldMapService.generateMapView(mockPlayerService);
     
     // Map should contain gate emoji at center (3,3)
-    expect(mapView).toContain('🚪');
+    expect(mapView).toContain('<z_gate>');
     
     // Should contain waste emojis in inner areas
     expect(mapView).toContain('<z_evergreen_tree>');
@@ -101,7 +101,7 @@ describe('Map Display Fixes', () => {
     expect(lines.length).toBe(7);
     
     // Map should contain the gate
-    expect(mapView).toContain('🚪');
+    expect(mapView).toContain('<z_gate>');
     
     // Map should contain some of our new locations
     expect(mapView).toContain('<z_factory>'); // Factory

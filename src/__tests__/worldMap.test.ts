@@ -94,7 +94,7 @@ describe('WorldMapService', () => {
   test('should provide proper location display names', () => {
     const gateDisplay = worldMapService.getLocationDisplay(Location.GATE);
     expect(gateDisplay.name).toBe('Gate');
-    expect(gateDisplay.emoji).toBe('🚪');
+    expect(gateDisplay.emoji).toBe('<z_gate>');
 
     const wasteDisplay = worldMapService.getLocationDisplay(Location.WASTE);
     expect(wasteDisplay.name).toBe('Waste');
@@ -116,6 +116,10 @@ describe('WorldMapService', () => {
     const lakeSideDisplay = worldMapService.getLocationDisplay(Location.LAKE_SIDE);
     expect(lakeSideDisplay.name).toBe('Lake Side');
     expect(lakeSideDisplay.emoji).toBe('<z_pond>');
+    
+    const constructionDisplay = worldMapService.getLocationDisplay(Location.CONSTRUCTION_SITE);
+    expect(constructionDisplay.name).toBe('Construction Site');
+    expect(constructionDisplay.emoji).toBe('<z_construction_site>');
   });
 
   test('should generate map view', async () => {
@@ -124,7 +128,7 @@ describe('WorldMapService', () => {
     expect(typeof mapView).toBe('string');
     expect(mapView.length).toBeGreaterThan(0);
     // Should contain location emojis
-    expect(mapView).toMatch(/[🚪]|<z_evergreen_tree>/); // Should contain gate or waste emojis
+    expect(mapView).toMatch(/[<z_gate>]|<z_evergreen_tree>/); // Should contain gate or waste emojis
   });
 
   test('should throw error for out of bounds coordinates', () => {
