@@ -164,7 +164,7 @@ module.exports = {
       } else if (newLocation === Location.GATE) {
         embed.addFields([
           {
-            name: '🚪 Gate Area',
+            name: '<z_gate> Gate Area',
             value: 'You are at the gate to town. Use `/return` to enter the city (if the gate is open).',
             inline: false
           }

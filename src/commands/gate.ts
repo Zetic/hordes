@@ -71,7 +71,7 @@ module.exports = {
               name: '📍 Your Location', 
               value: player.location === Location.CITY ? '<z_house> In City' : 
                      player.location === Location.HOME ? '<z_house_with_garden> At Home' :
-                     player.location === Location.GATE ? '🚪 At Gate' :
+                     player.location === Location.GATE ? '<z_gate> At Gate' :
                      `🌍 Outside (${player.x}, ${player.y})`, 
               inline: true 
             }

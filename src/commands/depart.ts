@@ -104,7 +104,7 @@ module.exports = {
           },
           { 
             name: '📍 New Location', 
-            value: `🚪 Gate (${gateCoords.x}, ${gateCoords.y})`, 
+            value: `<z_gate> Gate (${gateCoords.x}, ${gateCoords.y})`, 
             inline: true 
           },
           { 
@@ -115,7 +115,7 @@ module.exports = {
         ])
         .addFields([
           {
-            name: '🚪 Gate Area',
+            name: '<z_gate> Gate Area',
             value: 'You are now at the gate to the wasteland. You can explore in any direction using `/move <direction>` or return to the city with `/return`.',
             inline: false
           }
