@@ -55,7 +55,23 @@ export enum Location {
   HOME = 'home',
   GATE = 'gate',
   WASTE = 'waste',
-  GREATER_WASTE = 'greater_waste'
+  GREATER_WASTE = 'greater_waste',
+  FACTORY = 'factory',
+  ABANDONED_MANSION = 'abandoned_mansion',
+  MODEST_NEIGHBORHOOD = 'modest_neighborhood',
+  GATED_COMMUNITY = 'gated_community',
+  CONVENIENCE_STORE = 'convenience_store',
+  OFFICE_DISTRICT = 'office_district',
+  HOSPITAL = 'hospital',
+  SCHOOL_CAMPUS = 'school_campus',
+  SHOPPING_MALL = 'shopping_mall',
+  HOTEL = 'hotel',
+  CITY_PARK = 'city_park',
+  AMUSEMENT_PARK = 'amusement_park',
+  CONSTRUCTION_SITE = 'construction_site',
+  RADIO_TOWER = 'radio_tower',
+  CAMP_GROUNDS = 'camp_grounds',
+  LAKE_SIDE = 'lake_side'
 }
 
 export interface City {
