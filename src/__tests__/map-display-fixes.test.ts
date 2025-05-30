@@ -49,7 +49,7 @@ describe('Map Display Fixes', () => {
     const mapView = await worldMapService.generateMapView(mockPlayerService);
     
     // Should contain player marker
-    expect(mapView).toContain('👤');
+    expect(mapView).toContain('<z_player>');
   });
 
   test('should show location emojis when no players are present', async () => {
@@ -74,7 +74,7 @@ describe('Map Display Fixes', () => {
     expect(mapView.length).toBeGreaterThan(0);
     
     // Should not contain player markers when no service provided
-    expect(mapView).not.toContain('👤');
+    expect(mapView).not.toContain('<z_player>');
   });
 
   test('should handle player service errors gracefully', async () => {
@@ -88,7 +88,7 @@ describe('Map Display Fixes', () => {
     // Should still generate map without player markers
     expect(typeof mapView).toBe('string');
     expect(mapView.length).toBeGreaterThan(0);
-    expect(mapView).not.toContain('👤');
+    expect(mapView).not.toContain('<z_player>');
   });
 
   test('should maintain proper map structure', async () => {
