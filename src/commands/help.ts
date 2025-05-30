@@ -34,7 +34,7 @@ module.exports = {
           },
           {
             name: '🗺️ Grid-Based World',
-            value: '🚪 **Gate** - Center tile, entrance to town\n🌲 **Waste** - Inner exploration areas (moderate danger)\n🌍 **Greater Waste** - Border areas (high danger, better rewards)\n\n**Directions**: North, Northeast, East, Southeast, South, Southwest, West, Northwest',
+            value: '🚪 **Gate** - Center tile, entrance to town\n<z_evergreen_tree> **Waste** - Inner exploration areas (moderate danger)\n🌍 **Greater Waste** - Border areas (high danger, better rewards)\n\n**Directions**: North, Northeast, East, Southeast, South, Southwest, West, Northwest',
             inline: false
           },
           {

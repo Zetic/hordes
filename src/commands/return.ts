@@ -97,7 +97,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor('#4ecdc4')
-        .setTitle('🏠 Returned to City')
+        .setTitle('<z_house> Returned to City')
         .setDescription(`${player.name} returns to the safety of the city!`)
         .addFields([
           { 
@@ -107,7 +107,7 @@ module.exports = {
           },
           { 
             name: '📍 New Location', 
-            value: '🏠 City (Safe Zone)', 
+            value: '<z_house> City (Safe Zone)', 
             inline: true 
           },
           { 

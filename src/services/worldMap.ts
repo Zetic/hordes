@@ -189,45 +189,45 @@ export class WorldMapService {
       case Location.GATE:
         return { name: 'Gate', emoji: '🚪' };
       case Location.WASTE:
-        return { name: 'Waste', emoji: '🌲' };
+        return { name: 'Waste', emoji: '<z_evergreen_tree>' };
       case Location.GREATER_WASTE:
-        return { name: 'Greater Waste', emoji: '🌲' };
+        return { name: 'Greater Waste', emoji: '<z_evergreen_tree>' };
       case Location.CITY:
-        return { name: 'City', emoji: '🏠' };
+        return { name: 'City', emoji: '<z_house>' };
       case Location.HOME:
-        return { name: 'Home', emoji: '🏡' };
+        return { name: 'Home', emoji: '<z_house_with_garden>' };
       case Location.FACTORY:
-        return { name: 'Factory', emoji: '🏭' };
+        return { name: 'Factory', emoji: '<z_factory>' };
       case Location.ABANDONED_MANSION:
-        return { name: 'Abandoned Mansion', emoji: '🏚️' };
+        return { name: 'Abandoned Mansion', emoji: '<z_house_abandoned>' };
       case Location.MODEST_NEIGHBORHOOD:
-        return { name: 'Modest Neighborhood', emoji: '🏠' };
+        return { name: 'Modest Neighborhood', emoji: '<z_house>' };
       case Location.GATED_COMMUNITY:
-        return { name: 'Gated Community', emoji: '🏡' };
+        return { name: 'Gated Community', emoji: '<z_house_with_garden>' };
       case Location.CONVENIENCE_STORE:
-        return { name: 'Convenience Store Street', emoji: '🏪' };
+        return { name: 'Convenience Store Street', emoji: '<z_convience_store>' };
       case Location.OFFICE_DISTRICT:
-        return { name: 'Office District', emoji: '🏢' };
+        return { name: 'Office District', emoji: '<z_office>' };
       case Location.HOSPITAL:
-        return { name: 'Hospital', emoji: '🏥' };
+        return { name: 'Hospital', emoji: '<z_hospital>' };
       case Location.SCHOOL_CAMPUS:
-        return { name: 'School Campus', emoji: '🏫' };
+        return { name: 'School Campus', emoji: '<z_school>' };
       case Location.SHOPPING_MALL:
-        return { name: 'Shopping Mall', emoji: '🏬' };
+        return { name: 'Shopping Mall', emoji: '<z_department_store>' };
       case Location.HOTEL:
-        return { name: 'Hotel', emoji: '🏨' };
+        return { name: 'Hotel', emoji: '<z_hotel>' };
       case Location.CITY_PARK:
-        return { name: 'City Park', emoji: '⛲' };
+        return { name: 'City Park', emoji: '<z_fountain>' };
       case Location.AMUSEMENT_PARK:
-        return { name: 'Amusement Park', emoji: '🎡' };
+        return { name: 'Amusement Park', emoji: '<z_ferris_wheel>' };
       case Location.CONSTRUCTION_SITE:
         return { name: 'Construction Site', emoji: '🏗️' };
       case Location.RADIO_TOWER:
-        return { name: 'Radio Tower', emoji: '🗼' };
+        return { name: 'Radio Tower', emoji: '<z_tokyo_tower>' };
       case Location.CAMP_GROUNDS:
         return { name: 'Camp Grounds', emoji: '🏕️' };
       case Location.LAKE_SIDE:
-        return { name: 'Lake Side', emoji: '💧' };
+        return { name: 'Lake Side', emoji: '<z_pond>' };
       default:
         return { name: 'Unknown', emoji: '❓' };
     }

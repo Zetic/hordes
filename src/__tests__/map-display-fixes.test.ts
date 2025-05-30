@@ -59,11 +59,11 @@ describe('Map Display Fixes', () => {
     expect(mapView).toContain('🚪');
     
     // Should contain waste emojis in inner areas
-    expect(mapView).toContain('🌲');
+    expect(mapView).toContain('<z_evergreen_tree>');
     
     // Should contain some of our new location emojis
-    expect(mapView).toContain('🏭'); // Factory
-    expect(mapView).toContain('💧'); // Lake Side
+    expect(mapView).toContain('<z_factory>'); // Factory
+    expect(mapView).toContain('<z_pond>'); // Lake Side
   });
 
   test('should work without player service parameter', async () => {
@@ -104,7 +104,7 @@ describe('Map Display Fixes', () => {
     expect(mapView).toContain('🚪');
     
     // Map should contain some of our new locations
-    expect(mapView).toContain('🏭'); // Factory
-    expect(mapView).toContain('💧'); // Lake Side
+    expect(mapView).toContain('<z_factory>'); // Factory
+    expect(mapView).toContain('<z_pond>'); // Lake Side
   });
 });

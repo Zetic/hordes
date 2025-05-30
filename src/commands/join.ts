@@ -71,7 +71,7 @@ module.exports = {
           { name: '💚 Status', value: `💚 Healthy`, inline: true },
           { name: '⚡ Action Points', value: `${newPlayer.actionPoints}/${newPlayer.maxActionPoints}`, inline: true },
           { name: '💧 Water', value: `${newPlayer.water}`, inline: true },
-          { name: '📍 Location', value: `🏠 City (Safe Zone)`, inline: true },
+          { name: '📍 Location', value: `<z_house> City (Safe Zone)`, inline: true },
           { name: '🎯 Alive', value: `Alive and Ready`, inline: true },
           { name: '\u200B', value: '\u200B', inline: true }
         ])
