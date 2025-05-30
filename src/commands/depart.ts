@@ -99,7 +99,7 @@ module.exports = {
         .addFields([
           { 
             name: '📍 Previous Location', 
-            value: '🏠 City (Safe Zone)', 
+            value: '<z_house> City (Safe Zone)', 
             inline: true 
           },
           { 
