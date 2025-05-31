@@ -131,20 +131,37 @@ module.exports = {
 
     } catch (error) {
       console.error('Error in admin command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while executing the admin command.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ An error occurred while executing the admin command.'
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ An error occurred while executing the admin command.',
+          ephemeral: true
+        });
+      }
     }
   }
 };
 
 async function handleResetCommand(interaction: CommandInteraction) {
+  // Defer reply since this is a heavy operation that will take time
+  await interaction.deferReply({ ephemeral: true });
+  
+  console.log('Admin reset command started...');
+  
   const success = await gameEngine.resetTown();
   
   // Also reset the map to initial state
   if (success) {
+    console.log('Town reset successful, now resetting map...');
     await worldMapService.resetMap();
+    console.log('Map reset completed.');
+  } else {
+    console.log('Town reset failed.');
   }
   
   const embed = new EmbedBuilder()
@@ -156,7 +173,7 @@ async function handleResetCommand(interaction: CommandInteraction) {
     )
     .setTimestamp();
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.editReply({ embeds: [embed] });
 }
 
 async function handleHordeCommand(interaction: CommandInteraction) {
