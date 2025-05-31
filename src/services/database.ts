@@ -179,6 +179,20 @@ export class DatabaseService {
         );
       `);
 
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS zone_contests (
+          x INTEGER NOT NULL,
+          y INTEGER NOT NULL,
+          status VARCHAR(50) NOT NULL DEFAULT 'uncontested',
+          human_cp INTEGER NOT NULL DEFAULT 0,
+          zombie_cp INTEGER NOT NULL DEFAULT 0,
+          temp_uncontested_until TIMESTAMP NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          PRIMARY KEY (x, y)
+        );
+      `);
+
       console.log('✅ Database schema initialized');
     } catch (error) {
       console.error('❌ Failed to initialize schema:', error);
