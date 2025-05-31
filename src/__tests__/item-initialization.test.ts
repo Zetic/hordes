@@ -13,7 +13,8 @@ const mockPool = {
 };
 
 const mockDB = {
-  pool: mockPool
+  pool: mockPool,
+  isItemsSchemaValid: jest.fn().mockResolvedValue(true)
 };
 
 // Mock the DatabaseService
