@@ -1,9 +1,12 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
+import { WorldMapService } from '../services/worldMap';
+import { Location, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
+const worldMapService = WorldMapService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,7 +21,9 @@ module.exports = {
           { name: 'horde', value: 'horde' },
           { name: 'refresh', value: 'refresh' },
           { name: 'hordesize', value: 'hordesize' },
-          { name: 'revive', value: 'revive' }
+          { name: 'revive', value: 'revive' },
+          { name: 'respawn', value: 'respawn' },
+          { name: 'return', value: 'return' }
         )
     )
     .addStringOption(option =>
@@ -83,6 +88,12 @@ module.exports = {
         case 'revive':
           await handleReviveCommand(interaction, targetUser);
           break;
+        case 'respawn':
+          await handleRespawnCommand(interaction, targetUser);
+          break;
+        case 'return':
+          await handleReturnCommand(interaction, targetUser);
+          break;
         default:
           const embed = new EmbedBuilder()
             .setColor('#ff6b6b')
@@ -105,12 +116,17 @@ module.exports = {
 async function handleResetCommand(interaction: CommandInteraction) {
   const success = await gameEngine.resetTown();
   
+  // Also reset the map to initial state
+  if (success) {
+    worldMapService.resetMap();
+  }
+  
   const embed = new EmbedBuilder()
     .setColor(success ? '#4ecdc4' : '#ff6b6b')
-    .setTitle(success ? '🔄 Town Reset' : '❌ Reset Failed')
+    .setTitle(success ? '🔄 Complete World Reset' : '❌ Reset Failed')
     .setDescription(success 
-      ? 'The town has been reset to its initial state. All players have been revived and restored to healthy status with full action points.'
-      : 'Failed to reset the town. Check the server logs for details.'
+      ? 'The entire world has been reset to its initial state. All players have been revived and restored to healthy status with full action points. The map has been reset and players will need to re-explore areas. All player data remains but locations have been reset.'
+      : 'Failed to reset the world. Check the server logs for details.'
     )
     .setTimestamp();
 
@@ -243,6 +259,92 @@ async function handleReviveCommand(interaction: CommandInteraction, targetUser: 
     .setDescription(success 
       ? `${targetUser.username} has been revived and returned to the city with healthy status.`
       : `Failed to revive ${targetUser.username}. Check the server logs for details.`
+    )
+    .setTimestamp();
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handleRespawnCommand(interaction: CommandInteraction, targetUser: any) {
+  if (!targetUser) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Missing User')
+      .setDescription('You must specify a user for the respawn command.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  const player = await playerService.getPlayer(targetUser.id);
+  if (!player) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Not Found')
+      .setDescription(`Player ${targetUser.username} is not registered in the game.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Perform a full reset for the individual player
+  try {
+    // Reset player to healthy state with full action points and return to city
+    await playerService.updatePlayerHealth(targetUser.id, player.maxHealth);
+    await playerService.updatePlayerStatus(targetUser.id, PlayerStatus.HEALTHY);
+    await playerService.updatePlayerLocation(targetUser.id, Location.CITY);
+    await playerService.resetPlayerActionPoints(targetUser.id);
+
+    const embed = new EmbedBuilder()
+      .setColor('#4ecdc4')
+      .setTitle('🔄 Player Respawned')
+      .setDescription(`${targetUser.username} has been fully reset - returned to city with healthy status, full health, and maximum action points.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error) {
+    console.error('Error respawning player:', error);
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Respawn Failed')
+      .setDescription(`Failed to respawn ${targetUser.username}. Check the server logs for details.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+
+async function handleReturnCommand(interaction: CommandInteraction, targetUser: any) {
+  if (!targetUser) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Missing User')
+      .setDescription('You must specify a user for the return command.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  const player = await playerService.getPlayer(targetUser.id);
+  if (!player) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Not Found')
+      .setDescription(`Player ${targetUser.username} is not registered in the game.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Return player to town safely (without healing)
+  const success = await playerService.updatePlayerLocation(targetUser.id, Location.CITY);
+  
+  const embed = new EmbedBuilder()
+    .setColor(success ? '#4ecdc4' : '#ff6b6b')
+    .setTitle(success ? '🏠 Player Returned to Town' : '❌ Return Failed')
+    .setDescription(success 
+      ? `${targetUser.username} has been safely returned to the town. Status and health remain unchanged.`
+      : `Failed to return ${targetUser.username} to town. Check the server logs for details.`
     )
     .setTimestamp();
 

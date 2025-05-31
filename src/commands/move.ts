@@ -121,6 +121,9 @@ module.exports = {
       // Get new location type
       const newLocation = worldMapService.getLocationAtCoordinate(newCoords.x, newCoords.y);
 
+      // Mark tile as explored (discover it when player moves there)
+      worldMapService.markTileExplored(newCoords.x, newCoords.y);
+
       // Update player position
       await playerService.updatePlayerLocation(discordId, newLocation, newCoords.x, newCoords.y);
 

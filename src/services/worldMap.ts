@@ -2,46 +2,56 @@ import { Location, Direction, GridCoordinate, WorldMapTile } from '../types/game
 import { createCanvas, loadImage, Canvas, CanvasRenderingContext2D } from 'canvas';
 import * as path from 'path';
 
+export enum TileState {
+  HIDDEN = 'hidden',
+  EXPLORED = 'explored', 
+  TOWN = 'town',
+  POI = 'poi'
+}
+
+export interface POILocation {
+  x: number;
+  y: number;
+  location: Location;
+}
+
 export class WorldMapService {
   private static instance: WorldMapService;
   
-  // 7x7 grid with center at (3,3) = GATE
-  private readonly MAP_SIZE = 7;
-  private readonly CENTER_X = 3;
-  private readonly CENTER_Y = 3;
+  // 13x13 grid with center at (6,6) = GATE/TOWN
+  private readonly MAP_SIZE = 13;
+  private readonly CENTER_X = 6;
+  private readonly CENTER_Y = 6;
   
   // Tile configuration
-  private readonly TILE_SIZE = 64;
+  private readonly TILE_SIZE = 16;
   private readonly TILES_DIR = path.join(__dirname, '../../tiles');
   
-  // Mapping of Location enum to tile filenames
-  private readonly LOCATION_TILES: Record<Location, string> = {
-    [Location.GATE]: 'z_gate.png',
-    [Location.WASTE]: 'z_evergreen_tree.png',
-    [Location.GREATER_WASTE]: 'z_evergreen_tree.png',
-    [Location.CITY]: 'z_house.png', // Not used in map but needed for completeness
-    [Location.HOME]: 'z_house_with_garden.png', // Not used in map but needed for completeness
-    [Location.FACTORY]: 'factory.png',
-    [Location.ABANDONED_MANSION]: 'z_house_abandoned.png',
-    [Location.MODEST_NEIGHBORHOOD]: 'z_house.png',
-    [Location.GATED_COMMUNITY]: 'z_house_with_garden.png',
-    [Location.CONVENIENCE_STORE]: 'z_convience_store.png',
-    [Location.OFFICE_DISTRICT]: 'z_office.png',
-    [Location.HOSPITAL]: 'z_hospital.png',
-    [Location.SCHOOL_CAMPUS]: 'z_school.png',
-    [Location.SHOPPING_MALL]: 'z_department_store.png',
-    [Location.HOTEL]: 'z_hotel.png',
-    [Location.CITY_PARK]: 'z_fountain.png',
-    [Location.AMUSEMENT_PARK]: 'z_ferris_wheel.png',
-    [Location.CONSTRUCTION_SITE]: 'z_construction_site.png',
-    [Location.RADIO_TOWER]: 'z_tokyo_tower.png',
-    [Location.CAMP_GROUNDS]: 'z_campsite.png',
-    [Location.LAKE_SIDE]: 'z_pond.png'
+  // Grid tile filenames for the new system
+  private readonly GRID_TILES = {
+    [TileState.HIDDEN]: 'grid_hidden.png',
+    [TileState.EXPLORED]: 'grid_explored.png',
+    [TileState.TOWN]: 'grid_town.png',
+    [TileState.POI]: 'grid_poi.png'
   };
   
-  private readonly PLAYER_TILE = 'z_player.png';
+  private readonly THREAT_TILES = {
+    low: 'grid_threat_low.png',
+    medium: 'grid_threat_medium.png',
+    high: 'grid_threat_high.png'
+  };
+  
+  private readonly PLAYER_TILE = 'grid_player.png';
+  
+  // POI locations (7 special locations during world generation)
+  private poiLocations: POILocation[] = [];
+  
+  // Track explored tiles
+  private exploredTiles: Set<string> = new Set();
 
-  private constructor() {}
+  private constructor() {
+    this.initializeMap();
+  }
 
   static getInstance(): WorldMapService {
     if (!WorldMapService.instance) {
@@ -50,105 +60,100 @@ export class WorldMapService {
     return WorldMapService.instance;
   }
 
+  // Initialize the map with starting state
+  private initializeMap() {
+    // Clear any existing state
+    this.exploredTiles.clear();
+    this.poiLocations = [];
+    
+    // Add center town tile
+    this.exploredTiles.add(`${this.CENTER_X},${this.CENTER_Y}`);
+    
+    // Add 8 surrounding explored tiles around center (starting area)
+    const surroundingOffsets = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],           [0, 1],
+      [1, -1],  [1, 0],  [1, 1]
+    ];
+    
+    surroundingOffsets.forEach(([dx, dy]) => {
+      const x = this.CENTER_X + dx;
+      const y = this.CENTER_Y + dy;
+      if (this.isValidCoordinate(x, y)) {
+        this.exploredTiles.add(`${x},${y}`);
+      }
+    });
+    
+    // Generate 7 POI locations during world gen
+    this.generatePOILocations();
+  }
+  
+  // Generate 7 POI locations for the world
+  private generatePOILocations() {
+    const poiLocationTypes = [
+      Location.FACTORY,
+      Location.HOSPITAL,
+      Location.SCHOOL_CAMPUS,
+      Location.SHOPPING_MALL,
+      Location.RADIO_TOWER,
+      Location.ABANDONED_MANSION,
+      Location.CAMP_GROUNDS
+    ];
+    
+    const usedCoordinates = new Set<string>();
+    
+    // Add center and immediate surrounding area to used coordinates
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const x = this.CENTER_X + dx;
+        const y = this.CENTER_Y + dy;
+        if (this.isValidCoordinate(x, y)) {
+          usedCoordinates.add(`${x},${y}`);
+        }
+      }
+    }
+    
+    // Generate random POI locations
+    for (let i = 0; i < 7; i++) {
+      let attempts = 0;
+      let x, y;
+      
+      do {
+        x = Math.floor(Math.random() * this.MAP_SIZE);
+        y = Math.floor(Math.random() * this.MAP_SIZE);
+        attempts++;
+      } while (usedCoordinates.has(`${x},${y}`) && attempts < 100);
+      
+      if (attempts < 100) {
+        this.poiLocations.push({
+          x,
+          y,
+          location: poiLocationTypes[i]
+        });
+        usedCoordinates.add(`${x},${y}`);
+      }
+    }
+  }
+
   // Get the location type for a given coordinate
   getLocationAtCoordinate(x: number, y: number): Location {
     // Bounds check
-    if (x < 0 || x >= this.MAP_SIZE || y < 0 || y >= this.MAP_SIZE) {
+    if (!this.isValidCoordinate(x, y)) {
       throw new Error('Coordinates out of bounds');
     }
 
-    // Center is the gate
+    // Center is the gate/town
     if (x === this.CENTER_X && y === this.CENTER_Y) {
       return Location.GATE;
     }
 
-    // Map specific locations according to the map layout
-    // Factory
-    if (x === 0 && y === 0) {
-      return Location.FACTORY;
-    }
-    
-    // Abandoned Mansion
-    if (x === 3 && y === 1) {
-      return Location.ABANDONED_MANSION;
-    }
-    
-    // Modest Neighborhood
-    if (x === 0 && y === 3) {
-      return Location.MODEST_NEIGHBORHOOD;
-    }
-    
-    // Convenience Store Street
-    if (x === 1 && y === 3) {
-      return Location.CONVENIENCE_STORE;
-    }
-    
-    // Gated Community
-    if (x === 0 && y === 4) {
-      return Location.GATED_COMMUNITY;
-    }
-    
-    // School Campus
-    if (x === 1 && y === 4) {
-      return Location.SCHOOL_CAMPUS;
-    }
-    
-    // Office District
-    if (x === 0 && y === 5) {
-      return Location.OFFICE_DISTRICT;
-    }
-    
-    // Shopping Mall
-    if (x === 1 && y === 5) {
-      return Location.SHOPPING_MALL;
-    }
-    
-    // City Park
-    if (x === 2 && y === 5) {
-      return Location.CITY_PARK;
-    }
-    
-    // Construction Site
-    if (x === 3 && y === 5) {
-      return Location.CONSTRUCTION_SITE;
-    }
-    
-    // Radio Tower
-    if (x === 5 && y === 5) {
-      return Location.RADIO_TOWER;
-    }
-    
-    // Hospital
-    if (x === 0 && y === 6) {
-      return Location.HOSPITAL;
-    }
-    
-    // Hotel
-    if (x === 1 && y === 6) {
-      return Location.HOTEL;
-    }
-    
-    // Amusement Park
-    if (x === 2 && y === 6) {
-      return Location.AMUSEMENT_PARK;
-    }
-    
-    // Camp Grounds
-    if (x === 5 && y === 3) {
-      return Location.CAMP_GROUNDS;
-    }
-    
-    // Lake Side
-    if ((x === 5 && y === 0) || (x === 6 && y === 0) || (x === 5 && y === 1) || (x === 6 && y === 1)) {
-      return Location.LAKE_SIDE;
+    // Check if this coordinate is a POI location
+    const poi = this.poiLocations.find(p => p.x === x && p.y === y);
+    if (poi) {
+      return poi.location;
     }
 
-    // Border tiles that aren't special locations are greater waste
-    if (x === 0 || x === this.MAP_SIZE - 1 || y === 0 || y === this.MAP_SIZE - 1) {
-      return Location.GREATER_WASTE;
-    }
-
-    // Inner tiles are waste
+    // All other locations are considered waste (for movement/resource purposes)
     return Location.WASTE;
   }
 
@@ -194,6 +199,36 @@ export class WorldMapService {
   // Check if coordinates are valid (within map bounds)
   isValidCoordinate(x: number, y: number): boolean {
     return x >= 0 && x < this.MAP_SIZE && y >= 0 && y < this.MAP_SIZE;
+  }
+  
+  // Get tile state for rendering
+  getTileState(x: number, y: number): TileState {
+    if (x === this.CENTER_X && y === this.CENTER_Y) {
+      return TileState.TOWN;
+    }
+    
+    if (this.exploredTiles.has(`${x},${y}`)) {
+      // Check if this is a POI that has been discovered
+      const poi = this.poiLocations.find(p => p.x === x && p.y === y);
+      if (poi) {
+        return TileState.POI;
+      }
+      return TileState.EXPLORED;
+    }
+    
+    return TileState.HIDDEN;
+  }
+  
+  // Mark a tile as explored when a player moves there
+  markTileExplored(x: number, y: number): void {
+    if (this.isValidCoordinate(x, y)) {
+      this.exploredTiles.add(`${x},${y}`);
+    }
+  }
+  
+  // Reset the map to initial state
+  resetMap(): void {
+    this.initializeMap();
   }
 
   // Get gate coordinates
@@ -266,50 +301,51 @@ export class WorldMapService {
     }
   }
 
-  // Generate a composite image representation of the full map
+  // Generate a composite image representation of the full map (three layers)
   async generateMapView(playerService?: any): Promise<Buffer> {
     const canvasWidth = this.MAP_SIZE * this.TILE_SIZE;
     const canvasHeight = this.MAP_SIZE * this.TILE_SIZE;
     const canvas = createCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
 
-    // Show the full 7x7 map
+    // Render the full 13x13 map
     for (let y = 0; y < this.MAP_SIZE; y++) {
       for (let x = 0; x < this.MAP_SIZE; x++) {
-        // Check if any players are at this coordinate
-        let hasPlayer = false;
-        if (playerService) {
-          try {
-            const playersAtLocation = await playerService.getPlayersByCoordinates(x, y);
-            hasPlayer = playersAtLocation.length > 0;
-          } catch (error) {
-            // If playerService fails, continue without player markers
-            console.warn('Failed to check players at coordinates:', error);
-          }
-        }
-        
-        const location = this.getLocationAtCoordinate(x, y);
-        const tileFilename = this.LOCATION_TILES[location];
-        const tilePath = path.join(this.TILES_DIR, tileFilename);
+        const destX = x * this.TILE_SIZE;
+        const destY = y * this.TILE_SIZE;
         
         try {
-          // Load and draw the base tile
-          const tileImage = await loadImage(tilePath);
-          const destX = x * this.TILE_SIZE;
-          const destY = y * this.TILE_SIZE;
-          ctx.drawImage(tileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+          // Layer 1: Base tile (grid_explored, grid_hidden, grid_town, grid_poi)
+          const tileState = this.getTileState(x, y);
+          const baseTileFilename = this.GRID_TILES[tileState];
+          const baseTilePath = path.join(this.TILES_DIR, baseTileFilename);
+          const baseTileImage = await loadImage(baseTilePath);
+          ctx.drawImage(baseTileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
           
-          // If there's a player here, overlay the player tile
-          if (hasPlayer) {
-            const playerTilePath = path.join(this.TILES_DIR, this.PLAYER_TILE);
-            const playerImage = await loadImage(playerTilePath);
-            ctx.drawImage(playerImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+          // Layer 2: Threat level (currently unused, but ready for future implementation)
+          // This would overlay threat tiles based on zombie count in the area
+          // For now, we skip this layer
+          
+          // Layer 3: Player markers
+          if (playerService) {
+            try {
+              const playersAtLocation = await playerService.getPlayersByCoordinates(x, y);
+              if (playersAtLocation.length > 0) {
+                const playerTilePath = path.join(this.TILES_DIR, this.PLAYER_TILE);
+                const playerImage = await loadImage(playerTilePath);
+                ctx.drawImage(playerImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+              }
+            } catch (error) {
+              // If playerService fails, continue without player markers
+              console.warn('Failed to check players at coordinates:', error);
+            }
           }
+          
         } catch (error) {
-          console.error(`Failed to load tile ${tileFilename}:`, error);
+          console.error(`Failed to load tiles for coordinate (${x}, ${y}):`, error);
           // Draw a red square as fallback
           ctx.fillStyle = '#ff0000';
-          ctx.fillRect(x * this.TILE_SIZE, y * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+          ctx.fillRect(destX, destY, this.TILE_SIZE, this.TILE_SIZE);
         }
       }
     }
