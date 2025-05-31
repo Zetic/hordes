@@ -14,6 +14,7 @@ export interface ItemDefinition {
     value?: number;
     breakChance?: number;
     transformInto?: string;
+    status?: string;
   }>;
 }
 
@@ -43,6 +44,54 @@ export const itemDefinitions: ItemDefinition[] = [
     category: "Items",
     subCategory: "Armoury",
     effects: [] // No effects for broken items
+  },
+  {
+    name: "Water Ration",
+    type: ItemType.CONSUMABLE,
+    description: "A bottle of clean water that restores action points and hydration",
+    weight: 1,
+    category: "Items",
+    subCategory: "Hydration",
+    effects: [
+      {
+        type: EffectType.RESTORE_AP,
+        value: 10
+      },
+      {
+        type: EffectType.ADD_STATUS,
+        status: "refreshed"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "thirsty"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "exhausted"
+      }
+    ]
+  },
+  {
+    name: "Stale Tart",
+    type: ItemType.CONSUMABLE,
+    description: "An old pastry that provides some nutrition and energy",
+    weight: 1,
+    category: "Items",
+    subCategory: "Nutrition",
+    effects: [
+      {
+        type: EffectType.RESTORE_AP,
+        value: 10
+      },
+      {
+        type: EffectType.ADD_STATUS,
+        status: "fed"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "exhausted"
+      }
+    ]
   }
   // More items can be added here as the system grows
 ];

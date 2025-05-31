@@ -351,6 +351,9 @@ export class GameEngine {
       // Process zombie spread after horde attack
       await this.zombieService.processHordeSpread();
       
+      // Process status changes after horde event
+      await this.processPostHordeStatusChanges();
+      
     } catch (error) {
       console.error('Error processing horde attack:', error);
     }
@@ -668,6 +671,53 @@ export class GameEngine {
       await this.zoneContestService.processExpiredTemporaryZones();
     } catch (error) {
       console.error('Error processing zone contest timers:', error);
+    }
+  }
+
+  private async processPostHordeStatusChanges(): Promise<void> {
+    try {
+      console.log('🔄 Processing post-horde status changes...');
+      
+      // Get all alive players
+      const alivePlayers = await this.playerService.getAlivePlayers();
+      
+      for (const player of alivePlayers) {
+        let statusChanged = false;
+        let newStatus = player.status;
+        
+        // Process status changes according to requirements
+        switch (player.status) {
+          case PlayerStatus.REFRESHED:
+            // Refreshed is removed
+            newStatus = PlayerStatus.HEALTHY;
+            statusChanged = true;
+            console.log(`📉 ${player.name}: Refreshed status removed`);
+            break;
+            
+          case PlayerStatus.FED:
+            // Fed is removed
+            newStatus = PlayerStatus.HEALTHY;
+            statusChanged = true;
+            console.log(`📉 ${player.name}: Fed status removed`);
+            break;
+            
+          case PlayerStatus.THIRSTY:
+            // Thirsty becomes Dehydrated
+            newStatus = PlayerStatus.DEHYDRATED;
+            statusChanged = true;
+            console.log(`📉 ${player.name}: Thirsty -> Dehydrated`);
+            break;
+        }
+        
+        // Update player status if it changed
+        if (statusChanged) {
+          await this.playerService.updatePlayerStatus(player.discordId, newStatus);
+        }
+      }
+      
+      console.log('✅ Post-horde status changes processed');
+    } catch (error) {
+      console.error('Error processing post-horde status changes:', error);
     }
   }
 }

@@ -47,12 +47,22 @@ module.exports = {
       const statusEmojis = {
         [PlayerStatus.HEALTHY]: '💚',
         [PlayerStatus.WOUNDED]: '🩸',
-        [PlayerStatus.DEAD]: '💀'
+        [PlayerStatus.DEAD]: '💀',
+        [PlayerStatus.REFRESHED]: '💧',
+        [PlayerStatus.FED]: '🍞',
+        [PlayerStatus.THIRSTY]: '🫗',
+        [PlayerStatus.DEHYDRATED]: '🏜️',
+        [PlayerStatus.EXHAUSTED]: '😴'
       };
       const statusTexts = {
         [PlayerStatus.HEALTHY]: 'Healthy',
         [PlayerStatus.WOUNDED]: 'Wounded',
-        [PlayerStatus.DEAD]: 'Dead'
+        [PlayerStatus.DEAD]: 'Dead',
+        [PlayerStatus.REFRESHED]: 'Refreshed',
+        [PlayerStatus.FED]: 'Fed',
+        [PlayerStatus.THIRSTY]: 'Thirsty',
+        [PlayerStatus.DEHYDRATED]: 'Dehydrated',
+        [PlayerStatus.EXHAUSTED]: 'Exhausted'
       };
       
       // Location display

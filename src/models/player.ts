@@ -106,6 +106,23 @@ export class PlayerService {
     }
   }
 
+  async updatePlayerActionPoints(discordId: string, newActionPoints: number): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE players 
+        SET action_points = LEAST($1, max_action_points),
+            last_action_time = NOW(),
+            updated_at = NOW()
+        WHERE discord_id = $2
+      `;
+      const result = await this.db.pool.query(query, [newActionPoints, discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error updating player action points:', error);
+      return false;
+    }
+  }
+
   async resetDailyActionPoints(): Promise<void> {
     try {
       // Only reset action points for alive players - dead players stay dead until town reset
