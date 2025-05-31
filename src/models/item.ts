@@ -32,13 +32,13 @@ export class ItemService {
       const query = 'SELECT * FROM items WHERE LOWER(name) = LOWER($1)';
       const result = await this.db.pool.query(query, [name]);
       
-      if (result && result.rows && result.rows.length === 0) {
+      if (result.rows.length === 0) {
         return null;
       }
 
-      return result && result.rows ? this.mapRowToItem(result.rows[0]) : null;
+      return this.mapRowToItem(result.rows[0]);
     } catch (error) {
-      // Database not available - return null for tests
+      console.error('Error getting item by name:', error);
       return null;
     }
   }
@@ -67,7 +67,7 @@ export class ItemService {
         name, type, description, weight, category, subCategory, killChance, breakChance, killCount, onBreak, broken
       ]);
       
-      return result && result.rows ? this.mapRowToItem(result.rows[0]) : null;
+      return this.mapRowToItem(result.rows[0]);
     } catch (error) {
       // Check if the error is related to missing columns
       if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
@@ -75,7 +75,7 @@ export class ItemService {
         console.error('This indicates the database schema may not have been properly initialized.');
         console.error('Please ensure the database schema includes all required columns for items.');
       } else {
-        // Database not available - this is fine for tests
+        console.error('Error creating item:', error);
       }
       return null;
     }
@@ -127,9 +127,7 @@ export class ItemService {
       // Verify database schema before attempting item creation
       const isSchemaValid = await this.db.isItemsSchemaValid();
       if (!isSchemaValid) {
-        // Database not available or schema invalid - log expected message for tests
-        console.log('✅ Default items initialized');
-        return;
+        throw new Error('Items table schema is not properly configured. Missing required columns.');
       }
 
       // Remove all dependent records first to avoid foreign key constraint violations
@@ -158,29 +156,54 @@ export class ItemService {
       await this.db.pool.query('DELETE FROM items');
       console.log('🗑️ Cleared existing items');
 
-      // Create all items from definitions
-      const { getAllItemDefinitions } = require('../data/items');
-      const allDefinitions = getAllItemDefinitions();
-      
-      let createdCount = 0;
-      for (const definition of allDefinitions) {
-        const created = await this.createItemFromDefinition(definition);
-        if (created) {
-          console.log(`✅ ${definition.name} created from definition`);
-          createdCount++;
-        } else {
-          console.error(`❌ Failed to create ${definition.name}`);
-        }
+      // Try to create items from definitions first (new system)
+      const boxCutterDef = getItemDefinition('Box Cutter');
+      if (boxCutterDef) {
+        await this.createItemFromDefinition(boxCutterDef);
+        console.log('✅ Box Cutter created from definition');
+      } else {
+        // Fallback to legacy creation
+        await this.createItem(
+          'Box Cutter',
+          ItemType.MELEE,
+          'A sharp utility knife that can be used to kill zombies',
+          1,
+          'Items',
+          'Armoury',
+          60, // 60% kill chance
+          70, // 70% break chance
+          1,  // kills 1 zombie
+          'Broken' // becomes broken on break
+        );
+        console.log('✅ Box Cutter created (legacy)');
       }
 
-      if (createdCount > 0) {
-        console.log('✅ Default items initialized');
+      // Create Broken Box Cutter
+      const brokenBoxCutterDef = getItemDefinition('Broken Box Cutter');
+      if (brokenBoxCutterDef) {
+        await this.createItemFromDefinition(brokenBoxCutterDef);
+        console.log('✅ Broken Box Cutter created from definition');
       } else {
-        console.log('✅ Default items initialized');
+        // Fallback to legacy creation
+        await this.createItem(
+          'Broken Box Cutter',
+          ItemType.MELEE,
+          'A broken utility knife with no use',
+          1,
+          'Items',
+          'Armoury',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true // broken
+        );
+        console.log('✅ Broken Box Cutter created (legacy)');
       }
-    } catch (error) {
-      // Database error - provide fallback message for tests
+
       console.log('✅ Default items initialized');
+    } catch (error) {
+      console.error('Error initializing default items:', error);
     }
   }
 

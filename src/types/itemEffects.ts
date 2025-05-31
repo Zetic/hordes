@@ -4,10 +4,7 @@ export enum EffectType {
   HEAL_PLAYER = 'heal_player',
   REPAIR_BUILDING = 'repair_building',
   PROVIDE_RESOURCE = 'provide_resource',
-  TRANSFORM_ITEM = 'transform_item',
-  RESTORE_AP = 'restore_ap',
-  ADD_STATUS = 'add_status',
-  REMOVE_STATUS = 'remove_status'
+  TRANSFORM_ITEM = 'transform_item'
 }
 
 export interface ItemEffect {
@@ -16,7 +13,6 @@ export interface ItemEffect {
   value?: number;          // Effect magnitude
   breakChance?: number;    // Chance to break on use (0-100)
   transformInto?: string;  // Item to transform into when broken
-  status?: string;         // Status to add or remove
 }
 
 export interface ItemUseContext {

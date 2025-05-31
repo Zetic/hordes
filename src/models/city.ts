@@ -158,11 +158,7 @@ export class CityService {
       const deleteBuildingsQuery = 'DELETE FROM buildings WHERE city_id = $1';
       await this.db.pool.query(deleteBuildingsQuery, [cityId]);
 
-      // Clear all bank inventories
-      const clearBankQuery = 'DELETE FROM bank_inventories WHERE city_id = $1';
-      await this.db.pool.query(clearBankQuery, [cityId]);
-
-      console.log('✅ City reset to initial state (buildings and bank cleared)');
+      console.log('✅ City reset to initial state');
       return true;
     } catch (error) {
       console.error('Error resetting city:', error);

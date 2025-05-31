@@ -1,7 +1,6 @@
 import { EffectType, ItemEffect, ItemUseContext, ItemUseResult } from '../types/itemEffects';
 import { handleKillZombieEffect } from './effects/combatEffects';
 import { handleHealPlayerEffect } from './effects/healingEffects';
-import { handleRestoreAPEffect, handleAddStatusEffect, handleRemoveStatusEffect } from './effects/statusEffects';
 
 export type EffectHandler = (effect: ItemEffect, context: ItemUseContext) => Promise<ItemUseResult>;
 
@@ -24,9 +23,6 @@ export class ItemEffectService {
   private registerDefaultHandlers() {
     this.registerHandler(EffectType.KILL_ZOMBIE, handleKillZombieEffect);
     this.registerHandler(EffectType.HEAL_PLAYER, handleHealPlayerEffect);
-    this.registerHandler(EffectType.RESTORE_AP, handleRestoreAPEffect);
-    this.registerHandler(EffectType.ADD_STATUS, handleAddStatusEffect);
-    this.registerHandler(EffectType.REMOVE_STATUS, handleRemoveStatusEffect);
     // Register more effects as they are implemented
   }
 

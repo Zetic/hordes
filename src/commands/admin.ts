@@ -115,7 +115,7 @@ module.exports = {
           await handleSpawnCommand(interaction, targetUser, itemName);
           break;
         case 'revealmap':
-          await handleRevealMapCommand(interaction);
+          await handleRevealMapCommand(interaction, targetUser);
           break;
         case 'fillbank':
           await handleFillBankCommand(interaction);
@@ -131,37 +131,20 @@ module.exports = {
 
     } catch (error) {
       console.error('Error in admin command:', error);
-      
-      // Check if reply was already deferred
-      if (interaction.deferred) {
-        await interaction.editReply({
-          content: '❌ An error occurred while executing the admin command.'
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while executing the admin command.',
-          ephemeral: true
-        });
-      }
+      await interaction.reply({
+        content: '❌ An error occurred while executing the admin command.',
+        ephemeral: true
+      });
     }
   }
 };
 
 async function handleResetCommand(interaction: CommandInteraction) {
-  // Defer reply since this is a heavy operation that will take time
-  await interaction.deferReply({ ephemeral: true });
-  
-  console.log('Admin reset command started...');
-  
   const success = await gameEngine.resetTown();
   
   // Also reset the map to initial state
   if (success) {
-    console.log('Town reset successful, now resetting map...');
     await worldMapService.resetMap();
-    console.log('Map reset completed.');
-  } else {
-    console.log('Town reset failed.');
   }
   
   const embed = new EmbedBuilder()
@@ -173,7 +156,7 @@ async function handleResetCommand(interaction: CommandInteraction) {
     )
     .setTimestamp();
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
 async function handleHordeCommand(interaction: CommandInteraction) {
@@ -486,14 +469,33 @@ async function handleSpawnCommand(interaction: CommandInteraction, targetUser: a
   }
 }
 
-async function handleRevealMapCommand(interaction: CommandInteraction) {
-  try {
-    // Get map size from WorldMapService
-    const mapSize = worldMapService.getMapSize();
+async function handleRevealMapCommand(interaction: CommandInteraction, targetUser: any) {
+  if (!targetUser) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ User Required')
+      .setDescription('Please specify a user to reveal the map for.');
     
-    // Reveal all tiles on the entire map (map revelation is shared across all players)
-    for (let x = 0; x < mapSize; x++) {
-      for (let y = 0; y < mapSize; y++) {
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Get the target player
+  const player = await playerService.getPlayer(targetUser.id);
+  if (!player) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Not Found')
+      .setDescription(`${targetUser.username} is not registered. They need to use \`/join\` first.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  try {
+    // Reveal all tiles on the 7x7 map for the player
+    for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 7; y++) {
         await worldMapService.markTileExplored(x, y);
       }
     }
@@ -501,7 +503,7 @@ async function handleRevealMapCommand(interaction: CommandInteraction) {
     const embed = new EmbedBuilder()
       .setColor('#4ecdc4')
       .setTitle('🗺️ Map Revealed')
-      .setDescription(`The entire ${mapSize}x${mapSize} map has been revealed for all players.`)
+      .setDescription(`The entire map has been revealed for ${targetUser.username}.`)
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -510,7 +512,7 @@ async function handleRevealMapCommand(interaction: CommandInteraction) {
     const embed = new EmbedBuilder()
       .setColor('#ff6b6b')
       .setTitle('❌ Reveal Failed')
-      .setDescription('Failed to reveal map. Check the server logs for details.')
+      .setDescription(`Failed to reveal map for ${targetUser.username}. Check the server logs for details.`)
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -548,7 +550,7 @@ async function handleFillBankCommand(interaction: CommandInteraction) {
     
     let addedItems = 0;
     for (const item of allItems) {
-      const success = await bankService.depositItem(city.id, item.id, 99);
+      const success = await bankService.addItemToBank(city.id, item.id, 99);
       if (success) {
         addedItems++;
       }

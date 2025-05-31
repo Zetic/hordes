@@ -4,10 +4,10 @@ import { Location } from '../types/game';
 describe('New Map System', () => {
   let worldMapService: WorldMapService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     worldMapService = WorldMapService.getInstance();
     // Reset map state for each test
-    await worldMapService.resetMap();
+    worldMapService.resetMap();
   });
 
   test('should have 13x13 grid size', () => {

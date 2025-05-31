@@ -1,6 +1,5 @@
 import { Player, Location, GamePhase, PlayerStatus } from '../types/game';
 import { DatabaseService } from '../services/database';
-import { safeJsonParseArray } from '../utils/jsonUtils';
 
 export class PlayerService {
   private db: DatabaseService;
@@ -33,12 +32,12 @@ export class PlayerService {
       const query = 'SELECT * FROM players WHERE discord_id = $1';
       const result = await this.db.pool.query(query, [discordId]);
       
-      if (result && result.rows && result.rows.length > 0) {
+      if (result.rows.length > 0) {
         return this.mapRowToPlayer(result.rows[0]);
       }
       return null;
     } catch (error) {
-      // Database not available - return null
+      console.error('Error getting player:', error);
       return null;
     }
   }
@@ -75,66 +74,6 @@ export class PlayerService {
     }
   }
 
-  async addPlayerCondition(discordId: string, condition: PlayerStatus): Promise<boolean> {
-    try {
-      // Get current conditions
-      const player = await this.getPlayer(discordId);
-      if (!player) return false;
-
-      // Add condition if not already present
-      if (!player.conditions.includes(condition)) {
-        const newConditions = [...player.conditions, condition];
-        const query = `
-          UPDATE players 
-          SET conditions = $1, updated_at = NOW()
-          WHERE discord_id = $2
-        `;
-        const result = await this.db.pool.query(query, [JSON.stringify(newConditions), discordId]);
-        return (result.rowCount || 0) > 0;
-      }
-      return true; // Already has condition
-    } catch (error) {
-      console.error('Error adding player condition:', error);
-      return false;
-    }
-  }
-
-  async removePlayerCondition(discordId: string, condition: PlayerStatus): Promise<boolean> {
-    try {
-      // Get current conditions
-      const player = await this.getPlayer(discordId);
-      if (!player) return false;
-
-      // Remove condition if present
-      const newConditions = player.conditions.filter(c => c !== condition);
-      const query = `
-        UPDATE players 
-        SET conditions = $1, updated_at = NOW()
-        WHERE discord_id = $2
-      `;
-      const result = await this.db.pool.query(query, [JSON.stringify(newConditions), discordId]);
-      return (result.rowCount || 0) > 0;
-    } catch (error) {
-      console.error('Error removing player condition:', error);
-      return false;
-    }
-  }
-
-  async updatePlayerConditions(discordId: string, conditions: PlayerStatus[]): Promise<boolean> {
-    try {
-      const query = `
-        UPDATE players 
-        SET conditions = $1, updated_at = NOW()
-        WHERE discord_id = $2
-      `;
-      const result = await this.db.pool.query(query, [JSON.stringify(conditions), discordId]);
-      return (result.rowCount || 0) > 0;
-    } catch (error) {
-      console.error('Error updating player conditions:', error);
-      return false;
-    }
-  }
-
   async updatePlayerLocation(discordId: string, location: Location, x?: number, y?: number): Promise<boolean> {
     try {
       const query = `
@@ -167,23 +106,6 @@ export class PlayerService {
     }
   }
 
-  async updatePlayerActionPoints(discordId: string, newActionPoints: number): Promise<boolean> {
-    try {
-      const query = `
-        UPDATE players 
-        SET action_points = LEAST($1, max_action_points),
-            last_action_time = NOW(),
-            updated_at = NOW()
-        WHERE discord_id = $2
-      `;
-      const result = await this.db.pool.query(query, [newActionPoints, discordId]);
-      return (result.rowCount || 0) > 0;
-    } catch (error) {
-      console.error('Error updating player action points:', error);
-      return false;
-    }
-  }
-
   async resetDailyActionPoints(): Promise<void> {
     try {
       // Only reset action points for alive players - dead players stay dead until town reset
@@ -204,9 +126,9 @@ export class PlayerService {
     try {
       const query = 'SELECT * FROM players WHERE is_alive = true';
       const result = await this.db.pool.query(query);
-      return result && result.rows ? result.rows.map(row => this.mapRowToPlayer(row)) : [];
+      return result.rows.map(row => this.mapRowToPlayer(row));
     } catch (error) {
-      // Database not available - return empty array
+      console.error('Error getting alive players:', error);
       return [];
     }
   }
@@ -230,7 +152,6 @@ export class PlayerService {
               water = 10,
               is_alive = true,
               status = $1,
-              conditions = '[]',
               location = $2,
               x = NULL,
               y = NULL,
@@ -277,7 +198,6 @@ export class PlayerService {
         SET health = max_health,
             is_alive = true,
             status = $1,
-            conditions = '[]',
             location = $2,
             updated_at = NOW()
         WHERE discord_id = $3
@@ -294,9 +214,9 @@ export class PlayerService {
     try {
       const query = 'SELECT * FROM players WHERE location = $1 AND is_alive = true';
       const result = await this.db.pool.query(query, [location]);
-      return result && result.rows ? result.rows.map(row => this.mapRowToPlayer(row)) : [];
+      return result.rows.map(row => this.mapRowToPlayer(row));
     } catch (error) {
-      // Database not available - return empty array
+      console.error('Error getting players by location:', error);
       return [];
     }
   }
@@ -305,21 +225,14 @@ export class PlayerService {
     try {
       const query = 'SELECT * FROM players WHERE x = $1 AND y = $2 AND is_alive = true';
       const result = await this.db.pool.query(query, [x, y]);
-      return result && result.rows ? result.rows.map(row => this.mapRowToPlayer(row)) : [];
+      return result.rows.map(row => this.mapRowToPlayer(row));
     } catch (error) {
-      // Database not available - return empty array
+      console.error('Error getting players by coordinates:', error);
       return [];
     }
   }
 
   private mapRowToPlayer(row: any): Player {
-    // Parse conditions from JSON string, default to empty array if null or invalid
-    const conditions: PlayerStatus[] = safeJsonParseArray(
-      row.conditions, 
-      [], 
-      `player conditions for ${row.discord_id}`
-    ).data;
-
     return {
       id: row.id,
       discordId: row.discord_id,
@@ -327,7 +240,6 @@ export class PlayerService {
       health: row.health,
       maxHealth: row.max_health,
       status: row.status as PlayerStatus,
-      conditions: conditions,
       actionPoints: row.action_points,
       maxActionPoints: row.max_action_points,
       water: row.water,

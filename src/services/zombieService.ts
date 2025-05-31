@@ -43,7 +43,7 @@ export class ZombieService {
       }
       return null;
     } catch (error) {
-      // Database not available - return no zombies for tests
+      console.error('Error getting zombies at location:', error);
       return null;
     }
   }
@@ -82,8 +82,8 @@ export class ZombieService {
       await this.db.pool.query(query, [x, y, count]);
       return true;
     } catch (error) {
-      // Database not available - this is fine for tests
-      return true;
+      console.error('Error setting zombies at location:', error);
+      return false;
     }
   }
 
@@ -131,8 +131,8 @@ export class ZombieService {
       console.log('✅ All zombies cleared');
       return true;
     } catch (error) {
-      // Database not available - this is fine for tests
-      return true;
+      console.error('Error clearing all zombies:', error);
+      return false;
     }
   }
 

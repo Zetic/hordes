@@ -1,41 +1,8 @@
 // Core game types and interfaces
-
-// Player status including both vital status and temporary conditions
 export enum PlayerStatus {
-  // Vital statuses (mutually exclusive, based on health/life state)
   HEALTHY = 'healthy',
-  WOUNDED = 'wounded', 
-  DEAD = 'dead',
-  
-  // Temporary conditions (can have multiple simultaneously)
-  REFRESHED = 'refreshed',
-  FED = 'fed',
-  THIRSTY = 'thirsty',
-  DEHYDRATED = 'dehydrated',
-  EXHAUSTED = 'exhausted'
-}
-
-// Helper to categorize status types
-export const VitalStatuses = [
-  PlayerStatus.HEALTHY,
-  PlayerStatus.WOUNDED,
-  PlayerStatus.DEAD
-] as const;
-
-export const TemporaryConditions = [
-  PlayerStatus.REFRESHED,
-  PlayerStatus.FED,
-  PlayerStatus.THIRSTY,
-  PlayerStatus.DEHYDRATED,
-  PlayerStatus.EXHAUSTED
-] as const;
-
-export function isVitalStatus(status: PlayerStatus): boolean {
-  return VitalStatuses.includes(status as any);
-}
-
-export function isTemporaryCondition(status: PlayerStatus): boolean {
-  return TemporaryConditions.includes(status as any);
+  WOUNDED = 'wounded',
+  DEAD = 'dead'
 }
 
 export interface Player {
@@ -44,8 +11,7 @@ export interface Player {
   name: string;
   health: number;
   maxHealth: number;
-  status: PlayerStatus; // Vital status only (healthy, wounded, dead)
-  conditions: PlayerStatus[]; // Array of temporary conditions
+  status: PlayerStatus;
   actionPoints: number;
   maxActionPoints: number;
   water: number;

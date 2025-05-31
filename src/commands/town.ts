@@ -16,42 +16,18 @@ module.exports = {
     
   async execute(interaction: CommandInteraction) {
     try {
-      console.log(`🏙️ Town command initiated by ${interaction.user.id}`);
-      // Defer reply since we're about to do database operations that might take time
-      await interaction.deferReply();
-
       // Get city and game state
-      console.log('📊 Fetching city and game state...');
       const city = await cityService.getDefaultCity();
       const gameState = await gameEngine.getCurrentGameState();
-      
-      // Check if we're in offline mode
-      const isOfflineMode = gameState?.cityId === 'offline-city';
-      
-      if (!city && !isOfflineMode) {
-        console.error('❌ No city found for town command');
-        await interaction.editReply({
-          content: '❌ No city found. Please contact an administrator.'
-        });
-        return;
-      }
-
-      if (isOfflineMode) {
-        console.log('⚠️ Town command running in offline mode');
-        await interaction.editReply({
-          content: '⚠️ **Limited Functionality Mode**\n\nThe game is currently running in offline mode due to database connectivity issues. Most commands are not available. Please contact an administrator to restore full functionality.'
-        });
-        return;
-      }
-
       const alivePlayers = await playerService.getAlivePlayers();
 
-      console.log('✅ City data retrieved successfully');
-      console.log(`📊 Game state available: ${gameState ? 'Yes' : 'No'}`);
-      console.log(`👥 Alive players: ${alivePlayers?.length || 0}`);
-
-      // At this point, city is guaranteed to not be null due to the earlier check
-      const safeCity = city!;
+      if (!city) {
+        await interaction.reply({
+          content: '❌ No city found. Please contact an administrator.',
+          ephemeral: true
+        });
+        return;
+      }
 
       // Count buildings by type
       const buildingCounts = {
@@ -62,7 +38,7 @@ module.exports = {
         hospital: 0
       };
 
-      safeCity.buildings.forEach(building => {
+      city.buildings.forEach(building => {
         if (buildingCounts.hasOwnProperty(building.type)) {
           buildingCounts[building.type as keyof typeof buildingCounts]++;
         }
@@ -80,7 +56,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor('#4ecdc4')
-        .setTitle(`🏙️ ${safeCity.name}`)
+        .setTitle(`🏙️ ${city.name}`)
         .setDescription('Survivor settlement status and defenses')
         .addFields([
           { 
@@ -90,7 +66,7 @@ module.exports = {
           },
           { 
             name: '📅 Day', 
-            value: `${gameState?.currentDay || safeCity.day}`, 
+            value: `${gameState?.currentDay || city.day}`, 
             inline: true 
           },
           { 
@@ -170,22 +146,14 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed] });
 
     } catch (error) {
       console.error('Error in town command:', error);
-      
-      // Check if reply was already deferred
-      if (interaction.deferred) {
-        await interaction.editReply({
-          content: '❌ An error occurred while getting city information.'
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while getting city information.',
-          ephemeral: true
-        });
-      }
+      await interaction.reply({
+        content: '❌ An error occurred while getting city information.',
+        ephemeral: true
+      });
     }
   }
 };

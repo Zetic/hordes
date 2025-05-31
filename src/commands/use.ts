@@ -43,6 +43,14 @@ module.exports = {
         return;
       }
 
+      // Check if player is in a valid location to use items
+      if (player.location === Location.CITY || player.location === Location.HOME) {
+        await interaction.editReply({
+          content: '❌ You cannot use items in this location. Go outside the city to use items.'
+        });
+        return;
+      }
+
       // Get the item from database
       const item = await itemService.getItemByName(itemName);
       if (!item) {
@@ -92,15 +100,6 @@ module.exports = {
 };
 
 async function handleItemUseWithEffects(interaction: CommandInteraction, player: any, item: any, itemDefinition: any, quantity: number) {
-  // Check for status-based usage restrictions
-  const statusRestrictionCheck = checkItemUsageRestrictions(player, itemDefinition);
-  if (!statusRestrictionCheck.allowed) {
-    await interaction.editReply({
-      content: statusRestrictionCheck.reason
-    });
-    return;
-  }
-
   const context: ItemUseContext = {
     player,
     location: { x: player.x, y: player.y }
@@ -117,8 +116,7 @@ async function handleItemUseWithEffects(interaction: CommandInteraction, player:
           chance: effectDef.chance,
           value: effectDef.value,
           breakChance: effectDef.breakChance,
-          transformInto: effectDef.transformInto,
-          status: effectDef.status
+          transformInto: effectDef.transformInto
         };
 
         const result = await effectService.executeEffect(effect, context);
@@ -145,14 +143,6 @@ async function handleItemUseWithEffects(interaction: CommandInteraction, player:
       }
     }
     
-    // Remove one item from inventory if any effect succeeded and item wasn't broken
-    const hasSuccessfulEffect = results.some(r => r.success);
-    const itemWasBroken = results.some(r => r.itemBroken);
-    
-    if (hasSuccessfulEffect && !itemWasBroken) {
-      await inventoryService.removeItemFromInventory(player.id, item.id, 1);
-    }
-    
     // Process results and create response
     await constructUseResponse(interaction, player, item, results);
   } else {
@@ -160,29 +150,6 @@ async function handleItemUseWithEffects(interaction: CommandInteraction, player:
       content: `❌ The ${item.name} cannot be used.`
     });
   }
-}
-
-function checkItemUsageRestrictions(player: any, itemDefinition: any): { allowed: boolean, reason?: string } {
-  // Import PlayerStatus enum here to avoid circular dependency issues
-  const { PlayerStatus } = require('../types/game');
-  
-  // Check Refreshed condition prevents Hydration items
-  if (player.conditions.includes(PlayerStatus.REFRESHED) && itemDefinition.subCategory === 'Hydration') {
-    return {
-      allowed: false,
-      reason: '❌ You cannot use hydration items while refreshed.'
-    };
-  }
-  
-  // Check Fed condition prevents Nutrition items
-  if (player.conditions.includes(PlayerStatus.FED) && itemDefinition.subCategory === 'Nutrition') {
-    return {
-      allowed: false,
-      reason: '❌ You cannot use nutrition items while fed.'
-    };
-  }
-  
-  return { allowed: true };
 }
 
 async function constructUseResponse(interaction: CommandInteraction, player: any, item: any, results: ItemUseResult[]) {

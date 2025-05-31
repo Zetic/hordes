@@ -29,31 +29,16 @@ module.exports = {
     try {
       const discordId = interaction.user.id;
       const buildingType = interaction.options.get('building')?.value as string;
-      console.log(`🏗️ Build command initiated by ${discordId} for ${buildingType}`);
 
       // Check if player can perform action
       const actionCheck = await gameEngine.canPerformAction(discordId);
       if (!actionCheck.canAct) {
-        console.log(`❌ Build blocked for ${discordId}: ${actionCheck.reason}`);
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('Cannot Build')
           .setDescription(actionCheck.reason || 'Unknown error');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
-        return;
-      }
-
-      // Check if we're in offline mode
-      const gameState = await gameEngine.getCurrentGameState();
-      const isOfflineMode = gameState?.cityId === 'offline-city';
-      
-      if (isOfflineMode) {
-        console.log(`⚠️ Build command attempted in offline mode by ${discordId}`);
-        await interaction.reply({
-          content: '⚠️ **Limited Functionality Mode**\n\nThe build command is not available in offline mode due to database connectivity issues. Please contact an administrator to restore full functionality.',
-          ephemeral: true
-        });
         return;
       }
 
@@ -107,14 +92,12 @@ module.exports = {
         return;
       }
 
-      // Defer reply since we're about to do database operations that might take time
-      await interaction.deferReply();
-
       // Spend action points
       const success = await playerService.spendActionPoints(discordId, building.cost);
       if (!success) {
-        await interaction.editReply({
-          content: '❌ Failed to spend action points. Please try again.'
+        await interaction.reply({
+          content: '❌ Failed to spend action points. Please try again.',
+          ephemeral: true
         });
         return;
       }
@@ -122,16 +105,18 @@ module.exports = {
       // Get city and add building
       const city = await cityService.getDefaultCity();
       if (!city) {
-        await interaction.editReply({
-          content: '❌ No city found. Please contact an administrator.'
+        await interaction.reply({
+          content: '❌ No city found. Please contact an administrator.',
+          ephemeral: true
         });
         return;
       }
 
       const newBuilding = await cityService.addBuilding(city.id, buildingType as BuildingType);
       if (!newBuilding) {
-        await interaction.editReply({
-          content: '❌ Failed to construct building. Please try again.'
+        await interaction.reply({
+          content: '❌ Failed to construct building. Please try again.',
+          ephemeral: true
         });
         return;
       }
@@ -217,22 +202,14 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed] });
 
     } catch (error) {
       console.error('Error in build command:', error);
-      
-      // Check if reply was already deferred
-      if (interaction.deferred) {
-        await interaction.editReply({
-          content: '❌ An error occurred while building.'
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while building.',
-          ephemeral: true
-        });
-      }
+      await interaction.reply({
+        content: '❌ An error occurred while building.',
+        ephemeral: true
+      });
     }
   }
 };
