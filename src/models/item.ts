@@ -156,52 +156,22 @@ export class ItemService {
       await this.db.pool.query('DELETE FROM items');
       console.log('🗑️ Cleared existing items');
 
-      // Try to create items from definitions first (new system)
-      const boxCutterDef = getItemDefinition('Box Cutter');
-      if (boxCutterDef) {
-        await this.createItemFromDefinition(boxCutterDef);
-        console.log('✅ Box Cutter created from definition');
-      } else {
-        // Fallback to legacy creation
-        await this.createItem(
-          'Box Cutter',
-          ItemType.MELEE,
-          'A sharp utility knife that can be used to kill zombies',
-          1,
-          'Items',
-          'Armoury',
-          60, // 60% kill chance
-          70, // 70% break chance
-          1,  // kills 1 zombie
-          'Broken' // becomes broken on break
-        );
-        console.log('✅ Box Cutter created (legacy)');
+      // Create all items from definitions
+      const { getAllItemDefinitions } = require('../data/items');
+      const allDefinitions = getAllItemDefinitions();
+      
+      let createdCount = 0;
+      for (const definition of allDefinitions) {
+        const created = await this.createItemFromDefinition(definition);
+        if (created) {
+          console.log(`✅ ${definition.name} created from definition`);
+          createdCount++;
+        } else {
+          console.error(`❌ Failed to create ${definition.name}`);
+        }
       }
 
-      // Create Broken Box Cutter
-      const brokenBoxCutterDef = getItemDefinition('Broken Box Cutter');
-      if (brokenBoxCutterDef) {
-        await this.createItemFromDefinition(brokenBoxCutterDef);
-        console.log('✅ Broken Box Cutter created from definition');
-      } else {
-        // Fallback to legacy creation
-        await this.createItem(
-          'Broken Box Cutter',
-          ItemType.MELEE,
-          'A broken utility knife with no use',
-          1,
-          'Items',
-          'Armoury',
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          true // broken
-        );
-        console.log('✅ Broken Box Cutter created (legacy)');
-      }
-
-      console.log('✅ Default items initialized');
+      console.log(`✅ ${createdCount} items initialized from definitions`);
     } catch (error) {
       console.error('Error initializing default items:', error);
     }
