@@ -68,7 +68,14 @@ export class ItemService {
       
       return this.mapRowToItem(result.rows[0]);
     } catch (error) {
-      console.error('Error creating item:', error);
+      // Check if the error is related to missing columns
+      if (error instanceof Error && error.message.includes('column') && error.message.includes('does not exist')) {
+        console.error('❌ Database schema error - missing columns in items table:', error.message);
+        console.error('This indicates the database schema may not have been properly initialized.');
+        console.error('Please ensure the database schema includes all required columns for items.');
+      } else {
+        console.error('Error creating item:', error);
+      }
       return null;
     }
   }
@@ -76,6 +83,12 @@ export class ItemService {
   // Initialize default items if they don't exist (Box Cutter only)
   async initializeDefaultItems(): Promise<void> {
     try {
+      // Verify database schema before attempting item creation
+      const isSchemaValid = await this.db.isItemsSchemaValid();
+      if (!isSchemaValid) {
+        throw new Error('Items table schema is not properly configured. Missing required columns.');
+      }
+
       // Remove all dependent records first to avoid foreign key constraint violations
       try {
         await this.db.pool.query('DELETE FROM area_inventories');

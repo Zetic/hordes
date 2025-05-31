@@ -154,6 +154,9 @@ export class DatabaseService {
         ADD COLUMN IF NOT EXISTS broken BOOLEAN DEFAULT false;
       `);
 
+      // Verify that all required item columns exist
+      await this.verifyItemsTableSchema();
+
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS inventory (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -232,6 +235,47 @@ export class DatabaseService {
       console.log('✅ Database schema initialized');
     } catch (error) {
       console.error('❌ Failed to initialize schema:', error);
+    }
+  }
+
+  // Verify that all required columns exist in the items table
+  private async verifyItemsTableSchema(): Promise<void> {
+    try {
+      const requiredColumns = [
+        'id', 'name', 'type', 'description', 'weight', 'created_at',
+        'category', 'sub_category', 'kill_chance', 'break_chance', 
+        'kill_count', 'on_break', 'broken'
+      ];
+
+      // Query to get all column names from the items table
+      const result = await this.pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'items' 
+        AND table_schema = 'public'
+      `);
+
+      const existingColumns = result.rows.map(row => row.column_name);
+      const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
+
+      if (missingColumns.length > 0) {
+        throw new Error(`Missing required columns in items table: ${missingColumns.join(', ')}`);
+      }
+
+      console.log('✅ Items table schema verification passed');
+    } catch (error) {
+      console.error('❌ Items table schema verification failed:', error);
+      throw error;
+    }
+  }
+
+  // Public method to check if the items table schema is properly configured
+  public async isItemsSchemaValid(): Promise<boolean> {
+    try {
+      await this.verifyItemsTableSchema();
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 
