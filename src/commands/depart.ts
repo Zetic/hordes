@@ -22,16 +22,31 @@ module.exports = {
   async execute(interaction: CommandInteraction) {
     try {
       const discordId = interaction.user.id;
+      console.log(`🚪 Depart command initiated by ${discordId}`);
 
       // Check if player can perform action
       const actionCheck = await gameEngine.canPerformAction(discordId);
       if (!actionCheck.canAct) {
+        console.log(`❌ Depart blocked for ${discordId}: ${actionCheck.reason}`);
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('Cannot Depart')
           .setDescription(actionCheck.reason || 'Unknown error');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
+      // Check if we're in offline mode
+      const gameState = await gameEngine.getCurrentGameState();
+      const isOfflineMode = gameState?.cityId === 'offline-city';
+      
+      if (isOfflineMode) {
+        console.log(`⚠️ Depart command attempted in offline mode by ${discordId}`);
+        await interaction.reply({
+          content: '⚠️ **Limited Functionality Mode**\n\nThe depart command is not available in offline mode due to database connectivity issues. Please contact an administrator to restore full functionality.',
+          ephemeral: true
+        });
         return;
       }
 
