@@ -7,6 +7,7 @@ import { ZombieService } from '../services/zombieService';
 import { ZoneContestService } from '../services/zoneContest';
 import { Client, EmbedBuilder } from 'discord.js';
 import cron from 'node-cron';
+import { safeJsonParse } from '../utils/jsonUtils';
 
 interface AttackResult {
   playerName: string;
@@ -90,8 +91,12 @@ export class GameEngine {
       let hordeSize = parseInt(process.env.INITIAL_HORDE_SIZE || '10');
       
       if (existingState) {
-        const parsed = JSON.parse(existingState);
-        hordeSize = parsed.hordeSize || hordeSize;
+        const parseResult = safeJsonParse(
+          existingState, 
+          { hordeSize }, 
+          'game state from Redis'
+        );
+        hordeSize = parseResult.data.hordeSize || hordeSize;
       }
 
       this.gameState = {
@@ -520,8 +525,15 @@ export class GameEngine {
       // Try to load from Redis
       const cached = await this.db.redis.get('game_state');
       if (cached) {
-        this.gameState = JSON.parse(cached);
-        return this.gameState;
+        const parseResult = safeJsonParse(
+          cached, 
+          null, 
+          'cached game state from Redis'
+        );
+        if (parseResult.success && parseResult.data) {
+          this.gameState = parseResult.data;
+          return this.gameState;
+        }
       }
       
       return null;

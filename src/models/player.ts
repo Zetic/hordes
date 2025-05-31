@@ -1,5 +1,6 @@
 import { Player, Location, GamePhase, PlayerStatus } from '../types/game';
 import { DatabaseService } from '../services/database';
+import { safeJsonParseArray } from '../utils/jsonUtils';
 
 export class PlayerService {
   private db: DatabaseService;
@@ -313,22 +314,11 @@ export class PlayerService {
 
   private mapRowToPlayer(row: any): Player {
     // Parse conditions from JSON string, default to empty array if null or invalid
-    let conditions: PlayerStatus[] = [];
-    try {
-      if (row.conditions) {
-        const parsed = JSON.parse(row.conditions);
-        // Ensure parsed result is an array
-        if (Array.isArray(parsed)) {
-          conditions = parsed;
-        } else {
-          // Handle case where a single condition was stored as a string
-          conditions = [parsed];
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to parse conditions for player:', row.discord_id, error);
-      conditions = [];
-    }
+    const conditions: PlayerStatus[] = safeJsonParseArray(
+      row.conditions, 
+      [], 
+      `player conditions for ${row.discord_id}`
+    ).data;
 
     return {
       id: row.id,
