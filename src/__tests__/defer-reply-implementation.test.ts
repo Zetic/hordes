@@ -48,44 +48,26 @@ describe('DeferReply Implementation', () => {
     expect(moveCommandContent).toContain('interaction.deferred');
   });
 
-  test('area command should defer reply before expensive operations', () => {
-    const areaCommand = require('../commands/area');
+  test('map command should defer reply before expensive operations', () => {
+    const mapCommand = require('../commands/map');
     
-    expect(areaCommand.data).toBeDefined();
-    expect(areaCommand.data.name).toBe('area');
-    expect(areaCommand.execute).toBeDefined();
-    expect(typeof areaCommand.execute).toBe('function');
+    expect(mapCommand.data).toBeDefined();
+    expect(mapCommand.data.name).toBe('map');
+    expect(mapCommand.execute).toBeDefined();
+    expect(typeof mapCommand.execute).toBe('function');
     
-    // Check that the area command file contains deferReply() call
+    // Check that the map command file contains deferReply() call
     const fs = require('fs');
     const path = require('path');
-    const areaCommandContent = fs.readFileSync(path.join(__dirname, '../commands/area.ts'), 'utf8');
+    const mapCommandContent = fs.readFileSync(path.join(__dirname, '../commands/map.ts'), 'utf8');
     
-    expect(areaCommandContent).toContain('await interaction.deferReply()');
-    expect(areaCommandContent).toContain('await interaction.editReply');
-    expect(areaCommandContent).toContain('interaction.deferred');
-  });
-
-  test('search command should defer reply before expensive operations', () => {
-    const searchCommand = require('../commands/search');
-    
-    expect(searchCommand.data).toBeDefined();
-    expect(searchCommand.data.name).toBe('search');
-    expect(searchCommand.execute).toBeDefined();
-    expect(typeof searchCommand.execute).toBe('function');
-    
-    // Check that the search command file contains deferReply() call
-    const fs = require('fs');
-    const path = require('path');
-    const searchCommandContent = fs.readFileSync(path.join(__dirname, '../commands/search.ts'), 'utf8');
-    
-    expect(searchCommandContent).toContain('await interaction.deferReply()');
-    expect(searchCommandContent).toContain('await interaction.editReply');
-    expect(searchCommandContent).toContain('interaction.deferred');
+    expect(mapCommandContent).toContain('await interaction.deferReply()');
+    expect(mapCommandContent).toContain('await interaction.editReply');
+    expect(mapCommandContent).toContain('interaction.deferred');
   });
 
   test('commands should have proper error handling for deferred and non-deferred states', () => {
-    const commandFiles = ['depart.ts', 'move.ts', 'area.ts', 'search.ts'];
+    const commandFiles = ['depart.ts', 'move.ts', 'map.ts'];
     const fs = require('fs');
     const path = require('path');
     

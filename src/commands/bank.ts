@@ -57,7 +57,7 @@ module.exports = {
   async execute(interaction: CommandInteraction) {
     try {
       const discordId = interaction.user.id;
-      const subcommand = interaction.options.data.find(option => option.type === 1)?.name;
+      const subcommand = interaction.options.data.find(option => option.type === 1)?.name || 'view';
 
       // Get player
       const player = await playerService.getPlayer(discordId);
@@ -97,6 +97,10 @@ module.exports = {
           break;
         case 'take':
           await handleTakeItem(interaction, player.id, city.id);
+          break;
+        default:
+          // Default to view when no subcommand is provided
+          await handleViewBank(interaction, city.id);
           break;
       }
 

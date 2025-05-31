@@ -14,7 +14,7 @@ const zombieService = ZombieService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('area')
+    .setName('map')
     .setDescription('Display the current area without moving or using energy'),
     
   async execute(interaction: CommandInteraction) {
@@ -121,8 +121,8 @@ module.exports = {
         {
           name: 'Available Actions',
           value: areaItems.length > 0 
-            ? '• Use `/search` to look for items (risky)\n• Use `/take <item>` to pick up items from the ground\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition'
-            : '• Use `/search` to look for items (risky)\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition',
+            ? '• Use `/take <item>` to pick up items from the ground\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition'
+            : '• Use `/move <direction>` to explore further\n• Use `/status` to check your condition',
           inline: false
         }
       ]);

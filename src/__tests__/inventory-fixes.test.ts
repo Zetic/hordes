@@ -70,18 +70,14 @@ describe('Inventory System Fixes', () => {
   });
 
   describe('Command Structure Validation', () => {
-    test('should verify search and take commands have proper structure', () => {
-      const searchCommand = require('../commands/search');
+    test('should verify take command has proper structure', () => {
       const takeCommand = require('../commands/take');
 
       // Verify commands have required properties
-      expect(searchCommand).toHaveProperty('data');
-      expect(searchCommand).toHaveProperty('execute');
       expect(takeCommand).toHaveProperty('data');
       expect(takeCommand).toHaveProperty('execute');
       
       // Verify they are functions
-      expect(typeof searchCommand.execute).toBe('function');
       expect(typeof takeCommand.execute).toBe('function');
     });
   });

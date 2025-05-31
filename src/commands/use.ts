@@ -79,13 +79,14 @@ module.exports = {
         return;
       }
 
-      // Try to use the new effect system first
+      // Use the new effect system only
       const itemDefinition = getItemDefinition(itemName);
       if (itemDefinition && itemDefinition.effects.length > 0) {
         await handleItemUseWithEffects(interaction, player, item, itemDefinition, inventoryItem.quantity);
       } else {
-        // Fall back to legacy system for backward compatibility
-        await handleLegacyItemUse(interaction, player, item, inventoryItem.quantity);
+        await interaction.editReply({
+          content: `❌ The ${item.name} cannot be used.`
+        });
       }
 
     } catch (error) {
@@ -151,25 +152,6 @@ async function handleItemUseWithEffects(interaction: CommandInteraction, player:
   }
 }
 
-async function handleLegacyItemUse(interaction: CommandInteraction, player: any, item: any, quantity: number) {
-  // Check if item can be used (has kill chance or other use properties)
-  if (!item.killChance && !item.killCount) {
-    await interaction.editReply({
-      content: `❌ The ${item.name} cannot be used.`
-    });
-    return;
-  }
-
-  // Handle Box Cutter usage (legacy)
-  if (item.name === 'Box Cutter') {
-    await handleBoxCutterUse(interaction, player, item, quantity);
-  } else {
-    await interaction.editReply({
-      content: `❌ Usage for ${item.name} is not implemented yet.`
-    });
-  }
-}
-
 async function constructUseResponse(interaction: CommandInteraction, player: any, item: any, results: ItemUseResult[]) {
   const embed = new EmbedBuilder()
     .setColor('#ff6b6b')
@@ -211,88 +193,4 @@ async function constructUseResponse(interaction: CommandInteraction, player: any
 
   embed.setTimestamp();
   await interaction.editReply({ embeds: [embed] });
-}
-
-async function handleBoxCutterUse(interaction: CommandInteraction, player: any, item: any, quantity: number) {
-  // Check if player has valid coordinates
-  if (player.x === null || player.x === undefined || player.y === null || player.y === undefined) {
-    await interaction.reply({
-      content: '❌ Invalid position. Please contact an administrator.',
-      ephemeral: true
-    });
-    return;
-  }
-
-  // Get zombies at current location
-  const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
-  if (!zombies || zombies.count <= 0) {
-    await interaction.reply({
-      content: '🔍 There are no zombies here to attack.',
-      ephemeral: true
-    });
-    return;
-  }
-
-  // Roll for kill chance (60%)
-  const killRoll = Math.random() * 100;
-  const killSuccess = killRoll <= (item.killChance || 0);
-
-  // Roll for break chance (70%)
-  const breakRoll = Math.random() * 100;
-  const itemBreaks = breakRoll <= (item.breakChance || 0);
-
-  const embed = new EmbedBuilder()
-    .setColor('#ff6b6b')
-    .setTitle('🔪 Box Cutter Attack')
-    .setDescription(`${player.name} attacks with their Box Cutter...`);
-
-  let resultMessage = '';
-
-  if (killSuccess) {
-    // Kill a zombie
-    await zombieService.removeZombiesAtLocation(player.x, player.y, 1);
-    resultMessage += '✅ You successfully killed a zombie!\n';
-  } else {
-    resultMessage += '❌ Your attack missed the zombie.\n';
-  }
-
-  if (itemBreaks) {
-    // Remove the box cutter and add broken box cutter
-    await inventoryService.removeItemFromInventory(player.id, item.id, 1);
-    
-    // Get or create broken box cutter
-    const brokenBoxCutter = await itemService.getItemByName('Broken Box Cutter');
-    if (brokenBoxCutter) {
-      await inventoryService.addItemToInventory(player.id, brokenBoxCutter.id, 1);
-      resultMessage += '💔 Your Box Cutter broke and is now useless!';
-    } else {
-      resultMessage += '💔 Your Box Cutter broke!';
-    }
-  } else {
-    resultMessage += '🔧 Your Box Cutter survived the attack.';
-  }
-
-  embed.addFields([
-    {
-      name: '📊 Results',
-      value: resultMessage,
-      inline: false
-    }
-  ]);
-
-  // Add current zombie count
-  const updatedZombies = await zombieService.getZombiesAtLocation(player.x, player.y);
-  const zombieCount = updatedZombies ? updatedZombies.count : 0;
-  
-  embed.addFields([
-    {
-      name: '🧟 Zombies Remaining',
-      value: `${zombieCount} zombies in this area`,
-      inline: false
-    }
-  ]);
-
-  embed.setTimestamp();
-
-  await interaction.reply({ embeds: [embed] });
 }
