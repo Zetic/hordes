@@ -92,12 +92,14 @@ module.exports = {
         return;
       }
 
+      // Defer reply since we're about to do database operations that might take time
+      await interaction.deferReply();
+
       // Spend action points
       const success = await playerService.spendActionPoints(discordId, building.cost);
       if (!success) {
-        await interaction.reply({
-          content: '❌ Failed to spend action points. Please try again.',
-          ephemeral: true
+        await interaction.editReply({
+          content: '❌ Failed to spend action points. Please try again.'
         });
         return;
       }
@@ -105,18 +107,16 @@ module.exports = {
       // Get city and add building
       const city = await cityService.getDefaultCity();
       if (!city) {
-        await interaction.reply({
-          content: '❌ No city found. Please contact an administrator.',
-          ephemeral: true
+        await interaction.editReply({
+          content: '❌ No city found. Please contact an administrator.'
         });
         return;
       }
 
       const newBuilding = await cityService.addBuilding(city.id, buildingType as BuildingType);
       if (!newBuilding) {
-        await interaction.reply({
-          content: '❌ Failed to construct building. Please try again.',
-          ephemeral: true
+        await interaction.editReply({
+          content: '❌ Failed to construct building. Please try again.'
         });
         return;
       }
@@ -202,14 +202,22 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {
       console.error('Error in build command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while building.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ An error occurred while building.'
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ An error occurred while building.',
+          ephemeral: true
+        });
+      }
     }
   }
 };

@@ -16,15 +16,17 @@ module.exports = {
     
   async execute(interaction: CommandInteraction) {
     try {
+      // Defer reply since we're about to do database operations that might take time
+      await interaction.deferReply();
+
       // Get city and game state
       const city = await cityService.getDefaultCity();
       const gameState = await gameEngine.getCurrentGameState();
       const alivePlayers = await playerService.getAlivePlayers();
 
       if (!city) {
-        await interaction.reply({
-          content: '❌ No city found. Please contact an administrator.',
-          ephemeral: true
+        await interaction.editReply({
+          content: '❌ No city found. Please contact an administrator.'
         });
         return;
       }
@@ -146,14 +148,22 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {
       console.error('Error in town command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while getting city information.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ An error occurred while getting city information.'
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ An error occurred while getting city information.',
+          ephemeral: true
+        });
+      }
     }
   }
 };
