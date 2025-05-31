@@ -5,6 +5,7 @@ import { WorldMapService } from '../services/worldMap';
 import { ItemService } from '../models/item';
 import { InventoryService } from '../models/inventory';
 import { AreaInventoryService } from '../models/areaInventory';
+import { DatabaseService } from '../services/database';
 import { Location, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
@@ -13,6 +14,7 @@ const worldMapService = WorldMapService.getInstance();
 const itemService = new ItemService();
 const inventoryService = new InventoryService();
 const areaInventoryService = new AreaInventoryService();
+const db = DatabaseService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,7 +32,9 @@ module.exports = {
           { name: 'revive', value: 'revive' },
           { name: 'respawn', value: 'respawn' },
           { name: 'return', value: 'return' },
-          { name: 'spawn', value: 'spawn' }
+          { name: 'spawn', value: 'spawn' },
+          { name: 'revealmap', value: 'revealmap' },
+          { name: 'fillbank', value: 'fillbank' }
         )
     )
     .addStringOption(option =>
@@ -109,6 +113,12 @@ module.exports = {
           break;
         case 'spawn':
           await handleSpawnCommand(interaction, targetUser, itemName);
+          break;
+        case 'revealmap':
+          await handleRevealMapCommand(interaction, targetUser);
+          break;
+        case 'fillbank':
+          await handleFillBankCommand(interaction);
           break;
         default:
           const embed = new EmbedBuilder()
@@ -453,6 +463,112 @@ async function handleSpawnCommand(interaction: CommandInteraction, targetUser: a
         ? `${item.name} has been added to ${targetUser.username}'s inventory.`
         : `Failed to spawn ${item.name}. Check the server logs for details.`
       )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+
+async function handleRevealMapCommand(interaction: CommandInteraction, targetUser: any) {
+  if (!targetUser) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ User Required')
+      .setDescription('Please specify a user to reveal the map for.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Get the target player
+  const player = await playerService.getPlayer(targetUser.id);
+  if (!player) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Not Found')
+      .setDescription(`${targetUser.username} is not registered. They need to use \`/join\` first.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  try {
+    // Reveal all tiles on the 7x7 map for the player
+    for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 7; y++) {
+        await worldMapService.markTileExplored(x, y);
+      }
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#4ecdc4')
+      .setTitle('🗺️ Map Revealed')
+      .setDescription(`The entire map has been revealed for ${targetUser.username}.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error) {
+    console.error('Error revealing map:', error);
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Reveal Failed')
+      .setDescription(`Failed to reveal map for ${targetUser.username}. Check the server logs for details.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+
+async function handleFillBankCommand(interaction: CommandInteraction) {
+  try {
+    // Get the default city
+    const cityService = new (require('../models/city')).CityService();
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ City Not Found')
+        .setDescription('Default city not found.');
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    // Get all items in the game
+    const query = 'SELECT * FROM items';
+    const result = await db.pool.query(query);
+    const allItems = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      description: row.description,
+      weight: row.weight
+    }));
+    
+    // Get bank service
+    const bankService = new (require('../models/bank')).BankService();
+    
+    let addedItems = 0;
+    for (const item of allItems) {
+      const success = await bankService.addItemToBank(city.id, item.id, 99);
+      if (success) {
+        addedItems++;
+      }
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#4ecdc4')
+      .setTitle('🏦 Bank Filled')
+      .setDescription(`Added 99 of ${addedItems} different items to the bank.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error) {
+    console.error('Error filling bank:', error);
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Fill Failed')
+      .setDescription('Failed to fill bank. Check the server logs for details.')
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });

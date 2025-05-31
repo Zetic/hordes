@@ -135,7 +135,7 @@ module.exports = {
         .addFields([
           {
             name: '🔍 Next Steps',
-            value: '• Use `/move <direction>` to explore (8 directions available)\n• Use `/search` to look for items at this location\n• Use `/return` to go back to the city\n• Use `/status` to check your condition',
+            value: '• Use `/move <direction>` to explore (8 directions available)\n• Use `/return` to go back to the city\n• Use `/status` to check your condition',
             inline: false
           }
         ])
