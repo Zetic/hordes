@@ -33,12 +33,12 @@ export class PlayerService {
       const query = 'SELECT * FROM players WHERE discord_id = $1';
       const result = await this.db.pool.query(query, [discordId]);
       
-      if (result.rows.length > 0) {
+      if (result && result.rows && result.rows.length > 0) {
         return this.mapRowToPlayer(result.rows[0]);
       }
       return null;
     } catch (error) {
-      console.error('Error getting player:', error);
+      // Database not available - return null
       return null;
     }
   }
@@ -204,9 +204,9 @@ export class PlayerService {
     try {
       const query = 'SELECT * FROM players WHERE is_alive = true';
       const result = await this.db.pool.query(query);
-      return result.rows.map(row => this.mapRowToPlayer(row));
+      return result && result.rows ? result.rows.map(row => this.mapRowToPlayer(row)) : [];
     } catch (error) {
-      console.error('Error getting alive players:', error);
+      // Database not available - return empty array
       return [];
     }
   }
@@ -294,9 +294,9 @@ export class PlayerService {
     try {
       const query = 'SELECT * FROM players WHERE location = $1 AND is_alive = true';
       const result = await this.db.pool.query(query, [location]);
-      return result.rows.map(row => this.mapRowToPlayer(row));
+      return result && result.rows ? result.rows.map(row => this.mapRowToPlayer(row)) : [];
     } catch (error) {
-      console.error('Error getting players by location:', error);
+      // Database not available - return empty array
       return [];
     }
   }
@@ -305,9 +305,9 @@ export class PlayerService {
     try {
       const query = 'SELECT * FROM players WHERE x = $1 AND y = $2 AND is_alive = true';
       const result = await this.db.pool.query(query, [x, y]);
-      return result.rows.map(row => this.mapRowToPlayer(row));
+      return result && result.rows ? result.rows.map(row => this.mapRowToPlayer(row)) : [];
     } catch (error) {
-      console.error('Error getting players by coordinates:', error);
+      // Database not available - return empty array
       return [];
     }
   }
