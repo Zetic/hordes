@@ -135,20 +135,40 @@ export class PlayerService {
 
   async resetAllPlayers(): Promise<boolean> {
     try {
-      const query = `
-        UPDATE players 
-        SET health = max_health,
-            action_points = max_action_points,
-            water = 10,
-            is_alive = true,
-            status = $1,
-            location = $2,
-            updated_at = NOW()
-        WHERE id IS NOT NULL
-      `;
-      await this.db.pool.query(query, [PlayerStatus.HEALTHY, Location.CITY]);
-      console.log('✅ All players reset to default state');
-      return true;
+      const client = await this.db.pool.connect();
+      
+      try {
+        await client.query('BEGIN');
+        
+        // Clear all player inventories
+        await client.query('DELETE FROM inventory');
+        console.log('✅ Cleared all player inventories');
+        
+        // Reset all players to default state with cleared coordinates
+        const resetQuery = `
+          UPDATE players 
+          SET health = max_health,
+              action_points = max_action_points,
+              water = 10,
+              is_alive = true,
+              status = $1,
+              location = $2,
+              x = NULL,
+              y = NULL,
+              updated_at = NOW()
+          WHERE id IS NOT NULL
+        `;
+        await client.query(resetQuery, [PlayerStatus.HEALTHY, Location.CITY]);
+        
+        await client.query('COMMIT');
+        console.log('✅ All players reset to default state with cleared inventories and coordinates');
+        return true;
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
     } catch (error) {
       console.error('Error resetting all players:', error);
       return false;

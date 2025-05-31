@@ -118,14 +118,14 @@ async function handleResetCommand(interaction: CommandInteraction) {
   
   // Also reset the map to initial state
   if (success) {
-    worldMapService.resetMap();
+    await worldMapService.resetMap();
   }
   
   const embed = new EmbedBuilder()
     .setColor(success ? '#4ecdc4' : '#ff6b6b')
     .setTitle(success ? '🔄 Complete World Reset' : '❌ Reset Failed')
     .setDescription(success 
-      ? 'The entire world has been reset to its initial state. All players have been revived and restored to healthy status with full action points. The map has been reset and players will need to re-explore areas. All player data remains but locations have been reset.'
+      ? 'The entire world has been reset to its initial state. All players have been revived and restored to healthy status with full action points. The map has been reset and players will need to re-explore areas. All player inventories have been cleared and coordinates reset. Zombies have been redistributed across the map.'
       : 'Failed to reset the world. Check the server logs for details.'
     )
     .setTimestamp();

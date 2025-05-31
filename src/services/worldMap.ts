@@ -1,6 +1,8 @@
 import { Location, Direction, GridCoordinate, WorldMapTile } from '../types/game';
 import { createCanvas, loadImage, Canvas, CanvasRenderingContext2D } from 'canvas';
 import * as path from 'path';
+import { DatabaseService } from './database';
+import { ZombieService, ThreatLevel } from './zombieService';
 
 export enum TileState {
   HIDDEN = 'hidden',
@@ -17,6 +19,8 @@ export interface POILocation {
 
 export class WorldMapService {
   private static instance: WorldMapService;
+  private db: DatabaseService;
+  private zombieService: ZombieService;
   
   // 13x13 grid with center at (6,6) = GATE/TOWN
   private readonly MAP_SIZE = 13;
@@ -50,42 +54,83 @@ export class WorldMapService {
   private exploredTiles: Set<string> = new Set();
 
   private constructor() {
-    this.initializeMap();
+    this.db = DatabaseService.getInstance();
+    this.zombieService = ZombieService.getInstance();
+    // Initialize synchronously - async part will be handled in getInstance
   }
 
   static getInstance(): WorldMapService {
     if (!WorldMapService.instance) {
       WorldMapService.instance = new WorldMapService();
+      // Initialize map asynchronously
+      WorldMapService.instance.initializeMap().catch(error => {
+        console.error('Error during map initialization:', error);
+      });
     }
     return WorldMapService.instance;
   }
 
   // Initialize the map with starting state
-  private initializeMap() {
-    // Clear any existing state
+  private async initializeMap() {
+    // Clear any existing in-memory state
     this.exploredTiles.clear();
     this.poiLocations = [];
     
-    // Add center town tile
-    this.exploredTiles.add(`${this.CENTER_X},${this.CENTER_Y}`);
+    // Load explored tiles from database
+    await this.loadExploredTilesFromDB();
     
-    // Add 8 surrounding explored tiles around center (starting area)
-    const surroundingOffsets = [
-      [-1, -1], [-1, 0], [-1, 1],
-      [0, -1],           [0, 1],
-      [1, -1],  [1, 0],  [1, 1]
-    ];
-    
-    surroundingOffsets.forEach(([dx, dy]) => {
-      const x = this.CENTER_X + dx;
-      const y = this.CENTER_Y + dy;
-      if (this.isValidCoordinate(x, y)) {
-        this.exploredTiles.add(`${x},${y}`);
-      }
-    });
+    // If no explored tiles in DB, initialize with default starting area
+    if (this.exploredTiles.size === 0) {
+      await this.initializeStartingArea();
+    }
     
     // Generate 7 POI locations during world gen
     this.generatePOILocations();
+  }
+  
+  // Load explored tiles from database
+  private async loadExploredTilesFromDB(): Promise<void> {
+    try {
+      const query = 'SELECT x, y FROM explored_tiles';
+      const result = await this.db.pool.query(query);
+      
+      for (const row of result.rows) {
+        this.exploredTiles.add(`${row.x},${row.y}`);
+      }
+      
+      if (result.rows.length > 0) {
+        console.log(`📍 Loaded ${result.rows.length} explored tiles from database`);
+      }
+    } catch (error) {
+      console.error('Error loading explored tiles from database:', error);
+    }
+  }
+  
+  // Initialize starting explored area
+  private async initializeStartingArea(): Promise<void> {
+    try {
+      // Add center town tile
+      await this.markTileExploredPersistent(this.CENTER_X, this.CENTER_Y);
+      
+      // Add 8 surrounding explored tiles around center (starting area)
+      const surroundingOffsets = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+      ];
+      
+      for (const [dx, dy] of surroundingOffsets) {
+        const x = this.CENTER_X + dx;
+        const y = this.CENTER_Y + dy;
+        if (this.isValidCoordinate(x, y)) {
+          await this.markTileExploredPersistent(x, y);
+        }
+      }
+      
+      console.log('✅ Initialized starting explored area');
+    } catch (error) {
+      console.error('Error initializing starting area:', error);
+    }
   }
   
   // Generate 7 POI locations for the world
@@ -223,12 +268,53 @@ export class WorldMapService {
   markTileExplored(x: number, y: number): void {
     if (this.isValidCoordinate(x, y)) {
       this.exploredTiles.add(`${x},${y}`);
+      // Also persist to database (fire and forget)
+      this.markTileExploredPersistent(x, y).catch(error => {
+        console.error('Failed to persist explored tile:', error);
+      });
+    }
+  }
+  
+  // Mark a tile as explored with database persistence
+  private async markTileExploredPersistent(x: number, y: number): Promise<void> {
+    try {
+      this.exploredTiles.add(`${x},${y}`);
+      
+      const query = `
+        INSERT INTO explored_tiles (x, y) 
+        VALUES ($1, $2) 
+        ON CONFLICT (x, y) DO NOTHING
+      `;
+      await this.db.pool.query(query, [x, y]);
+    } catch (error) {
+      console.error('Error persisting explored tile:', error);
     }
   }
   
   // Reset the map to initial state
-  resetMap(): void {
-    this.initializeMap();
+  async resetMap(): Promise<void> {
+    try {
+      // Clear explored tiles from database
+      await this.db.pool.query('DELETE FROM explored_tiles');
+      console.log('✅ Cleared explored tiles from database');
+      
+      // Clear zombies from database
+      await this.zombieService.clearAllZombies();
+      
+      // Reinitialize the map
+      await this.initializeMap();
+      
+      // Initialize zombies for new world
+      await this.zombieService.initializeWorldZombies();
+      
+      console.log('✅ Map reset complete');
+    } catch (error) {
+      console.error('Error resetting map:', error);
+      // Fallback to in-memory reset only
+      this.exploredTiles.clear();
+      this.poiLocations = [];
+      this.generatePOILocations();
+    }
   }
 
   // Get gate coordinates
@@ -322,9 +408,19 @@ export class WorldMapService {
           const baseTileImage = await loadImage(baseTilePath);
           ctx.drawImage(baseTileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
           
-          // Layer 2: Threat level (currently unused, but ready for future implementation)
-          // This would overlay threat tiles based on zombie count in the area
-          // For now, we skip this layer
+          // Layer 2: Threat level overlay based on zombie count
+          try {
+            const threatLevel = await this.zombieService.getThreatLevelAtLocation(x, y);
+            if (threatLevel !== ThreatLevel.NONE) {
+              const threatTileFilename = this.THREAT_TILES[threatLevel];
+              const threatTilePath = path.join(this.TILES_DIR, threatTileFilename);
+              const threatTileImage = await loadImage(threatTilePath);
+              ctx.drawImage(threatTileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+            }
+          } catch (error) {
+            // If threat tiles fail to load, continue without them
+            console.warn(`Failed to load threat tile for coordinate (${x}, ${y}):`, error);
+          }
           
           // Layer 3: Player markers
           if (playerService) {

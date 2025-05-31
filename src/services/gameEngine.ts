@@ -3,6 +3,7 @@ import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { ItemService } from '../models/item';
 import { DatabaseService } from '../services/database';
+import { ZombieService } from '../services/zombieService';
 import { Client, EmbedBuilder } from 'discord.js';
 import cron from 'node-cron';
 
@@ -31,6 +32,7 @@ export class GameEngine {
   private playerService: PlayerService;
   private cityService: CityService;
   private itemService: ItemService;
+  private zombieService: ZombieService;
   private db: DatabaseService;
   private gameState: GameState | null = null;
   private discordClient: Client | null = null;
@@ -39,6 +41,7 @@ export class GameEngine {
     this.playerService = new PlayerService();
     this.cityService = new CityService();
     this.itemService = new ItemService();
+    this.zombieService = ZombieService.getInstance();
     this.db = DatabaseService.getInstance();
     this.initializeGameEngine();
   }
@@ -335,6 +338,9 @@ export class GameEngine {
       
       // Update city population
       await this.cityService.updateCityPopulation(city.id);
+      
+      // Process zombie spread after horde attack
+      await this.zombieService.processHordeSpread();
       
     } catch (error) {
       console.error('Error processing horde attack:', error);
