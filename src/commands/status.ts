@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { WorldMapService } from '../services/worldMap';
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, Location, isTemporaryCondition } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -99,7 +99,9 @@ module.exports = {
           },
           ...(player.isAlive ? [{ 
             name: '🔄 Conditions', 
-            value: `${statusEmojis[player.status]} ${statusTexts[player.status]}`, 
+            value: player.conditions.length > 0 
+              ? player.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
+              : `${statusEmojis[player.status]} ${statusTexts[player.status]}`, 
             inline: true 
           }] : []),
           { 

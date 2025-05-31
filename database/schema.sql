@@ -167,6 +167,11 @@ BEGIN
         ALTER TABLE cities ADD COLUMN gate_open BOOLEAN DEFAULT true;
     END IF;
 
+    -- Add conditions field for multiple temporary conditions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'conditions') THEN
+        ALTER TABLE players ADD COLUMN conditions TEXT DEFAULT '[]';
+    END IF;
+
     -- Add new item properties for object system
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'category') THEN
         ALTER TABLE items ADD COLUMN category VARCHAR(50);

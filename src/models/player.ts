@@ -74,6 +74,66 @@ export class PlayerService {
     }
   }
 
+  async addPlayerCondition(discordId: string, condition: PlayerStatus): Promise<boolean> {
+    try {
+      // Get current conditions
+      const player = await this.getPlayer(discordId);
+      if (!player) return false;
+
+      // Add condition if not already present
+      if (!player.conditions.includes(condition)) {
+        const newConditions = [...player.conditions, condition];
+        const query = `
+          UPDATE players 
+          SET conditions = $1, updated_at = NOW()
+          WHERE discord_id = $2
+        `;
+        const result = await this.db.pool.query(query, [JSON.stringify(newConditions), discordId]);
+        return (result.rowCount || 0) > 0;
+      }
+      return true; // Already has condition
+    } catch (error) {
+      console.error('Error adding player condition:', error);
+      return false;
+    }
+  }
+
+  async removePlayerCondition(discordId: string, condition: PlayerStatus): Promise<boolean> {
+    try {
+      // Get current conditions
+      const player = await this.getPlayer(discordId);
+      if (!player) return false;
+
+      // Remove condition if present
+      const newConditions = player.conditions.filter(c => c !== condition);
+      const query = `
+        UPDATE players 
+        SET conditions = $1, updated_at = NOW()
+        WHERE discord_id = $2
+      `;
+      const result = await this.db.pool.query(query, [JSON.stringify(newConditions), discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error removing player condition:', error);
+      return false;
+    }
+  }
+
+  async updatePlayerConditions(discordId: string, conditions: PlayerStatus[]): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE players 
+        SET conditions = $1, updated_at = NOW()
+        WHERE discord_id = $2
+      `;
+      const result = await this.db.pool.query(query, [JSON.stringify(conditions), discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error updating player conditions:', error);
+      return false;
+    }
+  }
+
   async updatePlayerLocation(discordId: string, location: Location, x?: number, y?: number): Promise<boolean> {
     try {
       const query = `
@@ -250,6 +310,17 @@ export class PlayerService {
   }
 
   private mapRowToPlayer(row: any): Player {
+    // Parse conditions from JSON string, default to empty array if null or invalid
+    let conditions: PlayerStatus[] = [];
+    try {
+      if (row.conditions) {
+        conditions = JSON.parse(row.conditions);
+      }
+    } catch (error) {
+      console.warn('Failed to parse conditions for player:', row.discord_id, error);
+      conditions = [];
+    }
+
     return {
       id: row.id,
       discordId: row.discord_id,
@@ -257,6 +328,7 @@ export class PlayerService {
       health: row.health,
       maxHealth: row.max_health,
       status: row.status as PlayerStatus,
+      conditions: conditions,
       actionPoints: row.action_points,
       maxActionPoints: row.max_action_points,
       water: row.water,
