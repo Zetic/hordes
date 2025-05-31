@@ -440,18 +440,20 @@ export class WorldMapService {
           const baseTileImage = await loadImage(baseTilePath);
           ctx.drawImage(baseTileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
           
-          // Layer 2: Threat level overlay based on zombie count
-          try {
-            const threatLevel = await this.zombieService.getThreatLevelAtLocation(x, y);
-            if (threatLevel !== ThreatLevel.NONE) {
-              const threatTileFilename = this.THREAT_TILES[threatLevel];
-              const threatTilePath = path.join(this.TILES_DIR, threatTileFilename);
-              const threatTileImage = await loadImage(threatTilePath);
-              ctx.drawImage(threatTileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+          // Layer 2: Threat level overlay based on zombie count (only for explored tiles)
+          if (tileState !== TileState.HIDDEN) {
+            try {
+              const threatLevel = await this.zombieService.getThreatLevelAtLocation(x, y);
+              if (threatLevel !== ThreatLevel.NONE) {
+                const threatTileFilename = this.THREAT_TILES[threatLevel];
+                const threatTilePath = path.join(this.TILES_DIR, threatTileFilename);
+                const threatTileImage = await loadImage(threatTilePath);
+                ctx.drawImage(threatTileImage, destX, destY, this.TILE_SIZE, this.TILE_SIZE);
+              }
+            } catch (error) {
+              // If threat tiles fail to load, continue without them
+              console.warn(`Failed to load threat tile for coordinate (${x}, ${y}):`, error);
             }
-          } catch (error) {
-            // If threat tiles fail to load, continue without them
-            console.warn(`Failed to load threat tile for coordinate (${x}, ${y}):`, error);
           }
           
           // Layer 3: Player markers

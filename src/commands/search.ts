@@ -3,6 +3,7 @@ import { PlayerService } from '../models/player';
 import { InventoryService } from '../models/inventory';
 import { ItemService } from '../models/item';
 import { AreaInventoryService } from '../models/areaInventory';
+import { ZoneContestService } from '../services/zoneContest';
 import { Location, PlayerStatus, ItemType } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
@@ -11,6 +12,7 @@ const playerService = new PlayerService();
 const inventoryService = new InventoryService();
 const itemService = new ItemService();
 const areaInventoryService = new AreaInventoryService();
+const zoneContestService = ZoneContestService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -57,6 +59,18 @@ module.exports = {
           ephemeral: true
         });
         return;
+      }
+
+      // Check if player is trapped in a contested zone
+      if (player.x !== null && player.x !== undefined && player.y !== null && player.y !== undefined) {
+        const isTrapped = await zoneContestService.arePlayersTrapped(player.x, player.y);
+        if (isTrapped) {
+          await interaction.reply({
+            content: '❌ You are trapped in a contested zone and cannot perform mobility-based actions! Wait for the zone to become uncontested.',
+            ephemeral: true
+          });
+          return;
+        }
       }
 
       // Defer reply since we're about to do complex search processing

@@ -4,6 +4,7 @@ import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
 import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
+import { ZoneContestService } from '../services/zoneContest';
 import { Location, Direction, PlayerStatus } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
@@ -13,6 +14,7 @@ const gameEngine = GameEngine.getInstance();
 const inventoryService = new InventoryService();
 const areaInventoryService = new AreaInventoryService();
 const worldMapService = WorldMapService.getInstance();
+const zoneContestService = ZoneContestService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -89,6 +91,25 @@ module.exports = {
         return;
       }
 
+      // Check zone contest status - can player leave current zone?
+      const movementCheck = await zoneContestService.canPlayerMoveOut(player.x, player.y);
+      if (!movementCheck.canMove) {
+        const embed = new EmbedBuilder()
+          .setColor('#ff6b6b')
+          .setTitle('🚫 Zone Contested')
+          .setDescription(movementCheck.reason || 'You cannot leave this zone.')
+          .addFields([
+            {
+              name: '⚔️ Zone Status',
+              value: 'This zone is contested by zombies. You must wait for the zone to become uncontested before you can move.',
+              inline: false
+            }
+          ]);
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
       // Defer reply since we're about to do expensive operations (map generation and movement processing)
       await interaction.deferReply();
 
@@ -126,6 +147,10 @@ module.exports = {
 
       // Update player position
       await playerService.updatePlayerLocation(discordId, newLocation, newCoords.x, newCoords.y);
+
+      // Update zone contest status for both zones
+      await zoneContestService.onPlayerLeaveZone(currentX, currentY); // Player left old zone
+      await zoneContestService.onPlayerEnterZone(newCoords.x, newCoords.y); // Player entered new zone
 
       // Get items in the new area
       const areaItems = await areaInventoryService.getAreaInventory(newLocation, newCoords.x, newCoords.y);

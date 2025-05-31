@@ -4,6 +4,7 @@ import { CityService } from '../models/city';
 import { ItemService } from '../models/item';
 import { DatabaseService } from '../services/database';
 import { ZombieService } from '../services/zombieService';
+import { ZoneContestService } from '../services/zoneContest';
 import { Client, EmbedBuilder } from 'discord.js';
 import cron from 'node-cron';
 
@@ -33,6 +34,7 @@ export class GameEngine {
   private cityService: CityService;
   private itemService: ItemService;
   private zombieService: ZombieService;
+  private zoneContestService: ZoneContestService;
   private db: DatabaseService;
   private gameState: GameState | null = null;
   private discordClient: Client | null = null;
@@ -42,6 +44,7 @@ export class GameEngine {
     this.cityService = new CityService();
     this.itemService = new ItemService();
     this.zombieService = ZombieService.getInstance();
+    this.zoneContestService = ZoneContestService.getInstance();
     this.db = DatabaseService.getInstance();
     this.initializeGameEngine();
   }
@@ -124,7 +127,13 @@ export class GameEngine {
       await this.transitionToHordeMode();
     });
 
+    // Schedule zone contest timer processing every 5 minutes
+    cron.schedule('*/5 * * * *', async () => {
+      await this.processZoneContestTimers();
+    });
+
     console.log(`⏰ Phase transition cron jobs scheduled: Game Mode at ${gameStartTime}, Horde Mode at ${hordeStartTime}`);
+    console.log(`⏰ Zone contest timer processing scheduled every 5 minutes`);
   }
 
   private async transitionToPlayMode(): Promise<void> {
@@ -651,6 +660,14 @@ export class GameEngine {
     } catch (error) {
       console.error('Error refreshing player action points:', error);
       return false;
+    }
+  }
+
+  private async processZoneContestTimers(): Promise<void> {
+    try {
+      await this.zoneContestService.processExpiredTemporaryZones();
+    } catch (error) {
+      console.error('Error processing zone contest timers:', error);
     }
   }
 }

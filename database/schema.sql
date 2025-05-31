@@ -102,15 +102,33 @@ CREATE TABLE IF NOT EXISTS zombies (
   UNIQUE(x, y)
 );
 
+-- Zone contests table (for zone contesting system)
+CREATE TABLE IF NOT EXISTS zone_contests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  x INTEGER NOT NULL,
+  y INTEGER NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'uncontested', -- 'uncontested', 'contested', 'temporarily_uncontested'
+  human_cp INTEGER NOT NULL DEFAULT 0, -- Human control points
+  zombie_cp INTEGER NOT NULL DEFAULT 0, -- Zombie control points
+  temp_uncontested_until TIMESTAMP NULL, -- For 30-minute timer in temporarily uncontested status
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(x, y)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_players_discord_id ON players(discord_id);
 CREATE INDEX IF NOT EXISTS idx_players_alive ON players(is_alive);
+CREATE INDEX IF NOT EXISTS idx_players_coordinates ON players(x, y);
 CREATE INDEX IF NOT EXISTS idx_inventory_player_id ON inventory(player_id);
 CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id);
 CREATE INDEX IF NOT EXISTS idx_area_inventories_location ON area_inventories(location);
 CREATE INDEX IF NOT EXISTS idx_bank_inventories_city_id ON bank_inventories(city_id);
 CREATE INDEX IF NOT EXISTS idx_explored_tiles_coords ON explored_tiles(x, y);
 CREATE INDEX IF NOT EXISTS idx_zombies_coords ON zombies(x, y);
+CREATE INDEX IF NOT EXISTS idx_zone_contests_coords ON zone_contests(x, y);
+CREATE INDEX IF NOT EXISTS idx_zone_contests_status ON zone_contests(status);
+CREATE INDEX IF NOT EXISTS idx_zone_contests_temp_timer ON zone_contests(temp_uncontested_until);
 
 -- Insert default city if it doesn't exist
 INSERT INTO cities (name, day, game_phase)
