@@ -63,6 +63,8 @@ export class GameEngine {
 
   private async initializeGameEngine(): Promise<void> {
     try {
+      console.log('🎮 Initializing Game Engine...');
+      
       // Initialize default items
       await this.itemService.initializeDefaultItems();
       
@@ -72,23 +74,57 @@ export class GameEngine {
       // Schedule game phase transitions
       this.schedulePhaseTransitions();
       
-      console.log('🎮 Game Engine initialized');
+      console.log('🎮 Game Engine initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize game engine:', error);
+      console.log('💡 Game engine will run in limited mode without database connectivity');
+      
+      // Create a minimal fallback game state for offline mode
+      this.createOfflineGameState();
     }
+  }
+
+  private createOfflineGameState(): void {
+    console.log('🔄 Creating offline fallback game state...');
+    
+    // Create a basic game state that doesn't require database
+    this.gameState = {
+      cityId: 'offline-city',
+      currentDay: 1,
+      currentPhase: GamePhase.PLAY_MODE,
+      lastHordeAttack: new Date(),
+      nextPhaseChange: this.calculateNextPhaseChange(GamePhase.PLAY_MODE),
+      hordeSize: parseInt(process.env.INITIAL_HORDE_SIZE || '10')
+    };
+    
+    console.log('✅ Offline game state created - limited functionality available');
   }
 
   private async loadGameState(): Promise<void> {
     try {
+      console.log('🔄 Loading game state...');
+      
       // Get default city
       const city = await this.cityService.getDefaultCity();
       if (!city) {
-        throw new Error('No city found');
+        console.error('❌ Failed to load game state: No city found in database');
+        console.log('💡 This usually means the database is not available or not properly initialized');
+        throw new Error('No city found - database may be unavailable');
       }
 
+      console.log('✅ City found, loading Redis state...');
+
       // Get existing horde size from Redis or initialize
-      const existingState = await this.db.redis.get('game_state');
+      let existingState;
       let hordeSize = parseInt(process.env.INITIAL_HORDE_SIZE || '10');
+      
+      try {
+        existingState = await this.db.redis.get('game_state');
+        console.log('✅ Redis connection successful');
+      } catch (redisError) {
+        const errorMessage = redisError instanceof Error ? redisError.message : 'Unknown Redis error';
+        console.warn('⚠️ Redis unavailable, using default values:', errorMessage);
+      }
       
       if (existingState) {
         const parseResult = safeJsonParse(
@@ -97,6 +133,9 @@ export class GameEngine {
           'game state from Redis'
         );
         hordeSize = parseResult.data.hordeSize || hordeSize;
+        console.log('📊 Loaded existing game state from Redis');
+      } else {
+        console.log('📊 Using default game state values');
       }
 
       this.gameState = {
@@ -109,9 +148,20 @@ export class GameEngine {
       };
 
       // Store in Redis for quick access
-      await this.db.redis.set('game_state', JSON.stringify(this.gameState));
+      try {
+        await this.db.redis.set('game_state', JSON.stringify(this.gameState));
+        console.log('✅ Game state saved to Redis');
+      } catch (redisError) {
+        const errorMessage = redisError instanceof Error ? redisError.message : 'Unknown Redis error';
+        console.warn('⚠️ Failed to save game state to Redis:', errorMessage);
+      }
+      
+      console.log('🎮 Game state loaded successfully');
     } catch (error) {
-      console.error('Error loading game state:', error);
+      console.error('❌ Critical error loading game state:', error);
+      console.log('💡 Will try to create offline fallback state');
+      // Don't throw - let initializeGameEngine handle the fallback
+      throw error;
     }
   }
 
@@ -522,6 +572,8 @@ export class GameEngine {
         return this.gameState;
       }
       
+      console.log('🔍 Game state not in memory, trying Redis...');
+      
       // Try to load from Redis
       const cached = await this.db.redis.get('game_state');
       if (cached) {
@@ -532,13 +584,21 @@ export class GameEngine {
         );
         if (parseResult.success && parseResult.data) {
           this.gameState = parseResult.data;
+          console.log('✅ Game state loaded from Redis cache');
           return this.gameState;
+        } else {
+          console.warn('⚠️ Invalid game state data in Redis cache');
         }
+      } else {
+        console.log('📭 No cached game state found in Redis');
       }
       
+      console.warn('❌ Game state not available - commands requiring game state will fail');
+      console.log('💡 This usually means the database/Redis is not properly initialized');
       return null;
     } catch (error) {
-      console.error('Error getting game state:', error);
+      console.error('❌ Error getting game state:', error);
+      console.log('💡 Check database and Redis connectivity');
       return null;
     }
   }
@@ -547,7 +607,16 @@ export class GameEngine {
     try {
       const gameState = await this.getCurrentGameState();
       if (!gameState) {
-        return { canAct: false, reason: 'Game not initialized' };
+        console.log(`❌ Action blocked for ${discordId}: Game state not initialized`);
+        console.log('💡 This is usually caused by database connectivity issues');
+        return { canAct: false, reason: 'Game not initialized - check server logs for database connectivity issues' };
+      }
+
+      // Check if we're in offline mode
+      const isOfflineMode = gameState.cityId === 'offline-city';
+      if (isOfflineMode) {
+        console.log(`⚠️ Action allowed for ${discordId} in offline mode (limited functionality)`);
+        return { canAct: true };
       }
 
       if (gameState.currentPhase === GamePhase.HORDE_MODE) {
@@ -569,25 +638,32 @@ export class GameEngine {
 
       return { canAct: true };
     } catch (error) {
-      console.error('Error checking action permission:', error);
-      return { canAct: false, reason: 'Error checking permissions' };
+      console.error('❌ Error checking action permission for', discordId, ':', error);
+      return { canAct: false, reason: 'Error checking permissions - check server logs' };
     }
   }
 
   // Admin methods for testing purposes
   public async resetTown(): Promise<boolean> {
     try {
+      console.log('🔄 Starting town reset process...');
+      
       if (!this.gameState) {
-        console.error('Game state not initialized');
+        console.error('❌ Game state not initialized - cannot reset town');
+        console.log('💡 This usually means the database is not available');
+        console.log('💡 Try checking database connectivity and restart the bot');
         return false;
       }
 
+      console.log('🧹 Resetting all players...');
       // Reset all players to default state
       await this.playerService.resetAllPlayers();
       
+      console.log('🏙️ Resetting city state...');
       // Reset city to default state
       await this.cityService.resetCity(this.gameState.cityId);
       
+      console.log('🎮 Resetting game state...');
       // Reset game state to day 1, play mode, and initial horde size
       this.gameState.currentDay = 1;
       this.gameState.currentPhase = GamePhase.PLAY_MODE;
@@ -595,12 +671,19 @@ export class GameEngine {
       this.gameState.hordeSize = parseInt(process.env.INITIAL_HORDE_SIZE || '10');
       this.gameState.nextPhaseChange = this.calculateNextPhaseChange(GamePhase.PLAY_MODE);
       
-      await this.db.redis.set('game_state', JSON.stringify(this.gameState));
+      try {
+        await this.db.redis.set('game_state', JSON.stringify(this.gameState));
+        console.log('✅ Game state saved to Redis');
+      } catch (redisError) {
+        const errorMessage = redisError instanceof Error ? redisError.message : 'Unknown Redis error';
+        console.warn('⚠️ Failed to save reset state to Redis:', errorMessage);
+      }
       
-      console.log('🔄 Town has been reset to initial state');
+      console.log('✅ Town has been reset to initial state');
       return true;
     } catch (error) {
-      console.error('Error resetting town:', error);
+      console.error('❌ Error resetting town:', error);
+      console.log('💡 Check database connectivity and permissions');
       return false;
     }
   }

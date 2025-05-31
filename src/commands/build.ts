@@ -29,16 +29,31 @@ module.exports = {
     try {
       const discordId = interaction.user.id;
       const buildingType = interaction.options.get('building')?.value as string;
+      console.log(`🏗️ Build command initiated by ${discordId} for ${buildingType}`);
 
       // Check if player can perform action
       const actionCheck = await gameEngine.canPerformAction(discordId);
       if (!actionCheck.canAct) {
+        console.log(`❌ Build blocked for ${discordId}: ${actionCheck.reason}`);
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('Cannot Build')
           .setDescription(actionCheck.reason || 'Unknown error');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
+      // Check if we're in offline mode
+      const gameState = await gameEngine.getCurrentGameState();
+      const isOfflineMode = gameState?.cityId === 'offline-city';
+      
+      if (isOfflineMode) {
+        console.log(`⚠️ Build command attempted in offline mode by ${discordId}`);
+        await interaction.reply({
+          content: '⚠️ **Limited Functionality Mode**\n\nThe build command is not available in offline mode due to database connectivity issues. Please contact an administrator to restore full functionality.',
+          ephemeral: true
+        });
         return;
       }
 
