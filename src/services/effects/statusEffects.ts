@@ -9,7 +9,7 @@ export async function handleRestoreAPEffect(effect: ItemEffect, context: ItemUse
     const apToRestore = effect.value || 0;
     
     // Check if player has dehydrated condition - special case for Water Ration
-    if (context.player.conditions.includes(PlayerStatus.DEHYDRATED)) {
+    if (context.player.conditions && context.player.conditions.includes(PlayerStatus.DEHYDRATED)) {
       // For dehydrated players using water ration: 0 AP, remove dehydrated and add thirsty
       await playerService.removePlayerCondition(context.player.discordId, PlayerStatus.DEHYDRATED);
       await playerService.addPlayerCondition(context.player.discordId, PlayerStatus.THIRSTY);
@@ -64,7 +64,7 @@ export async function handleAddStatusEffect(effect: ItemEffect, context: ItemUse
       await playerService.updatePlayerStatus(context.player.discordId, statusToAdd);
     } else if (isTemporaryCondition(statusToAdd)) {
       // Handle temporary condition - can have multiple
-      if (context.player.conditions.includes(statusToAdd)) {
+      if (context.player.conditions && context.player.conditions.includes(statusToAdd)) {
         return {
           success: true,
           message: `You already have the ${statusToAdd} condition.`,
@@ -138,7 +138,7 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
       };
     } else if (isTemporaryCondition(statusToRemove)) {
       // Handle temporary condition removal
-      if (!context.player.conditions.includes(statusToRemove)) {
+      if (!context.player.conditions || !context.player.conditions.includes(statusToRemove)) {
         // Silent success if condition isn't present
         return {
           success: true,

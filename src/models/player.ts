@@ -229,6 +229,7 @@ export class PlayerService {
               water = 10,
               is_alive = true,
               status = $1,
+              conditions = '[]',
               location = $2,
               x = NULL,
               y = NULL,
@@ -275,6 +276,7 @@ export class PlayerService {
         SET health = max_health,
             is_alive = true,
             status = $1,
+            conditions = '[]',
             location = $2,
             updated_at = NOW()
         WHERE discord_id = $3

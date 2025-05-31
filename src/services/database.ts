@@ -57,6 +57,7 @@ export class DatabaseService {
           health INTEGER DEFAULT 100,
           max_health INTEGER DEFAULT 100,
           status VARCHAR(50) DEFAULT 'healthy',
+          conditions JSONB DEFAULT '[]',
           action_points INTEGER DEFAULT 10,
           max_action_points INTEGER DEFAULT 10,
           water INTEGER DEFAULT 3,
@@ -74,6 +75,12 @@ export class DatabaseService {
       await this.pool.query(`
         ALTER TABLE players 
         ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'healthy';
+      `);
+
+      // Add conditions column to existing tables if it doesn't exist
+      await this.pool.query(`
+        ALTER TABLE players 
+        ADD COLUMN IF NOT EXISTS conditions JSONB DEFAULT '[]';
       `);
 
       // Add coordinate columns to existing tables if they don't exist
