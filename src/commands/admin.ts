@@ -115,7 +115,7 @@ module.exports = {
           await handleSpawnCommand(interaction, targetUser, itemName);
           break;
         case 'revealmap':
-          await handleRevealMapCommand(interaction, targetUser);
+          await handleRevealMapCommand(interaction);
           break;
         case 'fillbank':
           await handleFillBankCommand(interaction);
@@ -469,33 +469,14 @@ async function handleSpawnCommand(interaction: CommandInteraction, targetUser: a
   }
 }
 
-async function handleRevealMapCommand(interaction: CommandInteraction, targetUser: any) {
-  if (!targetUser) {
-    const embed = new EmbedBuilder()
-      .setColor('#ff6b6b')
-      .setTitle('❌ User Required')
-      .setDescription('Please specify a user to reveal the map for.');
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-    return;
-  }
-
-  // Get the target player
-  const player = await playerService.getPlayer(targetUser.id);
-  if (!player) {
-    const embed = new EmbedBuilder()
-      .setColor('#ff6b6b')
-      .setTitle('❌ Player Not Found')
-      .setDescription(`${targetUser.username} is not registered. They need to use \`/join\` first.`);
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-    return;
-  }
-
+async function handleRevealMapCommand(interaction: CommandInteraction) {
   try {
-    // Reveal all tiles on the 7x7 map for the player
-    for (let x = 0; x < 7; x++) {
-      for (let y = 0; y < 7; y++) {
+    // Get map size from WorldMapService
+    const mapSize = worldMapService.getMapSize();
+    
+    // Reveal all tiles on the entire map (map revelation is shared across all players)
+    for (let x = 0; x < mapSize; x++) {
+      for (let y = 0; y < mapSize; y++) {
         await worldMapService.markTileExplored(x, y);
       }
     }
@@ -503,7 +484,7 @@ async function handleRevealMapCommand(interaction: CommandInteraction, targetUse
     const embed = new EmbedBuilder()
       .setColor('#4ecdc4')
       .setTitle('🗺️ Map Revealed')
-      .setDescription(`The entire map has been revealed for ${targetUser.username}.`)
+      .setDescription(`The entire ${mapSize}x${mapSize} map has been revealed for all players.`)
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -512,7 +493,7 @@ async function handleRevealMapCommand(interaction: CommandInteraction, targetUse
     const embed = new EmbedBuilder()
       .setColor('#ff6b6b')
       .setTitle('❌ Reveal Failed')
-      .setDescription(`Failed to reveal map for ${targetUser.username}. Check the server logs for details.`)
+      .setDescription('Failed to reveal map. Check the server logs for details.')
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -550,7 +531,7 @@ async function handleFillBankCommand(interaction: CommandInteraction) {
     
     let addedItems = 0;
     for (const item of allItems) {
-      const success = await bankService.addItemToBank(city.id, item.id, 99);
+      const success = await bankService.depositItem(city.id, item.id, 99);
       if (success) {
         addedItems++;
       }

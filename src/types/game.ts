@@ -2,7 +2,12 @@
 export enum PlayerStatus {
   HEALTHY = 'healthy',
   WOUNDED = 'wounded',
-  DEAD = 'dead'
+  DEAD = 'dead',
+  REFRESHED = 'refreshed',
+  FED = 'fed',
+  THIRSTY = 'thirsty',
+  DEHYDRATED = 'dehydrated',
+  EXHAUSTED = 'exhausted'
 }
 
 export interface Player {
