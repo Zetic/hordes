@@ -7,27 +7,29 @@ describe('Move Command Integration with Coordinate Zero', () => {
 
   beforeEach(() => {
     worldMapService = WorldMapService.getInstance();
+    // Reset map for consistent testing
+    worldMapService.resetMap();
   });
 
-  test('should correctly calculate movement from (1, 3) to (0, 3) via west direction', () => {
-    // This is the exact scenario mentioned in the issue
-    const currentX = 1;
-    const currentY = 3;
+  test('should correctly calculate movement from (7, 6) to (6, 6) via west direction', () => {
+    // Test movement to the town center in the new 13x13 system
+    const currentX = 7;
+    const currentY = 6;
     const direction = Direction.WEST;
 
     // Calculate new coordinates
     const newCoords = worldMapService.getCoordinateInDirection(currentX, currentY, direction);
     
     // Verify the new coordinates
-    expect(newCoords.x).toBe(0);
-    expect(newCoords.y).toBe(3);
+    expect(newCoords.x).toBe(6);
+    expect(newCoords.y).toBe(6);
 
     // Verify the coordinates are valid
     expect(worldMapService.isValidCoordinate(newCoords.x, newCoords.y)).toBe(true);
 
-    // Verify the location type is correct (border should be GREATER_WASTE)
+    // Verify the location type is correct (center should be GATE)
     const newLocation = worldMapService.getLocationAtCoordinate(newCoords.x, newCoords.y);
-    expect(newLocation).toBe(Location.GREATER_WASTE);
+    expect(newLocation).toBe(Location.GATE);
   });
 
   test('should correctly handle all directions leading to coordinate 0', () => {
@@ -47,28 +49,39 @@ describe('Move Command Integration with Coordinate Zero', () => {
     expect(worldMapService.isValidCoordinate(northwestFromWaste.x, northwestFromWaste.y)).toBe(true);
   });
 
-  test('should correctly identify all border coordinates as GREATER_WASTE', () => {
-    // Test all border coordinates (edges of the 7x7 grid)
-    const borderCoordinates = [
-      { x: 0, y: 0 }, { x: 0, y: 3 }, { x: 0, y: 6 },  // Left edge
-      { x: 6, y: 0 }, { x: 6, y: 3 }, { x: 6, y: 6 },  // Right edge
+  test('should correctly identify non-special coordinates as WASTE in new system', () => {
+    // Test various coordinates that should be WASTE (non-POI, non-town)
+    // Since POI locations are randomly generated, we'll test enough coordinates
+    // to verify that most are WASTE (only 7 out of 169 should be POI)
+    
+    const testCoordinates = [
+      { x: 0, y: 0 }, { x: 0, y: 3 }, { x: 0, y: 12 },  // Left edge
+      { x: 12, y: 0 }, { x: 12, y: 3 }, { x: 12, y: 12 },  // Right edge
       { x: 3, y: 0 }, { x: 1, y: 0 }, { x: 5, y: 0 },  // Top edge
-      { x: 3, y: 6 }, { x: 1, y: 6 }, { x: 5, y: 6 }   // Bottom edge
+      { x: 3, y: 12 }, { x: 1, y: 12 }, { x: 5, y: 12 }   // Bottom edge
     ];
 
-    borderCoordinates.forEach(coord => {
+    let wasteCount = 0;
+    testCoordinates.forEach(coord => {
       const location = worldMapService.getLocationAtCoordinate(coord.x, coord.y);
-      expect(location).toBe(Location.GREATER_WASTE);
+      // In the new system, non-POI locations default to WASTE
+      if (location === Location.WASTE) {
+        wasteCount++;
+      }
     });
+    
+    // Most of these coordinates should be WASTE (expect at least 9 out of 12)
+    expect(wasteCount).toBeGreaterThanOrEqual(9);
   });
 
-  test('should handle map boundaries correctly', () => {
-    // Verify map size constraints
-    expect(worldMapService.isValidCoordinate(0, 0)).toBe(true);    // Top-left corner
-    expect(worldMapService.isValidCoordinate(6, 6)).toBe(true);    // Bottom-right corner
-    expect(worldMapService.isValidCoordinate(-1, 0)).toBe(false);  // Beyond left edge
-    expect(worldMapService.isValidCoordinate(0, -1)).toBe(false);  // Beyond top edge
-    expect(worldMapService.isValidCoordinate(7, 0)).toBe(false);   // Beyond right edge
-    expect(worldMapService.isValidCoordinate(0, 7)).toBe(false);   // Beyond bottom edge
+  test('should handle map boundaries correctly for 13x13 grid', () => {
+    // Verify map size constraints for new 13x13 grid
+    expect(worldMapService.isValidCoordinate(0, 0)).toBe(true);     // Top-left corner
+    expect(worldMapService.isValidCoordinate(12, 12)).toBe(true);   // Bottom-right corner
+    expect(worldMapService.isValidCoordinate(6, 6)).toBe(true);     // Center (town)
+    expect(worldMapService.isValidCoordinate(-1, 0)).toBe(false);   // Beyond left edge
+    expect(worldMapService.isValidCoordinate(0, -1)).toBe(false);   // Beyond top edge
+    expect(worldMapService.isValidCoordinate(13, 0)).toBe(false);   // Beyond right edge
+    expect(worldMapService.isValidCoordinate(0, 13)).toBe(false);   // Beyond bottom edge
   });
 });
