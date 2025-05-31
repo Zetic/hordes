@@ -130,6 +130,22 @@ export class WorldMapService {
       console.log('✅ Initialized starting explored area');
     } catch (error) {
       console.error('Error initializing starting area:', error);
+      // Fallback to in-memory initialization only
+      this.exploredTiles.add(`${this.CENTER_X},${this.CENTER_Y}`);
+      const surroundingOffsets = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+      ];
+      
+      for (const [dx, dy] of surroundingOffsets) {
+        const x = this.CENTER_X + dx;
+        const y = this.CENTER_Y + dy;
+        if (this.isValidCoordinate(x, y)) {
+          this.exploredTiles.add(`${x},${y}`);
+        }
+      }
+      console.log('✅ Initialized starting explored area (in-memory fallback)');
     }
   }
   
@@ -314,6 +330,22 @@ export class WorldMapService {
       this.exploredTiles.clear();
       this.poiLocations = [];
       this.generatePOILocations();
+      
+      // Initialize starting area in-memory only
+      this.exploredTiles.add(`${this.CENTER_X},${this.CENTER_Y}`);
+      const surroundingOffsets = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+      ];
+      
+      for (const [dx, dy] of surroundingOffsets) {
+        const x = this.CENTER_X + dx;
+        const y = this.CENTER_Y + dy;
+        if (this.isValidCoordinate(x, y)) {
+          this.exploredTiles.add(`${x},${y}`);
+        }
+      }
     }
   }
 

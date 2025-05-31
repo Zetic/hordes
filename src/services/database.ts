@@ -160,6 +160,25 @@ export class DatabaseService {
         );
       `);
 
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS zombies (
+          x INTEGER NOT NULL,
+          y INTEGER NOT NULL,
+          count INTEGER NOT NULL DEFAULT 0,
+          updated_at TIMESTAMP DEFAULT NOW(),
+          PRIMARY KEY (x, y)
+        );
+      `);
+
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS explored_tiles (
+          x INTEGER NOT NULL,
+          y INTEGER NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          PRIMARY KEY (x, y)
+        );
+      `);
+
       console.log('✅ Database schema initialized');
     } catch (error) {
       console.error('❌ Failed to initialize schema:', error);
