@@ -43,14 +43,6 @@ module.exports = {
         return;
       }
 
-      // Check if player is in a valid location to use items
-      if (player.location === Location.CITY || player.location === Location.HOME) {
-        await interaction.editReply({
-          content: '❌ You cannot use items in this location. Go outside the city to use items.'
-        });
-        return;
-      }
-
       // Get the item from database
       const item = await itemService.getItemByName(itemName);
       if (!item) {
@@ -174,16 +166,16 @@ function checkItemUsageRestrictions(player: any, itemDefinition: any): { allowed
   // Import PlayerStatus enum here to avoid circular dependency issues
   const { PlayerStatus } = require('../types/game');
   
-  // Check Refreshed status prevents Hydration items
-  if (player.status === PlayerStatus.REFRESHED && itemDefinition.subCategory === 'Hydration') {
+  // Check Refreshed condition prevents Hydration items
+  if (player.conditions.includes(PlayerStatus.REFRESHED) && itemDefinition.subCategory === 'Hydration') {
     return {
       allowed: false,
       reason: '❌ You cannot use hydration items while refreshed.'
     };
   }
   
-  // Check Fed status prevents Nutrition items
-  if (player.status === PlayerStatus.FED && itemDefinition.subCategory === 'Nutrition') {
+  // Check Fed condition prevents Nutrition items
+  if (player.conditions.includes(PlayerStatus.FED) && itemDefinition.subCategory === 'Nutrition') {
     return {
       allowed: false,
       reason: '❌ You cannot use nutrition items while fed.'
