@@ -89,7 +89,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor(player.isAlive ? '#4ecdc4' : '#ff6b6b')
-        .setTitle(`${statusEmojis[player.status]} ${player.name}'s Status`)
+        .setTitle(`${player.name}'s Status`)
         .setThumbnail(targetUser.displayAvatarURL())
         .addFields([
           { 
