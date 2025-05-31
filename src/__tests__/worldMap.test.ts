@@ -6,6 +6,8 @@ describe('WorldMapService', () => {
 
   beforeEach(() => {
     worldMapService = WorldMapService.getInstance();
+    // Reset map for consistent testing
+    worldMapService.resetMap();
   });
 
   test('should be a singleton', () => {
@@ -14,81 +16,107 @@ describe('WorldMapService', () => {
     expect(instance1).toBe(instance2);
   });
 
-  test('should have gate at center (3,3)', () => {
+  test('should have gate at center (6,6) in new 13x13 system', () => {
     const gateCoords = worldMapService.getGateCoordinates();
-    expect(gateCoords.x).toBe(3);
-    expect(gateCoords.y).toBe(3);
+    expect(gateCoords.x).toBe(6);
+    expect(gateCoords.y).toBe(6);
     
-    const location = worldMapService.getLocationAtCoordinate(3, 3);
+    const location = worldMapService.getLocationAtCoordinate(6, 6);
     expect(location).toBe(Location.GATE);
   });
 
-  test('should have waste in inner areas', () => {
-    // Test some inner coordinates that are still waste
-    expect(worldMapService.getLocationAtCoordinate(2, 2)).toBe(Location.WASTE);
-    expect(worldMapService.getLocationAtCoordinate(4, 4)).toBe(Location.WASTE);
-    expect(worldMapService.getLocationAtCoordinate(4, 2)).toBe(Location.WASTE);
-    expect(worldMapService.getLocationAtCoordinate(2, 4)).toBe(Location.WASTE);
+  test('should have waste in non-POI areas', () => {
+    // Test coordinates that we know should be waste (avoid center and immediate surrounding)
+    // Since POI locations are randomly generated, we'll test a larger number of coordinates
+    // and expect most of them to be waste (since only 7 out of 169 total are POI)
+    
+    let wasteCount = 0;
+    let totalTested = 0;
+    
+    // Test coordinates avoiding the center town area
+    for (let x = 0; x < 13; x++) {
+      for (let y = 0; y < 13; y++) {
+        // Skip center town and its immediate surroundings (already explored)
+        if (Math.abs(x - 6) <= 1 && Math.abs(y - 6) <= 1) {
+          continue;
+        }
+        
+        totalTested++;
+        const location = worldMapService.getLocationAtCoordinate(x, y);
+        if (location === Location.WASTE) {
+          wasteCount++;
+        }
+      }
+    }
+    
+    // Most coordinates should be waste (we expect 7 POI locations out of 160 tested)
+    // So at least 150+ should be waste
+    expect(wasteCount).toBeGreaterThan(150);
+    expect(totalTested).toBe(160); // 13x13 - 9 center area = 169 - 9 = 160
   });
 
-  test('should have new location types at specific coordinates', () => {
-    // Test new locations
-    expect(worldMapService.getLocationAtCoordinate(0, 0)).toBe(Location.FACTORY);
-    expect(worldMapService.getLocationAtCoordinate(3, 1)).toBe(Location.ABANDONED_MANSION);
-    expect(worldMapService.getLocationAtCoordinate(0, 3)).toBe(Location.MODEST_NEIGHBORHOOD);
-    expect(worldMapService.getLocationAtCoordinate(1, 3)).toBe(Location.CONVENIENCE_STORE);
-    expect(worldMapService.getLocationAtCoordinate(5, 0)).toBe(Location.LAKE_SIDE);
+  test('should have POI locations randomly distributed', () => {
+    // In the new system, POI locations are randomly generated
+    // We can't predict exact coordinates, but we can verify the system works
+    let foundPOIs = 0;
+    
+    // Check all coordinates for POI locations
+    for (let x = 0; x < 13; x++) {
+      for (let y = 0; y < 13; y++) {
+        if (x === 6 && y === 6) continue; // Skip center (town)
+        
+        const location = worldMapService.getLocationAtCoordinate(x, y);
+        if (location !== Location.WASTE && location !== Location.GATE) {
+          foundPOIs++;
+        }
+      }
+    }
+    
+    // Should have exactly 7 POI locations
+    expect(foundPOIs).toBe(7);
   });
 
-  test('should have greater waste on borders that are not special locations', () => {
-    // Test border coordinates that should be greater waste
-    expect(worldMapService.getLocationAtCoordinate(2, 0)).toBe(Location.GREATER_WASTE);
-    expect(worldMapService.getLocationAtCoordinate(4, 0)).toBe(Location.GREATER_WASTE);
-    expect(worldMapService.getLocationAtCoordinate(6, 3)).toBe(Location.GREATER_WASTE);
-    expect(worldMapService.getLocationAtCoordinate(3, 6)).toBe(Location.GREATER_WASTE);
-  });
-
-  test('should validate coordinates correctly', () => {
+  test('should validate coordinates correctly for 13x13 grid', () => {
     // Valid coordinates
     expect(worldMapService.isValidCoordinate(0, 0)).toBe(true);
+    expect(worldMapService.isValidCoordinate(12, 12)).toBe(true);
     expect(worldMapService.isValidCoordinate(6, 6)).toBe(true);
-    expect(worldMapService.isValidCoordinate(3, 3)).toBe(true);
 
     // Invalid coordinates
     expect(worldMapService.isValidCoordinate(-1, 0)).toBe(false);
-    expect(worldMapService.isValidCoordinate(7, 0)).toBe(false);
+    expect(worldMapService.isValidCoordinate(13, 0)).toBe(false);
     expect(worldMapService.isValidCoordinate(0, -1)).toBe(false);
-    expect(worldMapService.isValidCoordinate(0, 7)).toBe(false);
+    expect(worldMapService.isValidCoordinate(0, 13)).toBe(false);
   });
 
   test('should calculate movement directions correctly', () => {
-    const startX = 3;
-    const startY = 3;
+    const startX = 6;
+    const startY = 6;
 
-    // Test all 8 directions
+    // Test all 8 directions from center
     const north = worldMapService.getCoordinateInDirection(startX, startY, Direction.NORTH);
-    expect(north).toEqual({ x: 3, y: 2 });
+    expect(north).toEqual({ x: 6, y: 5 });
 
     const northeast = worldMapService.getCoordinateInDirection(startX, startY, Direction.NORTHEAST);
-    expect(northeast).toEqual({ x: 4, y: 2 });
+    expect(northeast).toEqual({ x: 7, y: 5 });
 
     const east = worldMapService.getCoordinateInDirection(startX, startY, Direction.EAST);
-    expect(east).toEqual({ x: 4, y: 3 });
+    expect(east).toEqual({ x: 7, y: 6 });
 
     const southeast = worldMapService.getCoordinateInDirection(startX, startY, Direction.SOUTHEAST);
-    expect(southeast).toEqual({ x: 4, y: 4 });
+    expect(southeast).toEqual({ x: 7, y: 7 });
 
     const south = worldMapService.getCoordinateInDirection(startX, startY, Direction.SOUTH);
-    expect(south).toEqual({ x: 3, y: 4 });
+    expect(south).toEqual({ x: 6, y: 7 });
 
     const southwest = worldMapService.getCoordinateInDirection(startX, startY, Direction.SOUTHWEST);
-    expect(southwest).toEqual({ x: 2, y: 4 });
+    expect(southwest).toEqual({ x: 5, y: 7 });
 
     const west = worldMapService.getCoordinateInDirection(startX, startY, Direction.WEST);
-    expect(west).toEqual({ x: 2, y: 3 });
+    expect(west).toEqual({ x: 5, y: 6 });
 
     const northwest = worldMapService.getCoordinateInDirection(startX, startY, Direction.NORTHWEST);
-    expect(northwest).toEqual({ x: 2, y: 2 });
+    expect(northwest).toEqual({ x: 5, y: 5 });
   });
 
   test('should provide proper location display names', () => {
@@ -104,7 +132,7 @@ describe('WorldMapService', () => {
     expect(greaterWasteDisplay.name).toBe('Greater Waste');
     expect(greaterWasteDisplay.emoji).toBe('🌲');
     
-    // Test some of the new locations
+    // Test some of the POI locations
     const factoryDisplay = worldMapService.getLocationDisplay(Location.FACTORY);
     expect(factoryDisplay.name).toBe('Factory');
     expect(factoryDisplay.emoji).toBe('🏭');
@@ -112,10 +140,6 @@ describe('WorldMapService', () => {
     const hospitalDisplay = worldMapService.getLocationDisplay(Location.HOSPITAL);
     expect(hospitalDisplay.name).toBe('Hospital');
     expect(hospitalDisplay.emoji).toBe('🏥');
-    
-    const lakeSideDisplay = worldMapService.getLocationDisplay(Location.LAKE_SIDE);
-    expect(lakeSideDisplay.name).toBe('Lake Side');
-    expect(lakeSideDisplay.emoji).toBe('💧');
   });
 
   test('should generate map view as image buffer', async () => {
@@ -136,7 +160,7 @@ describe('WorldMapService', () => {
     }).toThrow('Coordinates out of bounds');
 
     expect(() => {
-      worldMapService.getLocationAtCoordinate(7, 0);
+      worldMapService.getLocationAtCoordinate(13, 0);
     }).toThrow('Coordinates out of bounds');
   });
 });
