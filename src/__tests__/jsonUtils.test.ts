@@ -61,6 +61,28 @@ describe('JSON Utils - Safe JSON Operations', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ key: 'value' });
     });
+
+    test('should handle non-string inputs gracefully', () => {
+      const fallback = { default: true };
+      
+      // Test with number
+      const numberResult = safeJsonParse(123 as any, fallback, 'test context');
+      expect(numberResult.success).toBe(true);
+      expect(numberResult.data).toEqual(fallback);
+      expect(numberResult.error).toBeUndefined();
+      
+      // Test with boolean
+      const booleanResult = safeJsonParse(true as any, fallback, 'test context');
+      expect(booleanResult.success).toBe(true);
+      expect(booleanResult.data).toEqual(fallback);
+      expect(booleanResult.error).toBeUndefined();
+      
+      // Test with object
+      const objectResult = safeJsonParse({ some: 'object' } as any, fallback, 'test context');
+      expect(objectResult.success).toBe(true);
+      expect(objectResult.data).toEqual(fallback);
+      expect(objectResult.error).toBeUndefined();
+    });
   });
 
   describe('safeJsonParseArray', () => {

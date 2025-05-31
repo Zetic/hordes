@@ -11,17 +11,25 @@ export interface SafeJsonParseResult<T> {
 
 /**
  * Safely parse JSON string with error handling and fallback value
- * @param jsonString - The JSON string to parse
+ * @param jsonString - The JSON string to parse (can be any type, non-strings return fallback)
  * @param fallback - The fallback value to return if parsing fails
  * @param context - Optional context for error logging (e.g., "player conditions", "game state")
  * @returns SafeJsonParseResult with parsed data or fallback value
  */
 export function safeJsonParse<T>(
-  jsonString: string | null | undefined,
+  jsonString: any,
   fallback: T,
   context?: string
 ): SafeJsonParseResult<T> {
-  // Handle null, undefined, or empty string cases
+  // Handle non-string inputs
+  if (typeof jsonString !== 'string') {
+    return {
+      success: true,
+      data: fallback
+    };
+  }
+
+  // Handle empty or whitespace-only strings
   if (!jsonString || jsonString.trim() === '') {
     return {
       success: true,
@@ -30,7 +38,7 @@ export function safeJsonParse<T>(
   }
 
   try {
-    const parsed = JSON.parse(jsonString);
+    const parsed = JSON.parse(jsonString.trim());
     return {
       success: true,
       data: parsed
@@ -52,13 +60,13 @@ export function safeJsonParse<T>(
 
 /**
  * Safely parse JSON string and ensure it's an array
- * @param jsonString - The JSON string to parse
+ * @param jsonString - The JSON string to parse (can be any type, non-strings return fallback)
  * @param fallback - The fallback array to return if parsing fails or result is not an array
  * @param context - Optional context for error logging
  * @returns SafeJsonParseResult with array data or fallback array
  */
 export function safeJsonParseArray<T>(
-  jsonString: string | null | undefined,
+  jsonString: any,
   fallback: T[] = [],
   context?: string
 ): SafeJsonParseResult<T[]> {
