@@ -55,7 +55,10 @@ export enum ItemType {
 
 export interface ItemEffect {
   type: string;
-  value: number;
+  value?: number;
+  chance?: number;         // Success chance (0-100)
+  breakChance?: number;    // Chance to break on use (0-100)
+  transformInto?: string;  // Item to transform into when broken
 }
 
 export enum Location {
