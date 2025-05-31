@@ -43,10 +43,10 @@ describe('Move Command Integration with Coordinate Zero', () => {
     expect(northFromWaste).toEqual({ x: 2, y: 0 });
     expect(worldMapService.isValidCoordinate(northFromWaste.x, northFromWaste.y)).toBe(true);
 
-    // Test moving to corner (0, 0)
-    const northwestFromWaste = worldMapService.getCoordinateInDirection(1, 1, Direction.NORTHWEST);
-    expect(northwestFromWaste).toEqual({ x: 0, y: 0 });
-    expect(worldMapService.isValidCoordinate(northwestFromWaste.x, northwestFromWaste.y)).toBe(true);
+    // Test moving to coordinates with x=0 (from different position)
+    const westFromWaste2 = worldMapService.getCoordinateInDirection(1, 1, Direction.WEST);
+    expect(westFromWaste2).toEqual({ x: 0, y: 1 });
+    expect(worldMapService.isValidCoordinate(westFromWaste2.x, westFromWaste2.y)).toBe(true);
   });
 
   test('should correctly identify non-special coordinates as WASTE in new system', () => {

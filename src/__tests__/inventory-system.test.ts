@@ -53,7 +53,7 @@ describe('Game Mechanics Integration', () => {
     const bankCommand = require('../commands/bank');
     const dropCommand = require('../commands/drop');
     const inventoryCommand = require('../commands/inventory');
-    const searchCommand = require('../commands/search');
+    const useCommand = require('../commands/use');
     const takeCommand = require('../commands/take');
 
     // All commands should have data and execute properties
@@ -63,8 +63,8 @@ describe('Game Mechanics Integration', () => {
     expect(dropCommand).toHaveProperty('execute');
     expect(inventoryCommand).toHaveProperty('data');
     expect(inventoryCommand).toHaveProperty('execute');
-    expect(searchCommand).toHaveProperty('data');
-    expect(searchCommand).toHaveProperty('execute');
+    expect(useCommand).toHaveProperty('data');
+    expect(useCommand).toHaveProperty('execute');
     expect(takeCommand).toHaveProperty('data');
     expect(takeCommand).toHaveProperty('execute');
   });

@@ -47,13 +47,13 @@ describe('Zone Contest System - Basic Integration', () => {
     expect(moveCode).toContain('Zone Contested');
   });
 
-  test('search command should include trapped player checks', () => {
+  test('use command should be implemented for item interaction', () => {
     const fs = require('fs');
-    const searchCode = fs.readFileSync('src/commands/search.ts', 'utf8');
+    const useCode = fs.readFileSync('src/commands/use.ts', 'utf8');
     
-    // Check that zone contest imports and checks exist
-    expect(searchCode).toContain('import { ZoneContestService }');
-    expect(searchCode).toContain('arePlayersTrapped');
-    expect(searchCode).toContain('contested zone');
+    // Check that use command exists and has expected functionality
+    expect(useCode).toContain('Box Cutter');
+    expect(useCode).toContain('killChance');
+    expect(useCode).toContain('removeZombiesAtLocation');
   });
 });
