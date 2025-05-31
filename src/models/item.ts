@@ -1,5 +1,6 @@
 import { Item, ItemType, InventoryItem } from '../types/game';
 import { DatabaseService } from '../services/database';
+import { ItemDefinition, getItemDefinition } from '../data/items';
 
 export class ItemService {
   private db: DatabaseService;
@@ -80,7 +81,47 @@ export class ItemService {
     }
   }
 
-  // Initialize default items if they don't exist (Box Cutter only)
+  // Create item from definition (admin function)
+  async createItemFromDefinition(definition: ItemDefinition): Promise<Item | null> {
+    try {
+      // Check if item already exists
+      const existing = await this.getItemByName(definition.name);
+      if (existing) {
+        console.log(`Item ${definition.name} already exists, skipping creation`);
+        return existing;
+      }
+
+      // Extract legacy properties from first effect if it's a kill zombie effect
+      let killChance: number | undefined;
+      let breakChance: number | undefined;
+      let transformInto: string | undefined;
+
+      const killEffect = definition.effects.find(e => e.type === 'kill_zombie');
+      if (killEffect) {
+        killChance = killEffect.chance;
+        breakChance = killEffect.breakChance;
+        transformInto = killEffect.transformInto;
+      }
+
+      return await this.createItem(
+        definition.name,
+        definition.type,
+        definition.description,
+        definition.weight,
+        definition.category,
+        definition.subCategory,
+        killChance,
+        breakChance,
+        killEffect?.value, // kill count
+        transformInto,
+        false // not broken by default
+      );
+    } catch (error) {
+      console.error('Error creating item from definition:', error);
+      return null;
+    }
+  }
+  // Initialize default items if they don't exist
   async initializeDefaultItems(): Promise<void> {
     try {
       // Verify database schema before attempting item creation
@@ -115,9 +156,13 @@ export class ItemService {
       await this.db.pool.query('DELETE FROM items');
       console.log('🗑️ Cleared existing items');
 
-      // Create Box Cutter
-      const boxCutter = await this.getItemByName('Box Cutter');
-      if (!boxCutter) {
+      // Try to create items from definitions first (new system)
+      const boxCutterDef = getItemDefinition('Box Cutter');
+      if (boxCutterDef) {
+        await this.createItemFromDefinition(boxCutterDef);
+        console.log('✅ Box Cutter created from definition');
+      } else {
+        // Fallback to legacy creation
         await this.createItem(
           'Box Cutter',
           ItemType.MELEE,
@@ -130,12 +175,16 @@ export class ItemService {
           1,  // kills 1 zombie
           'Broken' // becomes broken on break
         );
-        console.log('✅ Box Cutter created');
+        console.log('✅ Box Cutter created (legacy)');
       }
 
       // Create Broken Box Cutter
-      const brokenBoxCutter = await this.getItemByName('Broken Box Cutter');
-      if (!brokenBoxCutter) {
+      const brokenBoxCutterDef = getItemDefinition('Broken Box Cutter');
+      if (brokenBoxCutterDef) {
+        await this.createItemFromDefinition(brokenBoxCutterDef);
+        console.log('✅ Broken Box Cutter created from definition');
+      } else {
+        // Fallback to legacy creation
         await this.createItem(
           'Broken Box Cutter',
           ItemType.MELEE,
@@ -149,7 +198,7 @@ export class ItemService {
           undefined,
           true // broken
         );
-        console.log('✅ Broken Box Cutter created');
+        console.log('✅ Broken Box Cutter created (legacy)');
       }
 
       console.log('✅ Default items initialized');
@@ -159,7 +208,7 @@ export class ItemService {
   }
 
   private mapRowToItem(row: any): Item {
-    return {
+    const item: Item = {
       id: row.id,
       name: row.name,
       type: row.type as ItemType,
@@ -173,5 +222,19 @@ export class ItemService {
       onBreak: row.on_break,
       broken: row.broken || false
     };
+
+    // Try to get effects from item definition if available
+    const definition = getItemDefinition(item.name);
+    if (definition && definition.effects) {
+      item.effects = definition.effects.map(effect => ({
+        type: effect.type,
+        value: effect.value,
+        chance: effect.chance,
+        breakChance: effect.breakChance,
+        transformInto: effect.transformInto
+      }));
+    }
+
+    return item;
   }
 }
