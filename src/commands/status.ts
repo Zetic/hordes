@@ -97,13 +97,6 @@ module.exports = {
             value: player.isAlive ? '💚 Alive' : '💀 Dead', 
             inline: true 
           },
-          ...(player.isAlive ? [{ 
-            name: '🔄 Conditions', 
-            value: player.conditions.length > 0 
-              ? player.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
-              : `${statusEmojis[player.status]} ${statusTexts[player.status]}`, 
-            inline: true 
-          }] : []),
           { 
             name: '⚡ Action Points', 
             value: `${player.actionPoints}/${player.maxActionPoints}`, 
@@ -118,7 +111,14 @@ module.exports = {
             name: '⏰ Last Action', 
             value: `<t:${Math.floor(player.lastActionTime.getTime() / 1000)}:R>`, 
             inline: true 
-          }
+          },
+          ...(player.isAlive ? [{ 
+            name: '🔄 Conditions', 
+            value: player.conditions.length > 0 
+              ? player.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
+              : `${statusEmojis[player.status]} ${statusTexts[player.status]}`, 
+            inline: false 
+          }] : [])
         ]);
 
       // Add warnings for own status

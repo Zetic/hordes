@@ -316,7 +316,14 @@ export class PlayerService {
     let conditions: PlayerStatus[] = [];
     try {
       if (row.conditions) {
-        conditions = JSON.parse(row.conditions);
+        const parsed = JSON.parse(row.conditions);
+        // Ensure parsed result is an array
+        if (Array.isArray(parsed)) {
+          conditions = parsed;
+        } else {
+          // Handle case where a single condition was stored as a string
+          conditions = [parsed];
+        }
       }
     } catch (error) {
       console.warn('Failed to parse conditions for player:', row.discord_id, error);

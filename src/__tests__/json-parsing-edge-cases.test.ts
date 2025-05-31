@@ -1,0 +1,153 @@
+import { PlayerService } from '../models/player';
+import { PlayerStatus } from '../types/game';
+
+describe('JSON Parsing Edge Cases Fix', () => {
+  let playerService: PlayerService;
+
+  beforeEach(() => {
+    playerService = new PlayerService();
+  });
+
+  test('should handle plain string conditions gracefully', () => {
+    // Simulate a database row with invalid JSON conditions (plain string)
+    const mockRow = {
+      id: 'test-1',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: PlayerStatus.HEALTHY,
+      conditions: 'refreshed', // Invalid: plain string instead of JSON array
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date()
+    };
+
+    // Use reflection to access private method for testing
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    
+    // Should not throw and should default to empty conditions array
+    expect(() => {
+      const player = mapRowToPlayer(mockRow);
+      expect(Array.isArray(player.conditions)).toBe(true);
+      expect(player.conditions.length).toBe(0);
+    }).not.toThrow();
+  });
+
+  test('should handle quoted string conditions by converting to array', () => {
+    // Simulate a database row with JSON string condition
+    const mockRow = {
+      id: 'test-2',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: PlayerStatus.HEALTHY,
+      conditions: '"refreshed"', // Valid JSON string but not array
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date()
+    };
+
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const player = mapRowToPlayer(mockRow);
+    
+    // Should convert single value to array
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(1);
+    expect(player.conditions[0]).toBe('refreshed');
+  });
+
+  test('should handle empty string conditions', () => {
+    const mockRow = {
+      id: 'test-3',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: PlayerStatus.HEALTHY,
+      conditions: '', // Empty string
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date()
+    };
+
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const player = mapRowToPlayer(mockRow);
+    
+    // Empty string should result in empty array
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(0);
+  });
+
+  test('should handle null conditions', () => {
+    const mockRow = {
+      id: 'test-4',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: PlayerStatus.HEALTHY,
+      conditions: null, // Null value
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date()
+    };
+
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const player = mapRowToPlayer(mockRow);
+    
+    // Null should result in empty array
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(0);
+  });
+
+  test('should handle valid JSON array conditions', () => {
+    const mockRow = {
+      id: 'test-5',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: PlayerStatus.HEALTHY,
+      conditions: '["refreshed", "fed"]', // Valid JSON array
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date()
+    };
+
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const player = mapRowToPlayer(mockRow);
+    
+    // Should parse correctly
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(2);
+    expect(player.conditions).toContain('refreshed');
+    expect(player.conditions).toContain('fed');
+  });
+});
