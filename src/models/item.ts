@@ -42,15 +42,29 @@ export class ItemService {
     }
   }
 
-  // Create a new item (admin function)
-  async createItem(name: string, type: ItemType, description: string, weight: number = 1): Promise<Item | null> {
+  // Create a new item with extended properties (admin function)
+  async createItem(
+    name: string, 
+    type: ItemType, 
+    description: string, 
+    weight: number = 1,
+    category?: string,
+    subCategory?: string,
+    killChance?: number,
+    breakChance?: number,
+    killCount?: number,
+    onBreak?: string,
+    broken: boolean = false
+  ): Promise<Item | null> {
     try {
       const query = `
-        INSERT INTO items (name, type, description, weight)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO items (name, type, description, weight, category, sub_category, kill_chance, break_chance, kill_count, on_break, broken)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `;
-      const result = await this.db.pool.query(query, [name, type, description, weight]);
+      const result = await this.db.pool.query(query, [
+        name, type, description, weight, category, subCategory, killChance, breakChance, killCount, onBreak, broken
+      ]);
       
       return this.mapRowToItem(result.rows[0]);
     } catch (error) {
@@ -59,26 +73,48 @@ export class ItemService {
     }
   }
 
-  // Initialize default items if they don't exist
+  // Initialize default items if they don't exist (Box Cutter only)
   async initializeDefaultItems(): Promise<void> {
     try {
-      const defaultItems = [
-        { name: 'Wood', type: ItemType.BUILDING_MATERIAL, description: 'Basic construction material', weight: 1 },
-        { name: 'Metal Scraps', type: ItemType.BUILDING_MATERIAL, description: 'Scavenged metal pieces', weight: 1 },
-        { name: 'Water Bottle', type: ItemType.CONSUMABLE, description: 'Clean drinking water', weight: 1 },
-        { name: 'Canned Food', type: ItemType.CONSUMABLE, description: 'Non-perishable food', weight: 1 },
-        { name: 'Tools', type: ItemType.TOOL, description: 'Basic repair tools', weight: 1 },
-        { name: 'Oil Barrel', type: ItemType.RESOURCE, description: 'Fuel for generators', weight: 2 },
-        { name: 'Weapon Parts', type: ItemType.WEAPON, description: 'Components for making weapons', weight: 1 },
-        { name: 'Sturdy Wood', type: ItemType.BUILDING_MATERIAL, description: 'High-quality construction material', weight: 1 }
-      ];
+      // Remove all existing items first to clean up
+      await this.db.pool.query('DELETE FROM items');
+      console.log('🗑️ Cleared existing items');
 
-      for (const item of defaultItems) {
-        // Check if item already exists
-        const existing = await this.getItemByName(item.name);
-        if (!existing) {
-          await this.createItem(item.name, item.type, item.description, item.weight);
-        }
+      // Create Box Cutter
+      const boxCutter = await this.getItemByName('Box Cutter');
+      if (!boxCutter) {
+        await this.createItem(
+          'Box Cutter',
+          ItemType.MELEE,
+          'A sharp utility knife that can be used to kill zombies',
+          1,
+          'Items',
+          'Armoury',
+          60, // 60% kill chance
+          70, // 70% break chance
+          1,  // kills 1 zombie
+          'Broken' // becomes broken on break
+        );
+        console.log('✅ Box Cutter created');
+      }
+
+      // Create Broken Box Cutter
+      const brokenBoxCutter = await this.getItemByName('Broken Box Cutter');
+      if (!brokenBoxCutter) {
+        await this.createItem(
+          'Broken Box Cutter',
+          ItemType.MELEE,
+          'A broken utility knife with no use',
+          1,
+          'Items',
+          'Armoury',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true // broken
+        );
+        console.log('✅ Broken Box Cutter created');
       }
 
       console.log('✅ Default items initialized');
@@ -93,7 +129,14 @@ export class ItemService {
       name: row.name,
       type: row.type as ItemType,
       description: row.description,
-      weight: row.weight
+      weight: row.weight,
+      category: row.category,
+      subCategory: row.sub_category,
+      killChance: row.kill_chance,
+      breakChance: row.break_chance,
+      killCount: row.kill_count,
+      onBreak: row.on_break,
+      broken: row.broken || false
     };
   }
 }

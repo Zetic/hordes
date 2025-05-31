@@ -163,6 +163,35 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'cities' AND column_name = 'gate_open') THEN
         ALTER TABLE cities ADD COLUMN gate_open BOOLEAN DEFAULT true;
     END IF;
+
+    -- Add new item properties for object system
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'category') THEN
+        ALTER TABLE items ADD COLUMN category VARCHAR(50);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'sub_category') THEN
+        ALTER TABLE items ADD COLUMN sub_category VARCHAR(50);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'kill_chance') THEN
+        ALTER TABLE items ADD COLUMN kill_chance INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'break_chance') THEN
+        ALTER TABLE items ADD COLUMN break_chance INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'kill_count') THEN
+        ALTER TABLE items ADD COLUMN kill_count INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'on_break') THEN
+        ALTER TABLE items ADD COLUMN on_break VARCHAR(100);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'items' AND column_name = 'broken') THEN
+        ALTER TABLE items ADD COLUMN broken BOOLEAN DEFAULT false;
+    END IF;
 END $$;
 
 COMMENT ON TABLE players IS 'Stores player data and stats';
