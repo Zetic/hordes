@@ -96,8 +96,26 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
       };
     }
     
-    // Remove the status (set to healthy as default)
-    await playerService.updatePlayerStatus(context.player.discordId, PlayerStatus.HEALTHY);
+    // Determine the new status after removal
+    let newStatus: PlayerStatus;
+    
+    // Health-related statuses should transition correctly
+    if (statusToRemove === PlayerStatus.WOUNDED) {
+      newStatus = PlayerStatus.HEALTHY;
+    } else if (statusToRemove === PlayerStatus.DEAD) {
+      newStatus = PlayerStatus.HEALTHY; // Revival case
+    } else {
+      // For non-health-related statuses (refreshed, fed, thirsty, dehydrated, exhausted),
+      // determine appropriate default based on current health
+      if (context.player.health < context.player.maxHealth) {
+        newStatus = PlayerStatus.WOUNDED;
+      } else {
+        newStatus = PlayerStatus.HEALTHY;
+      }
+    }
+    
+    // Update player status
+    await playerService.updatePlayerStatus(context.player.discordId, newStatus);
     
     const statusMessages: { [key: string]: string } = {
       [PlayerStatus.THIRSTY]: '💧 Your thirst is quenched.',
@@ -110,7 +128,7 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
     return {
       success: true,
       message: statusMessages[statusToRemove] || `${statusToRemove} status removed.`,
-      effectData: { statusRemoved: true, removedStatus: statusToRemove }
+      effectData: { statusRemoved: true, removedStatus: statusToRemove, newStatus: newStatus }
     };
   } catch (error) {
     console.error('Error removing status:', error);

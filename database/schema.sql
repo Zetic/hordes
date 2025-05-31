@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS players (
   name VARCHAR(255) NOT NULL,
   health INTEGER DEFAULT 100,
   max_health INTEGER DEFAULT 100,
-  status VARCHAR(10) DEFAULT 'healthy',
+  status VARCHAR(20) DEFAULT 'healthy',
   action_points INTEGER DEFAULT 10,
   max_action_points INTEGER DEFAULT 10,
   water INTEGER DEFAULT 3,
@@ -140,7 +140,7 @@ DO $$
 BEGIN
     -- Add status column migration for existing data
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'status') THEN
-        ALTER TABLE players ADD COLUMN status VARCHAR(10) DEFAULT 'healthy';
+        ALTER TABLE players ADD COLUMN status VARCHAR(20) DEFAULT 'healthy';
         
         -- Migrate existing data: set status based on current health and is_alive
         UPDATE players SET status = CASE 
@@ -148,6 +148,9 @@ BEGIN
             WHEN health < max_health THEN 'wounded'
             ELSE 'healthy'
         END;
+    ELSE
+        -- Update existing status column to support longer status values
+        ALTER TABLE players ALTER COLUMN status TYPE VARCHAR(20);
     END IF;
 
     -- Add coordinates to players table
