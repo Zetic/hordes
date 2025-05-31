@@ -160,3 +160,19 @@ export interface WorldMapTile {
   location: Location;
   playersPresent: number;
 }
+
+export enum ZoneStatus {
+  UNCONTESTED = 'uncontested',
+  CONTESTED = 'contested', 
+  TEMPORARILY_UNCONTESTED = 'temporarily_uncontested'
+}
+
+export interface ZoneContest {
+  x: number;
+  y: number;
+  status: ZoneStatus;
+  humanCp: number;
+  zombieCp: number;
+  tempUncontestedUntil?: Date;
+  lastUpdated: Date;
+}
