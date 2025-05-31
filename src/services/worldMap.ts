@@ -227,30 +227,14 @@ export class WorldMapService {
       case Direction.NORTH:
         newY = currentY - 1;
         break;
-      case Direction.NORTHEAST:
-        newX = currentX + 1;
-        newY = currentY - 1;
-        break;
       case Direction.EAST:
         newX = currentX + 1;
-        break;
-      case Direction.SOUTHEAST:
-        newX = currentX + 1;
-        newY = currentY + 1;
         break;
       case Direction.SOUTH:
         newY = currentY + 1;
         break;
-      case Direction.SOUTHWEST:
-        newX = currentX - 1;
-        newY = currentY + 1;
-        break;
       case Direction.WEST:
         newX = currentX - 1;
-        break;
-      case Direction.NORTHWEST:
-        newX = currentX - 1;
-        newY = currentY - 1;
         break;
     }
 
@@ -358,13 +342,9 @@ export class WorldMapService {
   getDirectionDisplayName(direction: Direction): string {
     const names = {
       [Direction.NORTH]: 'North',
-      [Direction.NORTHEAST]: 'Northeast',
       [Direction.EAST]: 'East',
-      [Direction.SOUTHEAST]: 'Southeast',
       [Direction.SOUTH]: 'South',
-      [Direction.SOUTHWEST]: 'Southwest',
-      [Direction.WEST]: 'West',
-      [Direction.NORTHWEST]: 'Northwest'
+      [Direction.WEST]: 'West'
     };
     return names[direction];
   }

@@ -5,6 +5,7 @@ import { InventoryService } from '../models/inventory';
 import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
 import { ZoneContestService } from '../services/zoneContest';
+import { ZombieService } from '../services/zombieService';
 import { Location, Direction, PlayerStatus } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
@@ -15,6 +16,7 @@ const inventoryService = new InventoryService();
 const areaInventoryService = new AreaInventoryService();
 const worldMapService = WorldMapService.getInstance();
 const zoneContestService = ZoneContestService.getInstance();
+const zombieService = ZombieService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,13 +28,9 @@ module.exports = {
         .setRequired(true)
         .addChoices(
           { name: 'North', value: 'north' },
-          { name: 'Northeast', value: 'northeast' },
           { name: 'East', value: 'east' },
-          { name: 'Southeast', value: 'southeast' },
           { name: 'South', value: 'south' },
-          { name: 'Southwest', value: 'southwest' },
-          { name: 'West', value: 'west' },
-          { name: 'Northwest', value: 'northwest' }
+          { name: 'West', value: 'west' }
         )
     ),
     
@@ -94,6 +92,11 @@ module.exports = {
       // Check zone contest status - can player leave current zone?
       const movementCheck = await zoneContestService.canPlayerMoveOut(player.x, player.y);
       if (!movementCheck.canMove) {
+        // Get detailed contest information
+        const zoneContest = await zoneContestService.getZoneContest(player.x, player.y);
+        const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
+        const zombieCount = zombies ? zombies.count : 0;
+        
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('🚫 Zone Contested')
@@ -102,6 +105,21 @@ module.exports = {
             {
               name: '⚔️ Zone Status',
               value: 'This zone is contested by zombies. You must wait for the zone to become uncontested before you can move.',
+              inline: false
+            },
+            {
+              name: '📊 Contest Score',
+              value: `**Human Control:** ${zoneContest.humanCp} CP\n**Zombie Control:** ${zoneContest.zombieCp} CP`,
+              inline: true
+            },
+            {
+              name: '🧟 Zombies Present',
+              value: `${zombieCount} zombies in this area`,
+              inline: true
+            },
+            {
+              name: '💡 Recommendations',
+              value: '• Use items like Box Cutter to kill zombies\n• Call for help from other players\n• Wait for the zone to become uncontested',
               inline: false
             }
           ]);

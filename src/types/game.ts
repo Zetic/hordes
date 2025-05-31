@@ -35,10 +35,18 @@ export interface Item {
   description: string;
   weight: number;
   effects?: ItemEffect[];
+  category?: string;
+  subCategory?: string;
+  killChance?: number;
+  breakChance?: number;
+  killCount?: number;
+  onBreak?: string;
+  broken?: boolean;
 }
 
 export enum ItemType {
   WEAPON = 'weapon',
+  MELEE = 'melee',
   TOOL = 'tool',
   RESOURCE = 'resource',
   CONSUMABLE = 'consumable',
@@ -145,13 +153,9 @@ export interface GridCoordinate {
 
 export enum Direction {
   NORTH = 'north',
-  NORTHEAST = 'northeast', 
   EAST = 'east',
-  SOUTHEAST = 'southeast',
   SOUTH = 'south',
-  SOUTHWEST = 'southwest',
-  WEST = 'west',
-  NORTHWEST = 'northwest'
+  WEST = 'west'
 }
 
 export interface WorldMapTile {

@@ -2,11 +2,17 @@ import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.j
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { WorldMapService } from '../services/worldMap';
+import { ItemService } from '../models/item';
+import { InventoryService } from '../models/inventory';
+import { AreaInventoryService } from '../models/areaInventory';
 import { Location, PlayerStatus } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
 const worldMapService = WorldMapService.getInstance();
+const itemService = new ItemService();
+const inventoryService = new InventoryService();
+const areaInventoryService = new AreaInventoryService();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,7 +29,8 @@ module.exports = {
           { name: 'hordesize', value: 'hordesize' },
           { name: 'revive', value: 'revive' },
           { name: 'respawn', value: 'respawn' },
-          { name: 'return', value: 'return' }
+          { name: 'return', value: 'return' },
+          { name: 'spawn', value: 'spawn' }
         )
     )
     .addStringOption(option =>
@@ -40,6 +47,11 @@ module.exports = {
       option.setName('value')
         .setDescription('Value (required for hordesize command)')
         .setRequired(false)
+    )
+    .addStringOption(option =>
+      option.setName('itemname')
+        .setDescription('Item name (required for spawn command)')
+        .setRequired(false)
     ),
     
   async execute(interaction: CommandInteraction) {
@@ -48,6 +60,7 @@ module.exports = {
       const password = interaction.options.get('password')?.value as string;
       const targetUser = interaction.options.get('user')?.user;
       const value = interaction.options.get('value')?.value as number;
+      const itemName = interaction.options.get('itemname')?.value as string;
 
       // Validate admin password
       const adminPassword = process.env.ADMIN_PASSWORD;
@@ -93,6 +106,9 @@ module.exports = {
           break;
         case 'return':
           await handleReturnCommand(interaction, targetUser);
+          break;
+        case 'spawn':
+          await handleSpawnCommand(interaction, targetUser, itemName);
           break;
         default:
           const embed = new EmbedBuilder()
@@ -349,4 +365,96 @@ async function handleReturnCommand(interaction: CommandInteraction, targetUser: 
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handleSpawnCommand(interaction: CommandInteraction, targetUser: any, itemName: string | undefined) {
+  if (!targetUser) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ User Required')
+      .setDescription('Please specify a user to spawn the item for.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  if (!itemName) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Item Name Required')
+      .setDescription('Please specify an item name to spawn.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Get the target player
+  const player = await playerService.getPlayer(targetUser.id);
+  if (!player) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Player Not Found')
+      .setDescription(`${targetUser.username} is not registered. They need to use \`/join\` first.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Get the item
+  const item = await itemService.getItemByName(itemName);
+  if (!item) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Item Not Found')
+      .setDescription(`Item "${itemName}" not found.`);
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  // Check if player's inventory has space
+  const isEncumbered = await inventoryService.isPlayerEncumbered(player.id);
+  
+  if (isEncumbered) {
+    // Drop item on ground at player's location
+    if (player.x !== null && player.x !== undefined && player.y !== null && player.y !== undefined) {
+      await areaInventoryService.addItemToArea(player.location, item.id, 1, player.x, player.y);
+      
+      const embed = new EmbedBuilder()
+        .setColor('#95e1d3')
+        .setTitle('📦 Item Spawned on Ground')
+        .setDescription(`${item.name} spawned on the ground at ${targetUser.username}'s location because their inventory is full.`)
+        .addFields([
+          {
+            name: '📍 Location',
+            value: `${player.location} (${player.x}, ${player.y})`,
+            inline: false
+          }
+        ])
+        .setTimestamp();
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+    } else {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Cannot Spawn Item')
+        .setDescription(`${targetUser.username}'s inventory is full and they are not in a valid location to drop items.`);
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+  } else {
+    // Add item to player's inventory
+    const success = await inventoryService.addItemToInventory(player.id, item.id, 1);
+    
+    const embed = new EmbedBuilder()
+      .setColor(success ? '#4ecdc4' : '#ff6b6b')
+      .setTitle(success ? '🎒 Item Spawned in Inventory' : '❌ Spawn Failed')
+      .setDescription(success 
+        ? `${item.name} has been added to ${targetUser.username}'s inventory.`
+        : `Failed to spawn ${item.name}. Check the server logs for details.`
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
 }

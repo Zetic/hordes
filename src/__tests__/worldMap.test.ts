@@ -93,30 +93,18 @@ describe('WorldMapService', () => {
     const startX = 6;
     const startY = 6;
 
-    // Test all 8 directions from center
+    // Test all 4 cardinal directions from center
     const north = worldMapService.getCoordinateInDirection(startX, startY, Direction.NORTH);
     expect(north).toEqual({ x: 6, y: 5 });
-
-    const northeast = worldMapService.getCoordinateInDirection(startX, startY, Direction.NORTHEAST);
-    expect(northeast).toEqual({ x: 7, y: 5 });
 
     const east = worldMapService.getCoordinateInDirection(startX, startY, Direction.EAST);
     expect(east).toEqual({ x: 7, y: 6 });
 
-    const southeast = worldMapService.getCoordinateInDirection(startX, startY, Direction.SOUTHEAST);
-    expect(southeast).toEqual({ x: 7, y: 7 });
-
     const south = worldMapService.getCoordinateInDirection(startX, startY, Direction.SOUTH);
     expect(south).toEqual({ x: 6, y: 7 });
 
-    const southwest = worldMapService.getCoordinateInDirection(startX, startY, Direction.SOUTHWEST);
-    expect(southwest).toEqual({ x: 5, y: 7 });
-
     const west = worldMapService.getCoordinateInDirection(startX, startY, Direction.WEST);
     expect(west).toEqual({ x: 5, y: 6 });
-
-    const northwest = worldMapService.getCoordinateInDirection(startX, startY, Direction.NORTHWEST);
-    expect(northwest).toEqual({ x: 5, y: 5 });
   });
 
   test('should provide proper location display names', () => {

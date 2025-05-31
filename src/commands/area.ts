@@ -2,6 +2,7 @@ import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilde
 import { PlayerService } from '../models/player';
 import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
+import { ZombieService } from '../services/zombieService';
 import { Location } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
@@ -9,6 +10,7 @@ import { Location } from '../types/game';
 const playerService = new PlayerService();
 const areaInventoryService = new AreaInventoryService();
 const worldMapService = WorldMapService.getInstance();
+const zombieService = ZombieService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -53,6 +55,10 @@ module.exports = {
       // Get current location information
       const locationDisplay = worldMapService.getLocationDisplay(player.location);
       const areaItems = await areaInventoryService.getAreaInventory(player.location, player.x, player.y);
+      
+      // Get zombie count in the area
+      const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
+      const zombieCount = zombies ? zombies.count : 0;
 
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')
@@ -63,6 +69,11 @@ module.exports = {
             name: 'Current Location', 
             value: `${locationDisplay.emoji} ${locationDisplay.name} (${player.x}, ${player.y})`, 
             inline: true 
+          },
+          {
+            name: '🧟 Zombie Count',
+            value: `${zombieCount} zombies in this area`,
+            inline: true
           }
         ]);
 

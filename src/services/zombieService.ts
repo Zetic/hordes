@@ -98,6 +98,21 @@ export class ZombieService {
     }
   }
 
+  async removeZombiesAtLocation(x: number, y: number, removeCount: number): Promise<boolean> {
+    try {
+      const existing = await this.getZombiesAtLocation(x, y);
+      if (!existing || existing.count <= 0) {
+        return true; // No zombies to remove
+      }
+      
+      const newCount = Math.max(0, existing.count - removeCount);
+      return await this.setZombiesAtLocation(x, y, newCount);
+    } catch (error) {
+      console.error('Error removing zombies at location:', error);
+      return false;
+    }
+  }
+
   getThreatLevel(zombieCount: number): ThreatLevel {
     if (zombieCount === 0) return ThreatLevel.NONE;
     if (zombieCount <= 2) return ThreatLevel.LOW;
