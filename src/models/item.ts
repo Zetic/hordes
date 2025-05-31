@@ -76,7 +76,29 @@ export class ItemService {
   // Initialize default items if they don't exist (Box Cutter only)
   async initializeDefaultItems(): Promise<void> {
     try {
-      // Remove all existing items first to clean up
+      // Remove all dependent records first to avoid foreign key constraint violations
+      try {
+        await this.db.pool.query('DELETE FROM area_inventories');
+        console.log('🗑️ Cleared area inventories');
+      } catch (error) {
+        console.warn('Warning: Could not clear area_inventories:', error);
+      }
+
+      try {
+        await this.db.pool.query('DELETE FROM inventory');
+        console.log('🗑️ Cleared player inventories');
+      } catch (error) {
+        console.warn('Warning: Could not clear inventory:', error);
+      }
+
+      try {
+        await this.db.pool.query('DELETE FROM bank_inventories');
+        console.log('🗑️ Cleared bank inventories');
+      } catch (error) {
+        console.warn('Warning: Could not clear bank_inventories:', error);
+      }
+
+      // Now remove all existing items
       await this.db.pool.query('DELETE FROM items');
       console.log('🗑️ Cleared existing items');
 

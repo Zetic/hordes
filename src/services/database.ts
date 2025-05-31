@@ -118,6 +118,42 @@ export class DatabaseService {
         );
       `);
 
+      // Add missing columns to items table if they don't exist
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS category VARCHAR(255);
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS sub_category VARCHAR(255);
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS kill_chance INTEGER;
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS break_chance INTEGER;
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS kill_count INTEGER;
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS on_break VARCHAR(255);
+      `);
+
+      await this.pool.query(`
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS broken BOOLEAN DEFAULT false;
+      `);
+
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS inventory (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
