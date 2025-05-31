@@ -47,6 +47,9 @@ module.exports = {
         return;
       }
 
+      // Defer reply since we're about to do expensive operations (map generation)
+      await interaction.deferReply();
+
       // Get current location information
       const locationDisplay = worldMapService.getLocationDisplay(player.location);
       const areaItems = await areaInventoryService.getAreaInventory(player.location, player.x, player.y);
@@ -115,14 +118,22 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed], files: [mapAttachment] });
+      await interaction.editReply({ embeds: [embed], files: [mapAttachment] });
 
     } catch (error) {
       console.error('Error in area command:', error);
-      await interaction.reply({
-        content: 'An error occurred while viewing the area.',
-        ephemeral: true
-      });
+      
+      // Check if reply was already deferred
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: 'An error occurred while viewing the area.'
+        });
+      } else {
+        await interaction.reply({
+          content: 'An error occurred while viewing the area.',
+          ephemeral: true
+        });
+      }
     }
   }
 };
