@@ -1,5 +1,5 @@
 import { PlayerService } from '../models/player';
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, Location, PlayerCondition } from '../types/game';
 
 // Mock database client for transaction testing
 const mockClient = {
@@ -48,7 +48,7 @@ describe('PlayerService Reset Functionality', () => {
       // Should reset players with cleared coordinates
       expect(mockClient.query).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE players'),
-        [PlayerStatus.HEALTHY, Location.CITY]
+        [PlayerCondition.HEALTHY, Location.CITY]
       );
       
       expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
@@ -97,7 +97,7 @@ describe('PlayerService Reset Functionality', () => {
       );
       
       expect(updateCall).toBeDefined();
-      expect(updateCall[1]).toEqual([PlayerStatus.HEALTHY, Location.CITY]);
+      expect(updateCall[1]).toEqual([PlayerCondition.HEALTHY, Location.CITY]);
     });
 
     test('should reset health and action points to max values', async () => {

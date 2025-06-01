@@ -12,7 +12,14 @@ CREATE TABLE IF NOT EXISTS players (
   health INTEGER DEFAULT 100,
   max_health INTEGER DEFAULT 100,
   status VARCHAR(10) DEFAULT 'alive',
-  conditions TEXT DEFAULT '["healthy"]',
+  -- Individual boolean columns for each condition (replacing JSON conditions)
+  condition_healthy BOOLEAN DEFAULT true,
+  condition_wounded BOOLEAN DEFAULT false,
+  condition_fed BOOLEAN DEFAULT false,
+  condition_refreshed BOOLEAN DEFAULT false,
+  condition_thirsty BOOLEAN DEFAULT false,
+  condition_dehydrated BOOLEAN DEFAULT false,
+  condition_exhausted BOOLEAN DEFAULT false,
   action_points INTEGER DEFAULT 10,
   max_action_points INTEGER DEFAULT 10,
   water INTEGER DEFAULT 3,
@@ -121,6 +128,14 @@ CREATE TABLE IF NOT EXISTS zone_contests (
 CREATE INDEX IF NOT EXISTS idx_players_discord_id ON players(discord_id);
 CREATE INDEX IF NOT EXISTS idx_players_alive ON players(is_alive);
 CREATE INDEX IF NOT EXISTS idx_players_coordinates ON players(x, y);
+-- Indexes for condition columns (replacing JSON conditions)
+CREATE INDEX IF NOT EXISTS idx_players_condition_healthy ON players(condition_healthy);
+CREATE INDEX IF NOT EXISTS idx_players_condition_wounded ON players(condition_wounded);
+CREATE INDEX IF NOT EXISTS idx_players_condition_fed ON players(condition_fed);
+CREATE INDEX IF NOT EXISTS idx_players_condition_refreshed ON players(condition_refreshed);
+CREATE INDEX IF NOT EXISTS idx_players_condition_thirsty ON players(condition_thirsty);
+CREATE INDEX IF NOT EXISTS idx_players_condition_dehydrated ON players(condition_dehydrated);
+CREATE INDEX IF NOT EXISTS idx_players_condition_exhausted ON players(condition_exhausted);
 CREATE INDEX IF NOT EXISTS idx_inventory_player_id ON inventory(player_id);
 CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id);
 CREATE INDEX IF NOT EXISTS idx_area_inventories_location ON area_inventories(location);
@@ -150,16 +165,37 @@ BEGIN
         END;
     END IF;
 
-    -- Add conditions column for new condition system
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'conditions') THEN
-        ALTER TABLE players ADD COLUMN conditions TEXT DEFAULT '["healthy"]';
+    -- Add individual boolean condition columns (replacing JSON conditions)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_healthy') THEN
+        ALTER TABLE players ADD COLUMN condition_healthy BOOLEAN DEFAULT true;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_wounded') THEN
+        ALTER TABLE players ADD COLUMN condition_wounded BOOLEAN DEFAULT false;
         
-        -- Migrate existing data: convert old status to conditions
-        UPDATE players SET conditions = CASE 
-            WHEN NOT is_alive THEN '[]'
-            WHEN health < max_health THEN '["wounded"]'
-            ELSE '["healthy"]'
-        END;
+        -- Migrate existing data: set wounded based on health
+        UPDATE players SET condition_wounded = (health < max_health AND is_alive = true);
+        UPDATE players SET condition_healthy = (health >= max_health AND is_alive = true);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_fed') THEN
+        ALTER TABLE players ADD COLUMN condition_fed BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_refreshed') THEN
+        ALTER TABLE players ADD COLUMN condition_refreshed BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_thirsty') THEN
+        ALTER TABLE players ADD COLUMN condition_thirsty BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_dehydrated') THEN
+        ALTER TABLE players ADD COLUMN condition_dehydrated BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'condition_exhausted') THEN
+        ALTER TABLE players ADD COLUMN condition_exhausted BOOLEAN DEFAULT false;
     END IF;
 
     -- Add coordinates to players table

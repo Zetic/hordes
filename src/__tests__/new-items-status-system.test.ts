@@ -1,7 +1,7 @@
 // Quick test to verify new items and status system works
 import { itemDefinitions, getItemDefinition } from '../data/items';
 import { EffectType } from '../types/itemEffects';
-import { PlayerStatus } from '../types/game';
+import { PlayerStatus, PlayerCondition } from '../types/game';
 
 describe('New Items and Status System', () => {
   test('Water Ration should be defined with correct effects', () => {
@@ -43,11 +43,11 @@ describe('New Items and Status System', () => {
   });
 
   test('New PlayerStatus values should be available', () => {
-    expect(PlayerStatus.REFRESHED).toBe('refreshed');
-    expect(PlayerStatus.FED).toBe('fed');
-    expect(PlayerStatus.THIRSTY).toBe('thirsty');
-    expect(PlayerStatus.DEHYDRATED).toBe('dehydrated');
-    expect(PlayerStatus.EXHAUSTED).toBe('exhausted');
+    expect(PlayerCondition.REFRESHED).toBe('refreshed');
+    expect(PlayerCondition.FED).toBe('fed');
+    expect(PlayerCondition.THIRSTY).toBe('thirsty');
+    expect(PlayerCondition.DEHYDRATED).toBe('dehydrated');
+    expect(PlayerCondition.EXHAUSTED).toBe('exhausted');
   });
 
   test('All items should have valid structure', () => {

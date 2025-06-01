@@ -1,4 +1,4 @@
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, Location, PlayerCondition } from '../types/game';
 
 describe('Status Command Integration - Display Revision', () => {
   // Test the actual structure that the status command should generate
@@ -10,7 +10,7 @@ describe('Status Command Integration - Display Revision', () => {
         name: 'TestPlayer',
         health: 75,
         maxHealth: 100,
-        status: PlayerStatus.WOUNDED,
+        status: PlayerCondition.WOUNDED,
         isAlive: true,
         actionPoints: 8,
         maxActionPoints: 10,
@@ -24,25 +24,25 @@ describe('Status Command Integration - Display Revision', () => {
 
       // Simulate the logic from the status command
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerCondition.HEALTHY]: '💚',
+        [PlayerCondition.WOUNDED]: '🩸',
         [PlayerStatus.DEAD]: '💀',
-        [PlayerStatus.REFRESHED]: '💧',
-        [PlayerStatus.FED]: '🍞',
-        [PlayerStatus.THIRSTY]: '🫗',
-        [PlayerStatus.DEHYDRATED]: '🏜️',
-        [PlayerStatus.EXHAUSTED]: '😴'
+        [PlayerCondition.REFRESHED]: '💧',
+        [PlayerCondition.FED]: '🍞',
+        [PlayerCondition.THIRSTY]: '🫗',
+        [PlayerCondition.DEHYDRATED]: '🏜️',
+        [PlayerCondition.EXHAUSTED]: '😴'
       };
       
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerCondition.HEALTHY]: 'Healthy',
+        [PlayerCondition.WOUNDED]: 'Wounded',
         [PlayerStatus.DEAD]: 'Dead',
-        [PlayerStatus.REFRESHED]: 'Refreshed',
-        [PlayerStatus.FED]: 'Fed',
-        [PlayerStatus.THIRSTY]: 'Thirsty',
-        [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-        [PlayerStatus.EXHAUSTED]: 'Exhausted'
+        [PlayerCondition.REFRESHED]: 'Refreshed',
+        [PlayerCondition.FED]: 'Fed',
+        [PlayerCondition.THIRSTY]: 'Thirsty',
+        [PlayerCondition.DEHYDRATED]: 'Dehydrated',
+        [PlayerCondition.EXHAUSTED]: 'Exhausted'
       };
 
       // Build fields as the command would
@@ -162,35 +162,35 @@ describe('Status Command Integration - Display Revision', () => {
 
     test('should test various condition statuses for alive players', () => {
       const testCases = [
-        { status: PlayerStatus.HEALTHY, expected: '💚 Healthy' },
-        { status: PlayerStatus.WOUNDED, expected: '🩸 Wounded' },
-        { status: PlayerStatus.REFRESHED, expected: '💧 Refreshed' },
-        { status: PlayerStatus.FED, expected: '🍞 Fed' },
-        { status: PlayerStatus.THIRSTY, expected: '🫗 Thirsty' },
-        { status: PlayerStatus.DEHYDRATED, expected: '🏜️ Dehydrated' },
-        { status: PlayerStatus.EXHAUSTED, expected: '😴 Exhausted' }
+        { status: PlayerCondition.HEALTHY, expected: '💚 Healthy' },
+        { status: PlayerCondition.WOUNDED, expected: '🩸 Wounded' },
+        { status: PlayerCondition.REFRESHED, expected: '💧 Refreshed' },
+        { status: PlayerCondition.FED, expected: '🍞 Fed' },
+        { status: PlayerCondition.THIRSTY, expected: '🫗 Thirsty' },
+        { status: PlayerCondition.DEHYDRATED, expected: '🏜️ Dehydrated' },
+        { status: PlayerCondition.EXHAUSTED, expected: '😴 Exhausted' }
       ];
 
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerCondition.HEALTHY]: '💚',
+        [PlayerCondition.WOUNDED]: '🩸',
         [PlayerStatus.DEAD]: '💀',
-        [PlayerStatus.REFRESHED]: '💧',
-        [PlayerStatus.FED]: '🍞',
-        [PlayerStatus.THIRSTY]: '🫗',
-        [PlayerStatus.DEHYDRATED]: '🏜️',
-        [PlayerStatus.EXHAUSTED]: '😴'
+        [PlayerCondition.REFRESHED]: '💧',
+        [PlayerCondition.FED]: '🍞',
+        [PlayerCondition.THIRSTY]: '🫗',
+        [PlayerCondition.DEHYDRATED]: '🏜️',
+        [PlayerCondition.EXHAUSTED]: '😴'
       };
       
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerCondition.HEALTHY]: 'Healthy',
+        [PlayerCondition.WOUNDED]: 'Wounded',
         [PlayerStatus.DEAD]: 'Dead',
-        [PlayerStatus.REFRESHED]: 'Refreshed',
-        [PlayerStatus.FED]: 'Fed',
-        [PlayerStatus.THIRSTY]: 'Thirsty',
-        [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-        [PlayerStatus.EXHAUSTED]: 'Exhausted'
+        [PlayerCondition.REFRESHED]: 'Refreshed',
+        [PlayerCondition.FED]: 'Fed',
+        [PlayerCondition.THIRSTY]: 'Thirsty',
+        [PlayerCondition.DEHYDRATED]: 'Dehydrated',
+        [PlayerCondition.EXHAUSTED]: 'Exhausted'
       };
 
       testCases.forEach(({ status, expected }) => {

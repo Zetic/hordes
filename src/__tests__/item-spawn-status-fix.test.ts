@@ -1,6 +1,6 @@
 // Test to verify that the new items can be found and status system works correctly
 import { getItemDefinition, getAllItemDefinitions } from '../data/items';
-import { PlayerStatus } from '../types/game';
+import { PlayerStatus, PlayerCondition } from '../types/game';
 import { handleRemoveStatusEffect, handleAddStatusEffect } from '../services/effects/statusEffects';
 import { EffectType, ItemUseContext, ItemEffect } from '../types/itemEffects';
 
@@ -36,8 +36,8 @@ describe('Item Spawn and Status Fix Tests', () => {
     test('Removing refreshed status should not set to healthy if player is wounded', async () => {
       const mockPlayer = {
         discordId: 'test123',
-        status: PlayerStatus.WOUNDED, // Vital status based on health
-        conditions: [PlayerStatus.REFRESHED], // Temporary condition
+        status: PlayerCondition.WOUNDED, // Vital status based on health
+        conditions: [PlayerCondition.REFRESHED], // Temporary condition
         health: 50,
         maxHealth: 100
       };
@@ -64,8 +64,8 @@ describe('Item Spawn and Status Fix Tests', () => {
     test('Removing fed status should not set to healthy if player is wounded', async () => {
       const mockPlayer = {
         discordId: 'test456',
-        status: PlayerStatus.WOUNDED, // Vital status based on health
-        conditions: [PlayerStatus.FED], // Temporary condition
+        status: PlayerCondition.WOUNDED, // Vital status based on health
+        conditions: [PlayerCondition.FED], // Temporary condition
         health: 70,
         maxHealth: 100
       };
@@ -89,11 +89,11 @@ describe('Item Spawn and Status Fix Tests', () => {
 
     test('Status messages should be defined for all new statuses', () => {
       const statusMessages = [
-        PlayerStatus.REFRESHED,
-        PlayerStatus.FED,
-        PlayerStatus.THIRSTY,
-        PlayerStatus.DEHYDRATED,
-        PlayerStatus.EXHAUSTED
+        PlayerCondition.REFRESHED,
+        PlayerCondition.FED,
+        PlayerCondition.THIRSTY,
+        PlayerCondition.DEHYDRATED,
+        PlayerCondition.EXHAUSTED
       ];
 
       statusMessages.forEach(status => {

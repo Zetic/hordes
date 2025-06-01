@@ -1,4 +1,4 @@
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, Location, PlayerCondition } from '../types/game';
 
 describe('Status Display Revision', () => {
   describe('Status vs Conditions Separation', () => {
@@ -10,7 +10,7 @@ describe('Status Display Revision', () => {
         name: 'Alice',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY,
+        status: PlayerCondition.HEALTHY,
         isAlive: true,
         actionPoints: 10,
         maxActionPoints: 10,
@@ -26,13 +26,13 @@ describe('Status Display Revision', () => {
         ...aliveHealthyPlayer,
         name: 'Bob',
         health: 50,
-        status: PlayerStatus.WOUNDED,
+        status: PlayerCondition.WOUNDED,
       };
 
       const aliveFedPlayer = {
         ...aliveHealthyPlayer,
         name: 'Charlie',
-        status: PlayerStatus.FED,
+        status: PlayerCondition.FED,
       };
 
       const deadPlayer = {
@@ -52,9 +52,9 @@ describe('Status Display Revision', () => {
       expect(deadPlayer.isAlive).toBe(false);
       
       // Each player should have different conditions
-      expect(aliveHealthyPlayer.status).toBe(PlayerStatus.HEALTHY);
-      expect(aliveWoundedPlayer.status).toBe(PlayerStatus.WOUNDED);
-      expect(aliveFedPlayer.status).toBe(PlayerStatus.FED);
+      expect(aliveHealthyPlayer.status).toBe(PlayerCondition.HEALTHY);
+      expect(aliveWoundedPlayer.status).toBe(PlayerCondition.WOUNDED);
+      expect(aliveFedPlayer.status).toBe(PlayerCondition.FED);
       expect(deadPlayer.status).toBe(PlayerStatus.DEAD);
     });
 
@@ -65,25 +65,29 @@ describe('Status Display Revision', () => {
       };
 
       const conditionTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerCondition.HEALTHY]: 'Healthy',
+        [PlayerCondition.WOUNDED]: 'Wounded',
         [PlayerStatus.DEAD]: 'Dead',
-        [PlayerStatus.REFRESHED]: 'Refreshed',
-        [PlayerStatus.FED]: 'Fed',
-        [PlayerStatus.THIRSTY]: 'Thirsty',
-        [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-        [PlayerStatus.EXHAUSTED]: 'Exhausted'
+        [PlayerCondition.REFRESHED]: 'Refreshed',
+        [PlayerCondition.FED]: 'Fed',
+        [PlayerCondition.THIRSTY]: 'Thirsty',
+        [PlayerCondition.DEHYDRATED]: 'Dehydrated',
+        [PlayerCondition.EXHAUSTED]: 'Exhausted'
       };
 
       // Verify mappings exist
       expect(vitalStatusTexts.alive).toBe('Alive');
       expect(vitalStatusTexts.dead).toBe('Dead');
       
-      // Verify all PlayerStatus values have condition text mappings
-      Object.values(PlayerStatus).forEach(status => {
-        expect(conditionTexts[status]).toBeDefined();
-        expect(typeof conditionTexts[status]).toBe('string');
+      // Verify all PlayerCondition values have condition text mappings
+      Object.values(PlayerCondition).forEach(condition => {
+        expect(conditionTexts[condition]).toBeDefined();
+        expect(typeof conditionTexts[condition]).toBe('string');
       });
+      
+      // Verify PlayerStatus.DEAD has a mapping too
+      expect(conditionTexts[PlayerStatus.DEAD]).toBeDefined();
+      expect(typeof conditionTexts[PlayerStatus.DEAD]).toBe('string');
     });
   });
 

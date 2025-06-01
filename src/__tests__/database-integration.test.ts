@@ -1,6 +1,6 @@
 import { PlayerService } from '../models/player';
 import { DatabaseService } from '../services/database';
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, Location, PlayerCondition } from '../types/game';
 
 // Simple integration test to verify the database status column fixes
 describe('Database Integration Test', () => {
@@ -21,7 +21,7 @@ describe('Database Integration Test', () => {
     test('should construct valid updatePlayerStatus query', () => {
       // Test the SQL query structure that was failing before
       const discordId = 'test123';
-      const status = PlayerStatus.WOUNDED;
+      const status = PlayerCondition.WOUNDED;
       
       const query = `
         UPDATE players 
@@ -38,7 +38,7 @@ describe('Database Integration Test', () => {
       expect(query).toContain('WHERE discord_id = $3');
       
       // Verify parameters match expected types
-      expect(params[0]).toBe(PlayerStatus.WOUNDED);
+      expect(params[0]).toBe(PlayerCondition.WOUNDED);
       expect(params[1]).toBe(true); // wounded players are still alive
       expect(params[2]).toBe('test123');
       
@@ -60,7 +60,7 @@ describe('Database Integration Test', () => {
             updated_at = NOW()
         WHERE id IS NOT NULL
       `;
-      const params = [PlayerStatus.HEALTHY, Location.CITY];
+      const params = [PlayerCondition.HEALTHY, Location.CITY];
       
       // Verify the query includes all required columns
       expect(query).toContain('SET health = max_health');
@@ -69,7 +69,7 @@ describe('Database Integration Test', () => {
       expect(query).toContain('WHERE id IS NOT NULL');
       
       // Verify parameters
-      expect(params[0]).toBe(PlayerStatus.HEALTHY);
+      expect(params[0]).toBe(PlayerCondition.HEALTHY);
       expect(params[1]).toBe(Location.CITY);
     });
   });
@@ -149,7 +149,7 @@ describe('Database Integration Test', () => {
       };
 
       // Verify the status is properly mapped and not undefined
-      expect(mappedPlayer.status).toBe(PlayerStatus.WOUNDED);
+      expect(mappedPlayer.status).toBe(PlayerCondition.WOUNDED);
       expect(mappedPlayer.status).not.toBeUndefined();
       expect(mappedPlayer.status).not.toBe('undefined');
     });
@@ -159,8 +159,8 @@ describe('Database Integration Test', () => {
     test('should display proper status transitions in log messages', () => {
       // Test the log message format that was showing "undefined → undefined"
       const playerName = 'TestPlayer';
-      const previousStatus = PlayerStatus.HEALTHY;
-      const newStatus = PlayerStatus.WOUNDED;
+      const previousStatus = PlayerCondition.HEALTHY;
+      const newStatus = PlayerCondition.WOUNDED;
       const attackCount = 2;
       const successfulHits = 1;
 
@@ -176,18 +176,18 @@ describe('Database Integration Test', () => {
     test('should handle different status transitions', () => {
       const testCases = [
         {
-          previous: PlayerStatus.HEALTHY,
-          new: PlayerStatus.WOUNDED,
+          previous: PlayerCondition.HEALTHY,
+          new: PlayerCondition.WOUNDED,
           expected: 'healthy → wounded'
         },
         {
-          previous: PlayerStatus.WOUNDED,
+          previous: PlayerCondition.WOUNDED,
           new: PlayerStatus.DEAD,
           expected: 'wounded → dead'
         },
         {
-          previous: PlayerStatus.HEALTHY,
-          new: PlayerStatus.HEALTHY,
+          previous: PlayerCondition.HEALTHY,
+          new: PlayerCondition.HEALTHY,
           expected: 'healthy → healthy'
         }
       ];

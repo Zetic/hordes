@@ -1,4 +1,4 @@
-import { PlayerStatus, isVitalStatus, isTemporaryCondition } from '../types/game';
+import { PlayerStatus, isVitalStatus, isTemporaryCondition, PlayerCondition } from '../types/game';
 import { PlayerService } from '../models/player';
 
 describe('Issue #93 Fix Verification', () => {
@@ -14,8 +14,8 @@ describe('Issue #93 Fix Verification', () => {
         name: 'TestPlayer',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY, // Vital status
-        conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED], // Both conditions
+        status: PlayerCondition.HEALTHY, // Vital status
+        conditions: [PlayerCondition.REFRESHED, PlayerCondition.FED], // Both conditions
         actionPoints: 10,
         maxActionPoints: 10,
         water: 5,
@@ -28,12 +28,12 @@ describe('Issue #93 Fix Verification', () => {
       };
 
       // Verify both conditions can coexist
-      expect(mockPlayer.conditions).toContain(PlayerStatus.REFRESHED);
-      expect(mockPlayer.conditions).toContain(PlayerStatus.FED);
+      expect(mockPlayer.conditions).toContain(PlayerCondition.REFRESHED);
+      expect(mockPlayer.conditions).toContain(PlayerCondition.FED);
       expect(mockPlayer.conditions.length).toBe(2);
       
       // Verify vital status is separate
-      expect(mockPlayer.status).toBe(PlayerStatus.HEALTHY);
+      expect(mockPlayer.status).toBe(PlayerCondition.HEALTHY);
       expect(isVitalStatus(mockPlayer.status)).toBe(true);
       
       // Verify conditions are properly categorized
@@ -45,31 +45,31 @@ describe('Issue #93 Fix Verification', () => {
     test('should display multiple conditions in status command format', () => {
       // Mock status display logic from status.ts
       const mockPlayer = {
-        conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED, PlayerStatus.THIRSTY],
-        status: PlayerStatus.WOUNDED,
+        conditions: [PlayerCondition.REFRESHED, PlayerCondition.FED, PlayerCondition.THIRSTY],
+        status: PlayerCondition.WOUNDED,
         isAlive: true
       };
 
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerCondition.HEALTHY]: '💚',
+        [PlayerCondition.WOUNDED]: '🩸',
         [PlayerStatus.DEAD]: '💀',
-        [PlayerStatus.REFRESHED]: '💧',
-        [PlayerStatus.FED]: '🍞',
-        [PlayerStatus.THIRSTY]: '🫗',
-        [PlayerStatus.DEHYDRATED]: '🏜️',
-        [PlayerStatus.EXHAUSTED]: '😴'
+        [PlayerCondition.REFRESHED]: '💧',
+        [PlayerCondition.FED]: '🍞',
+        [PlayerCondition.THIRSTY]: '🫗',
+        [PlayerCondition.DEHYDRATED]: '🏜️',
+        [PlayerCondition.EXHAUSTED]: '😴'
       };
       
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerCondition.HEALTHY]: 'Healthy',
+        [PlayerCondition.WOUNDED]: 'Wounded',
         [PlayerStatus.DEAD]: 'Dead',
-        [PlayerStatus.REFRESHED]: 'Refreshed',
-        [PlayerStatus.FED]: 'Fed',
-        [PlayerStatus.THIRSTY]: 'Thirsty',
-        [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-        [PlayerStatus.EXHAUSTED]: 'Exhausted'
+        [PlayerCondition.REFRESHED]: 'Refreshed',
+        [PlayerCondition.FED]: 'Fed',
+        [PlayerCondition.THIRSTY]: 'Thirsty',
+        [PlayerCondition.DEHYDRATED]: 'Dehydrated',
+        [PlayerCondition.EXHAUSTED]: 'Exhausted'
       };
 
       // Test the conditions display logic
@@ -93,14 +93,14 @@ describe('Issue #93 Fix Verification', () => {
 
       const cityPlayer = {
         location: 'city' as any,
-        conditions: [] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        conditions: [] as PlayerCondition[],
+        status: PlayerCondition.HEALTHY
       };
 
       const homePlayer = {
         location: 'home' as any, 
-        conditions: [] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        conditions: [] as PlayerCondition[],
+        status: PlayerCondition.HEALTHY
       };
 
       // Mock item definitions
@@ -115,22 +115,22 @@ describe('Issue #93 Fix Verification', () => {
       
       // Players should be able to use hydration/nutrition items anywhere
       // (unless they have specific conditions that prevent it)
-      expect(cityPlayer.conditions.includes(PlayerStatus.REFRESHED)).toBe(false);
-      expect(cityPlayer.conditions.includes(PlayerStatus.FED)).toBe(false);
+      expect(cityPlayer.conditions.includes(PlayerCondition.REFRESHED)).toBe(false);
+      expect(cityPlayer.conditions.includes(PlayerCondition.FED)).toBe(false);
     });
 
     test('should still prevent usage based on conditions not location', () => {
       // Verify that the new restriction system works based on conditions
       const refreshedPlayer = {
         location: 'waste' as any,
-        conditions: [PlayerStatus.REFRESHED] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        conditions: [PlayerCondition.REFRESHED] as PlayerCondition[],
+        status: PlayerCondition.HEALTHY
       };
 
       const fedPlayer = {
         location: 'city' as any, // Can be in city
-        conditions: [PlayerStatus.FED] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        conditions: [PlayerCondition.FED] as PlayerCondition[],
+        status: PlayerCondition.HEALTHY
       };
 
       // Test restriction logic from checkItemUsageRestrictions
@@ -138,15 +138,15 @@ describe('Issue #93 Fix Verification', () => {
       const nutritionItem = { subCategory: 'Nutrition' };
 
       // Refreshed player cannot use hydration items (regardless of location)
-      const refreshedCanUseHydration = !refreshedPlayer.conditions.includes(PlayerStatus.REFRESHED) || hydrationItem.subCategory !== 'Hydration';
+      const refreshedCanUseHydration = !refreshedPlayer.conditions.includes(PlayerCondition.REFRESHED) || hydrationItem.subCategory !== 'Hydration';
       expect(refreshedCanUseHydration).toBe(false);
 
       // Fed player cannot use nutrition items (regardless of location) 
-      const fedCanUseNutrition = !fedPlayer.conditions.includes(PlayerStatus.FED) || nutritionItem.subCategory !== 'Nutrition';
+      const fedCanUseNutrition = !fedPlayer.conditions.includes(PlayerCondition.FED) || nutritionItem.subCategory !== 'Nutrition';
       expect(fedCanUseNutrition).toBe(false);
 
       // But fed player CAN use hydration items
-      const fedCanUseHydration = !fedPlayer.conditions.includes(PlayerStatus.REFRESHED) || hydrationItem.subCategory !== 'Hydration';
+      const fedCanUseHydration = !fedPlayer.conditions.includes(PlayerCondition.REFRESHED) || hydrationItem.subCategory !== 'Hydration';
       expect(fedCanUseHydration).toBe(true);
     });
   });
@@ -155,7 +155,7 @@ describe('Issue #93 Fix Verification', () => {
     test('should support conditions field migration', () => {
       // Test that the database schema supports the new conditions field
       const emptyConditions = '[]';
-      const multipleConditions = `["${PlayerStatus.REFRESHED}", "${PlayerStatus.FED}"]`;
+      const multipleConditions = `["${PlayerCondition.REFRESHED}", "${PlayerCondition.FED}"]`;
 
       // Test JSON parsing for database storage
       expect(() => JSON.parse(emptyConditions)).not.toThrow();

@@ -1,6 +1,5 @@
 import { Player, Location, GamePhase, PlayerStatus, PlayerCondition } from '../types/game';
 import { DatabaseService } from '../services/database';
-import { safeJsonParseArray } from '../utils/jsonUtils';
 
 export class PlayerService {
   private db: DatabaseService;
@@ -77,31 +76,21 @@ export class PlayerService {
 
   async addPlayerCondition(discordId: string, condition: string): Promise<boolean> {
     try {
-      // Get current conditions
-      const player = await this.getPlayer(discordId);
-      if (!player) return false;
-
-      // Parse existing conditions or start with empty array
-      let conditions: string[] = [];
-      if (player.conditions && player.conditions.length > 0) {
-        conditions = player.conditions.map(c => typeof c === 'string' ? c : String(c));
+      // Map condition string to column name
+      const columnName = this.getConditionColumnName(condition);
+      if (!columnName) {
+        console.error(`Invalid condition: ${condition}`);
+        return false;
       }
 
-      // Add condition if not already present
-      if (!conditions.includes(condition)) {
-        conditions.push(condition);
-        
-        // Update database
-        const query = `
-          UPDATE players 
-          SET conditions = $1, updated_at = NOW()
-          WHERE discord_id = $2
-        `;
-        const result = await this.db.pool.query(query, [JSON.stringify(conditions), discordId]);
-        return (result.rowCount || 0) > 0;
-      }
-      
-      return true; // Condition already exists
+      // Update the specific condition column to true
+      const query = `
+        UPDATE players 
+        SET ${columnName} = true, updated_at = NOW()
+        WHERE discord_id = $1
+      `;
+      const result = await this.db.pool.query(query, [discordId]);
+      return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error adding player condition:', error);
       return false;
@@ -110,26 +99,20 @@ export class PlayerService {
 
   async removePlayerCondition(discordId: string, condition: string): Promise<boolean> {
     try {
-      // Get current conditions
-      const player = await this.getPlayer(discordId);
-      if (!player) return false;
-
-      // Parse existing conditions
-      let conditions: string[] = [];
-      if (player.conditions && player.conditions.length > 0) {
-        conditions = player.conditions.map(c => typeof c === 'string' ? c : String(c));
+      // Map condition string to column name
+      const columnName = this.getConditionColumnName(condition);
+      if (!columnName) {
+        console.error(`Invalid condition: ${condition}`);
+        return false;
       }
 
-      // Remove condition if present
-      const updatedConditions = conditions.filter(c => c !== condition);
-      
-      // Update database
+      // Update the specific condition column to false
       const query = `
         UPDATE players 
-        SET conditions = $1, updated_at = NOW()
-        WHERE discord_id = $2
+        SET ${columnName} = false, updated_at = NOW()
+        WHERE discord_id = $1
       `;
-      const result = await this.db.pool.query(query, [JSON.stringify(updatedConditions), discordId]);
+      const result = await this.db.pool.query(query, [discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error removing player condition:', error);
@@ -232,16 +215,20 @@ export class PlayerService {
               water = 10,
               is_alive = true,
               status = $1,
-              conditions = $2,
-              location = $3,
+              condition_healthy = true,
+              condition_wounded = false,
+              condition_fed = false,
+              condition_refreshed = false,
+              condition_thirsty = false,
+              condition_dehydrated = false,
+              condition_exhausted = false,
+              location = $2,
               x = NULL,
               y = NULL,
               updated_at = NOW()
           WHERE id IS NOT NULL
         `;
-        // Set default conditions to HEALTHY only
-        const defaultConditions = JSON.stringify([PlayerCondition.HEALTHY]);
-        await client.query(resetQuery, [PlayerStatus.ALIVE, defaultConditions, Location.CITY]);
+        await client.query(resetQuery, [PlayerStatus.ALIVE, Location.CITY]);
         
         await client.query('COMMIT');
         console.log('✅ All players reset to default state with cleared inventories and coordinates');
@@ -276,18 +263,23 @@ export class PlayerService {
 
   async revivePlayer(discordId: string): Promise<boolean> {
     try {
-      const defaultConditions = JSON.stringify([PlayerCondition.HEALTHY]);
       const query = `
         UPDATE players 
         SET health = max_health,
             is_alive = true,
             status = $1,
-            conditions = $2,
-            location = $3,
+            condition_healthy = true,
+            condition_wounded = false,
+            condition_fed = false,
+            condition_refreshed = false,
+            condition_thirsty = false,
+            condition_dehydrated = false,
+            condition_exhausted = false,
+            location = $2,
             updated_at = NOW()
-        WHERE discord_id = $4
+        WHERE discord_id = $3
       `;
-      const result = await this.db.pool.query(query, [PlayerStatus.ALIVE, defaultConditions, Location.CITY, discordId]);
+      const result = await this.db.pool.query(query, [PlayerStatus.ALIVE, Location.CITY, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error reviving player:', error);
@@ -318,24 +310,17 @@ export class PlayerService {
   }
 
   private mapRowToPlayer(row: any): Player {
-    // Handle both JSON (string) and JSONB (already parsed) formats for conditions
+    // Map individual boolean condition columns to PlayerCondition array
     let conditions: PlayerCondition[] = [];
     
-    if (row.conditions) {
-      if (Array.isArray(row.conditions)) {
-        // JSONB case - already parsed by PostgreSQL
-        conditions = row.conditions as PlayerCondition[];
-      } else if (typeof row.conditions === 'string') {
-        // JSON case - needs parsing, use utility function that handles single values
-        const conditionsResult = safeJsonParseArray<PlayerCondition>(
-          row.conditions,
-          [],
-          `player conditions for ${row.discord_id}`
-        );
-        conditions = conditionsResult.data;
-      }
-      // For any other type (number, boolean, object), default to empty array
-    }
+    // Check each condition boolean column and add to array if true
+    if (row.condition_healthy) conditions.push(PlayerCondition.HEALTHY);
+    if (row.condition_wounded) conditions.push(PlayerCondition.WOUNDED);
+    if (row.condition_fed) conditions.push(PlayerCondition.FED);
+    if (row.condition_refreshed) conditions.push(PlayerCondition.REFRESHED);
+    if (row.condition_thirsty) conditions.push(PlayerCondition.THIRSTY);
+    if (row.condition_dehydrated) conditions.push(PlayerCondition.DEHYDRATED);
+    if (row.condition_exhausted) conditions.push(PlayerCondition.EXHAUSTED);
 
     return {
       id: row.id,
@@ -355,5 +340,20 @@ export class PlayerService {
       inventory: [], // Will be loaded separately
       lastActionTime: row.last_action_time
     };
+  }
+
+  private getConditionColumnName(condition: string): string | null {
+    // Map PlayerCondition enum values to database column names
+    const conditionMap: { [key: string]: string } = {
+      [PlayerCondition.HEALTHY]: 'condition_healthy',
+      [PlayerCondition.WOUNDED]: 'condition_wounded',
+      [PlayerCondition.FED]: 'condition_fed',
+      [PlayerCondition.REFRESHED]: 'condition_refreshed',
+      [PlayerCondition.THIRSTY]: 'condition_thirsty',
+      [PlayerCondition.DEHYDRATED]: 'condition_dehydrated',
+      [PlayerCondition.EXHAUSTED]: 'condition_exhausted'
+    };
+    
+    return conditionMap[condition] || null;
   }
 }

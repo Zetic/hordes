@@ -1,11 +1,11 @@
-import { PlayerStatus } from '../types/game';
+import { PlayerCondition } from '../types/game';
 
 describe('Conditions Column Fix', () => {
   test('should parse conditions JSON correctly', () => {
     // Test that the conditions parsing logic works correctly
     const emptyConditions = '[]';
-    const singleCondition = `["${PlayerStatus.FED}"]`;
-    const multipleConditions = `["${PlayerStatus.REFRESHED}", "${PlayerStatus.FED}"]`;
+    const singleCondition = `["${PlayerCondition.FED}"]`;
+    const multipleConditions = `["${PlayerCondition.REFRESHED}", "${PlayerCondition.FED}"]`;
 
     // Test JSON parsing for database storage
     expect(() => JSON.parse(emptyConditions)).not.toThrow();
@@ -21,12 +21,12 @@ describe('Conditions Column Fix', () => {
 
     expect(Array.isArray(parsedSingle)).toBe(true);
     expect(parsedSingle.length).toBe(1);
-    expect(parsedSingle[0]).toBe(PlayerStatus.FED);
+    expect(parsedSingle[0]).toBe(PlayerCondition.FED);
 
     expect(Array.isArray(parsedMultiple)).toBe(true);
     expect(parsedMultiple.length).toBe(2);
-    expect(parsedMultiple).toContain(PlayerStatus.REFRESHED);
-    expect(parsedMultiple).toContain(PlayerStatus.FED);
+    expect(parsedMultiple).toContain(PlayerCondition.REFRESHED);
+    expect(parsedMultiple).toContain(PlayerCondition.FED);
   });
 
   test('should handle invalid JSON gracefully', () => {
@@ -36,7 +36,7 @@ describe('Conditions Column Fix', () => {
     const undefinedValue = undefined;
 
     // These should not throw and should return empty array as fallback
-    let conditions: PlayerStatus[] = [];
+    let conditions: PlayerCondition[] = [];
     
     try {
       if (invalidJson) {
@@ -73,17 +73,17 @@ describe('Conditions Column Fix', () => {
 
   test('should stringify conditions for database storage', () => {
     // Test the JSON stringification for database storage
-    const emptyConditions: PlayerStatus[] = [];
-    const singleCondition: PlayerStatus[] = [PlayerStatus.FED];
-    const multipleConditions: PlayerStatus[] = [PlayerStatus.REFRESHED, PlayerStatus.FED];
+    const emptyConditions: PlayerCondition[] = [];
+    const singleCondition: PlayerCondition[] = [PlayerCondition.FED];
+    const multipleConditions: PlayerCondition[] = [PlayerCondition.REFRESHED, PlayerCondition.FED];
 
     const emptyJson = JSON.stringify(emptyConditions);
     const singleJson = JSON.stringify(singleCondition);
     const multipleJson = JSON.stringify(multipleConditions);
 
     expect(emptyJson).toBe('[]');
-    expect(singleJson).toBe(`["${PlayerStatus.FED}"]`);
-    expect(multipleJson).toBe(`["${PlayerStatus.REFRESHED}","${PlayerStatus.FED}"]`);
+    expect(singleJson).toBe(`["${PlayerCondition.FED}"]`);
+    expect(multipleJson).toBe(`["${PlayerCondition.REFRESHED}","${PlayerCondition.FED}"]`);
 
     // Verify round-trip conversion works
     expect(JSON.parse(emptyJson)).toEqual(emptyConditions);

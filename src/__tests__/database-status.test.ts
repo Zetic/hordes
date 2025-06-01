@@ -1,16 +1,16 @@
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, Location, PlayerCondition } from '../types/game';
 
 describe('Database Status Column', () => {
   describe('Status Column Values', () => {
     test('should define valid status values', () => {
-      expect(PlayerStatus.HEALTHY).toBe('healthy');
-      expect(PlayerStatus.WOUNDED).toBe('wounded');
+      expect(PlayerCondition.HEALTHY).toBe('healthy');
+      expect(PlayerCondition.WOUNDED).toBe('wounded');
       expect(PlayerStatus.DEAD).toBe('dead');
     });
 
     test('should use correct default status', () => {
       const defaultStatus = 'healthy';
-      expect(defaultStatus).toBe(PlayerStatus.HEALTHY);
+      expect(defaultStatus).toBe(PlayerCondition.HEALTHY);
     });
   });
 
@@ -18,7 +18,7 @@ describe('Database Status Column', () => {
     test('should construct valid player update query with status', () => {
       // Simulate the UPDATE query structure used in updatePlayerStatus
       const mockDiscordId = 'test123';
-      const mockStatus = PlayerStatus.WOUNDED;
+      const mockStatus = PlayerCondition.WOUNDED;
       const mockIsAlive = true;
       
       const query = `
@@ -30,7 +30,7 @@ describe('Database Status Column', () => {
       
       expect(query).toContain('status = $1');
       expect(query).toContain('WHERE discord_id = $3');
-      expect(params).toEqual([PlayerStatus.WOUNDED, true, 'test123']);
+      expect(params).toEqual([PlayerCondition.WOUNDED, true, 'test123']);
     });
 
     test('should construct valid reset all players query', () => {
@@ -46,31 +46,32 @@ describe('Database Status Column', () => {
             updated_at = NOW()
         WHERE id IS NOT NULL
       `;
-      const params = [PlayerStatus.HEALTHY, Location.CITY];
+      const params = [PlayerCondition.HEALTHY, Location.CITY];
       
       expect(query).toContain('status = $1');
       expect(query).toContain('location = $2');
       expect(query).toContain('WHERE id IS NOT NULL');
-      expect(params).toEqual([PlayerStatus.HEALTHY, Location.CITY]);
+      expect(params).toEqual([PlayerCondition.HEALTHY, Location.CITY]);
     });
   });
 
   describe('Status Transitions', () => {
     test('should handle status transitions during horde attacks', () => {
       // Mock the horde attack status progression logic
-      let currentStatus = PlayerStatus.HEALTHY;
+      let currentStatus = PlayerCondition.HEALTHY;
       
       // First hit: healthy -> wounded
-      if (currentStatus === PlayerStatus.HEALTHY) {
-        currentStatus = PlayerStatus.WOUNDED;
+      if (currentStatus === PlayerCondition.HEALTHY) {
+        currentStatus = PlayerCondition.WOUNDED;
       }
-      expect(currentStatus).toBe(PlayerStatus.WOUNDED);
+      expect(currentStatus).toBe(PlayerCondition.WOUNDED);
       
-      // Second hit: wounded -> dead
-      if (currentStatus === PlayerStatus.WOUNDED) {
-        currentStatus = PlayerStatus.DEAD;
+      // Second hit: wounded -> dead (different type as PlayerStatus is different from PlayerCondition)
+      let newStatus: PlayerStatus = PlayerStatus.DEAD;
+      if (currentStatus === PlayerCondition.WOUNDED) {
+        newStatus = PlayerStatus.DEAD;
       }
-      expect(currentStatus).toBe(PlayerStatus.DEAD);
+      expect(newStatus).toBe(PlayerStatus.DEAD);
     });
 
     test('should not transition dead players', () => {
@@ -121,15 +122,15 @@ describe('Database Status Column', () => {
         lastActionTime: mockRow.last_action_time
       };
 
-      expect(player.status).toBe(PlayerStatus.WOUNDED);
+      expect(player.status).toBe(PlayerCondition.WOUNDED);
       expect(player.status).not.toBe(undefined);
       expect(player.isAlive).toBe(true);
     });
 
     test('should handle status formatting in logs', () => {
       const playerName = 'TestPlayer';
-      const previousStatus = PlayerStatus.HEALTHY;
-      const newStatus = PlayerStatus.WOUNDED;
+      const previousStatus = PlayerCondition.HEALTHY;
+      const newStatus = PlayerCondition.WOUNDED;
       const attackCount = 3;
       const successfulHits = 1;
 

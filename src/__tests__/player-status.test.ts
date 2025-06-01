@@ -1,16 +1,16 @@
-import { PlayerStatus } from '../types/game';
+import { PlayerStatus, PlayerCondition } from '../types/game';
 
 describe('Player Status System', () => {
   test('should define all player statuses', () => {
-    expect(PlayerStatus.HEALTHY).toBe('healthy');
-    expect(PlayerStatus.WOUNDED).toBe('wounded');
+    expect(PlayerCondition.HEALTHY).toBe('healthy');
+    expect(PlayerCondition.WOUNDED).toBe('wounded');
     expect(PlayerStatus.DEAD).toBe('dead');
   });
 
   test('should have correct status progression', () => {
     // Test status progression from healthy to wounded to dead
-    const healthyStatus = PlayerStatus.HEALTHY;
-    const woundedStatus = PlayerStatus.WOUNDED;
+    const healthyStatus = PlayerCondition.HEALTHY;
+    const woundedStatus = PlayerCondition.WOUNDED;
     const deadStatus = PlayerStatus.DEAD;
     
     expect(healthyStatus).not.toBe(woundedStatus);
@@ -20,18 +20,19 @@ describe('Player Status System', () => {
 
   test('should handle status transitions correctly', () => {
     // Mock player status progression
-    let playerStatus = PlayerStatus.HEALTHY;
+    let playerStatus = PlayerCondition.HEALTHY;
     
     // First injury: healthy -> wounded
-    if (playerStatus === PlayerStatus.HEALTHY) {
-      playerStatus = PlayerStatus.WOUNDED;
+    if (playerStatus === PlayerCondition.HEALTHY) {
+      playerStatus = PlayerCondition.WOUNDED;
     }
-    expect(playerStatus).toBe(PlayerStatus.WOUNDED);
+    expect(playerStatus).toBe(PlayerCondition.WOUNDED);
     
-    // Second injury: wounded -> dead
-    if (playerStatus === PlayerStatus.WOUNDED) {
-      playerStatus = PlayerStatus.DEAD;
+    // Second injury: wounded -> dead (status change, not condition)
+    let finalStatus: PlayerStatus = PlayerStatus.ALIVE;
+    if (playerStatus === PlayerCondition.WOUNDED) {
+      finalStatus = PlayerStatus.DEAD;
     }
-    expect(playerStatus).toBe(PlayerStatus.DEAD);
+    expect(finalStatus).toBe(PlayerStatus.DEAD);
   });
 });

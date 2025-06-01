@@ -1,21 +1,21 @@
-import { PlayerStatus } from '../types/game';
+import { PlayerStatus, PlayerCondition } from '../types/game';
 
 describe('Status Command Display Fix', () => {
   test('should format status title without emoji', () => {
     const playerName = 'TestPlayer';
     const statusEmojis = {
-      [PlayerStatus.HEALTHY]: '💚',
-      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerCondition.HEALTHY]: '💚',
+      [PlayerCondition.WOUNDED]: '🩸',
       [PlayerStatus.DEAD]: '💀',
-      [PlayerStatus.REFRESHED]: '💧',
-      [PlayerStatus.FED]: '🍞',
-      [PlayerStatus.THIRSTY]: '🫗',
-      [PlayerStatus.DEHYDRATED]: '🏜️',
-      [PlayerStatus.EXHAUSTED]: '😴'
+      [PlayerCondition.REFRESHED]: '💧',
+      [PlayerCondition.FED]: '🍞',
+      [PlayerCondition.THIRSTY]: '🫗',
+      [PlayerCondition.DEHYDRATED]: '🏜️',
+      [PlayerCondition.EXHAUSTED]: '😴'
     };
 
     // OLD behavior (incorrect)
-    const oldTitle = `${statusEmojis[PlayerStatus.HEALTHY]} ${playerName}'s Status`;
+    const oldTitle = `${statusEmojis[PlayerCondition.HEALTHY]} ${playerName}'s Status`;
     
     // NEW behavior (correct)
     const newTitle = `${playerName}'s Status`;
@@ -32,31 +32,31 @@ describe('Status Command Display Fix', () => {
 
   test('should display multiple conditions in separate section', () => {
     const mockPlayer = {
-      conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED, PlayerStatus.THIRSTY],
-      status: PlayerStatus.WOUNDED,
+      conditions: [PlayerCondition.REFRESHED, PlayerCondition.FED, PlayerCondition.THIRSTY],
+      status: PlayerCondition.WOUNDED,
       isAlive: true
     };
 
     const statusEmojis = {
-      [PlayerStatus.HEALTHY]: '💚',
-      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerCondition.HEALTHY]: '💚',
+      [PlayerCondition.WOUNDED]: '🩸',
       [PlayerStatus.DEAD]: '💀',
-      [PlayerStatus.REFRESHED]: '💧',
-      [PlayerStatus.FED]: '🍞',
-      [PlayerStatus.THIRSTY]: '🫗',
-      [PlayerStatus.DEHYDRATED]: '🏜️',
-      [PlayerStatus.EXHAUSTED]: '😴'
+      [PlayerCondition.REFRESHED]: '💧',
+      [PlayerCondition.FED]: '🍞',
+      [PlayerCondition.THIRSTY]: '🫗',
+      [PlayerCondition.DEHYDRATED]: '🏜️',
+      [PlayerCondition.EXHAUSTED]: '😴'
     };
     
     const statusTexts = {
-      [PlayerStatus.HEALTHY]: 'Healthy',
-      [PlayerStatus.WOUNDED]: 'Wounded',
+      [PlayerCondition.HEALTHY]: 'Healthy',
+      [PlayerCondition.WOUNDED]: 'Wounded',
       [PlayerStatus.DEAD]: 'Dead',
-      [PlayerStatus.REFRESHED]: 'Refreshed',
-      [PlayerStatus.FED]: 'Fed',
-      [PlayerStatus.THIRSTY]: 'Thirsty',
-      [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-      [PlayerStatus.EXHAUSTED]: 'Exhausted'
+      [PlayerCondition.REFRESHED]: 'Refreshed',
+      [PlayerCondition.FED]: 'Fed',
+      [PlayerCondition.THIRSTY]: 'Thirsty',
+      [PlayerCondition.DEHYDRATED]: 'Dehydrated',
+      [PlayerCondition.EXHAUSTED]: 'Exhausted'
     };
 
     // Test the conditions display logic (from status.ts)
@@ -77,30 +77,30 @@ describe('Status Command Display Fix', () => {
   test('should show vital status in Status field when no conditions', () => {
     const mockPlayer = {
       conditions: [],
-      status: PlayerStatus.WOUNDED,
+      status: PlayerCondition.WOUNDED,
       isAlive: true
     };
 
     const statusEmojis = {
-      [PlayerStatus.HEALTHY]: '💚',
-      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerCondition.HEALTHY]: '💚',
+      [PlayerCondition.WOUNDED]: '🩸',
       [PlayerStatus.DEAD]: '💀',
-      [PlayerStatus.REFRESHED]: '💧',
-      [PlayerStatus.FED]: '🍞',
-      [PlayerStatus.THIRSTY]: '🫗',
-      [PlayerStatus.DEHYDRATED]: '🏜️',
-      [PlayerStatus.EXHAUSTED]: '😴'
+      [PlayerCondition.REFRESHED]: '💧',
+      [PlayerCondition.FED]: '🍞',
+      [PlayerCondition.THIRSTY]: '🫗',
+      [PlayerCondition.DEHYDRATED]: '🏜️',
+      [PlayerCondition.EXHAUSTED]: '😴'
     };
     
     const statusTexts = {
-      [PlayerStatus.HEALTHY]: 'Healthy',
-      [PlayerStatus.WOUNDED]: 'Wounded',
+      [PlayerCondition.HEALTHY]: 'Healthy',
+      [PlayerCondition.WOUNDED]: 'Wounded',
       [PlayerStatus.DEAD]: 'Dead',
-      [PlayerStatus.REFRESHED]: 'Refreshed',
-      [PlayerStatus.FED]: 'Fed',
-      [PlayerStatus.THIRSTY]: 'Thirsty',
-      [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-      [PlayerStatus.EXHAUSTED]: 'Exhausted'
+      [PlayerCondition.REFRESHED]: 'Refreshed',
+      [PlayerCondition.FED]: 'Fed',
+      [PlayerCondition.THIRSTY]: 'Thirsty',
+      [PlayerCondition.DEHYDRATED]: 'Dehydrated',
+      [PlayerCondition.EXHAUSTED]: 'Exhausted'
     };
 
     // Test the conditions display logic (from status.ts)
@@ -114,7 +114,7 @@ describe('Status Command Display Fix', () => {
 
   test('should not show conditions section for dead players', () => {
     const deadPlayer = {
-      conditions: [PlayerStatus.FED], // Dead players might have had conditions before dying
+      conditions: [PlayerCondition.FED], // Dead players might have had conditions before dying
       status: PlayerStatus.DEAD,
       isAlive: false
     };

@@ -1,7 +1,7 @@
 import { GameEngine } from '../services/gameEngine';
 import { CityService } from '../models/city';
 import { PlayerService } from '../models/player';
-import { BuildingType, Location, PlayerStatus } from '../types/game';
+import { BuildingType, Location, PlayerStatus, PlayerCondition } from '../types/game';
 
 describe('Issue #20 Fixes', () => {
   let gameEngine: GameEngine;
@@ -114,8 +114,8 @@ describe('Issue #20 Fixes', () => {
   describe('Return Command Changes', () => {
     test('should not provide healing on return', () => {
       const playerStatuses = [
-        PlayerStatus.HEALTHY,
-        PlayerStatus.WOUNDED,
+        PlayerCondition.HEALTHY,
+        PlayerCondition.WOUNDED,
         PlayerStatus.DEAD
       ];
       

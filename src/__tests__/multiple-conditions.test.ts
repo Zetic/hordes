@@ -1,33 +1,33 @@
-import { PlayerStatus, isVitalStatus, isTemporaryCondition } from '../types/game';
+import { PlayerStatus, isVitalStatus, isTemporaryCondition, PlayerCondition } from '../types/game';
 
 describe('Multiple Conditions System', () => {
   describe('Status Categorization', () => {
     test('should correctly identify vital statuses', () => {
-      expect(isVitalStatus(PlayerStatus.HEALTHY)).toBe(true);
-      expect(isVitalStatus(PlayerStatus.WOUNDED)).toBe(true);
-      expect(isVitalStatus(PlayerStatus.DEAD)).toBe(true);
+      expect(isVitalStatus(PlayerCondition.HEALTHY)).toBe(true);
+      expect(isVitalStatus(PlayerCondition.WOUNDED)).toBe(true);
+      expect(isVitalStatus(PlayerCondition.FED)).toBe(false); // Not a vital condition
     });
 
     test('should correctly identify temporary conditions', () => {
-      expect(isTemporaryCondition(PlayerStatus.REFRESHED)).toBe(true);
-      expect(isTemporaryCondition(PlayerStatus.FED)).toBe(true);
-      expect(isTemporaryCondition(PlayerStatus.THIRSTY)).toBe(true);
-      expect(isTemporaryCondition(PlayerStatus.DEHYDRATED)).toBe(true);
-      expect(isTemporaryCondition(PlayerStatus.EXHAUSTED)).toBe(true);
+      expect(isTemporaryCondition(PlayerCondition.REFRESHED)).toBe(true);
+      expect(isTemporaryCondition(PlayerCondition.FED)).toBe(true);
+      expect(isTemporaryCondition(PlayerCondition.THIRSTY)).toBe(true);
+      expect(isTemporaryCondition(PlayerCondition.DEHYDRATED)).toBe(true);
+      expect(isTemporaryCondition(PlayerCondition.EXHAUSTED)).toBe(true);
     });
 
     test('should not cross-categorize statuses', () => {
       // Vital statuses should not be identified as temporary conditions
-      expect(isTemporaryCondition(PlayerStatus.HEALTHY)).toBe(false);
-      expect(isTemporaryCondition(PlayerStatus.WOUNDED)).toBe(false);
-      expect(isTemporaryCondition(PlayerStatus.DEAD)).toBe(false);
+      expect(isTemporaryCondition(PlayerCondition.HEALTHY)).toBe(false);
+      expect(isTemporaryCondition(PlayerCondition.WOUNDED)).toBe(false);
+      // Note: PlayerStatus.DEAD is not a PlayerCondition, so this test is not applicable
 
       // Temporary conditions should not be identified as vital statuses
-      expect(isVitalStatus(PlayerStatus.REFRESHED)).toBe(false);
-      expect(isVitalStatus(PlayerStatus.FED)).toBe(false);
-      expect(isVitalStatus(PlayerStatus.THIRSTY)).toBe(false);
-      expect(isVitalStatus(PlayerStatus.DEHYDRATED)).toBe(false);
-      expect(isVitalStatus(PlayerStatus.EXHAUSTED)).toBe(false);
+      expect(isVitalStatus(PlayerCondition.REFRESHED)).toBe(false);
+      expect(isVitalStatus(PlayerCondition.FED)).toBe(false);
+      expect(isVitalStatus(PlayerCondition.THIRSTY)).toBe(false);
+      expect(isVitalStatus(PlayerCondition.DEHYDRATED)).toBe(false);
+      expect(isVitalStatus(PlayerCondition.EXHAUSTED)).toBe(false);
     });
   });
 
@@ -40,8 +40,8 @@ describe('Multiple Conditions System', () => {
         name: 'Alice',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY, // Vital status
-        conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED], // Multiple conditions
+        status: PlayerCondition.HEALTHY, // Vital status
+        conditions: [PlayerCondition.REFRESHED, PlayerCondition.FED], // Multiple conditions
         actionPoints: 10,
         maxActionPoints: 10,
         water: 5,
@@ -54,12 +54,12 @@ describe('Multiple Conditions System', () => {
       };
 
       // Should have healthy vital status
-      expect(playerWithMultipleConditions.status).toBe(PlayerStatus.HEALTHY);
+      expect(playerWithMultipleConditions.status).toBe(PlayerCondition.HEALTHY);
       expect(isVitalStatus(playerWithMultipleConditions.status)).toBe(true);
 
       // Should have both refreshed and fed conditions
-      expect(playerWithMultipleConditions.conditions).toContain(PlayerStatus.REFRESHED);
-      expect(playerWithMultipleConditions.conditions).toContain(PlayerStatus.FED);
+      expect(playerWithMultipleConditions.conditions).toContain(PlayerCondition.REFRESHED);
+      expect(playerWithMultipleConditions.conditions).toContain(PlayerCondition.FED);
       expect(playerWithMultipleConditions.conditions.length).toBe(2);
 
       // All conditions should be temporary conditions
@@ -76,8 +76,8 @@ describe('Multiple Conditions System', () => {
         name: 'Bob',
         health: 50,
         maxHealth: 100,
-        status: PlayerStatus.WOUNDED, // Vital status
-        conditions: [PlayerStatus.THIRSTY, PlayerStatus.EXHAUSTED], // Multiple conditions
+        status: PlayerCondition.WOUNDED, // Vital status
+        conditions: [PlayerCondition.THIRSTY, PlayerCondition.EXHAUSTED], // Multiple conditions
         actionPoints: 3,
         maxActionPoints: 10,
         water: 1,
@@ -90,12 +90,12 @@ describe('Multiple Conditions System', () => {
       };
 
       // Should have wounded vital status
-      expect(woundedPlayerWithConditions.status).toBe(PlayerStatus.WOUNDED);
+      expect(woundedPlayerWithConditions.status).toBe(PlayerCondition.WOUNDED);
       expect(isVitalStatus(woundedPlayerWithConditions.status)).toBe(true);
 
       // Should have multiple conditions
-      expect(woundedPlayerWithConditions.conditions).toContain(PlayerStatus.THIRSTY);
-      expect(woundedPlayerWithConditions.conditions).toContain(PlayerStatus.EXHAUSTED);
+      expect(woundedPlayerWithConditions.conditions).toContain(PlayerCondition.THIRSTY);
+      expect(woundedPlayerWithConditions.conditions).toContain(PlayerCondition.EXHAUSTED);
       expect(woundedPlayerWithConditions.conditions.length).toBe(2);
     });
 
@@ -107,7 +107,7 @@ describe('Multiple Conditions System', () => {
         name: 'Charlie',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY,
+        status: PlayerCondition.HEALTHY,
         conditions: [], // No conditions
         actionPoints: 10,
         maxActionPoints: 10,
@@ -120,7 +120,7 @@ describe('Multiple Conditions System', () => {
         lastActionTime: new Date()
       };
 
-      expect(healthyPlayerNoConditions.status).toBe(PlayerStatus.HEALTHY);
+      expect(healthyPlayerNoConditions.status).toBe(PlayerCondition.HEALTHY);
       expect(healthyPlayerNoConditions.conditions.length).toBe(0);
     });
   });
@@ -135,13 +135,13 @@ describe('Multiple Conditions System', () => {
     });
 
     test('should handle multiple conditions in JSON format', () => {
-      const multipleConditionsJson = `["${PlayerStatus.REFRESHED}", "${PlayerStatus.FED}"]`;
+      const multipleConditionsJson = `["${PlayerCondition.REFRESHED}", "${PlayerCondition.FED}"]`;
       const parsedConditions = JSON.parse(multipleConditionsJson);
       
       expect(Array.isArray(parsedConditions)).toBe(true);
       expect(parsedConditions.length).toBe(2);
-      expect(parsedConditions).toContain(PlayerStatus.REFRESHED);
-      expect(parsedConditions).toContain(PlayerStatus.FED);
+      expect(parsedConditions).toContain(PlayerCondition.REFRESHED);
+      expect(parsedConditions).toContain(PlayerCondition.FED);
     });
   });
 });

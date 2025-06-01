@@ -1,6 +1,6 @@
 import { InventoryService } from '../models/inventory';
 import { ItemService } from '../models/item';
-import { ItemType, Location, PlayerStatus } from '../types/game';
+import { ItemType, Location, PlayerStatus, PlayerCondition } from '../types/game';
 
 describe('Inventory System', () => {
   
@@ -34,8 +34,8 @@ describe('Game Mechanics Integration', () => {
     expect(Location.GATE).toBe('gate');
     expect(Location.WASTE).toBe('waste');
     expect(Location.GREATER_WASTE).toBe('greater_waste');
-    expect(PlayerStatus.HEALTHY).toBe('healthy');
-    expect(PlayerStatus.WOUNDED).toBe('wounded');
+    expect(PlayerCondition.HEALTHY).toBe('healthy');
+    expect(PlayerCondition.WOUNDED).toBe('wounded');
     expect(PlayerStatus.DEAD).toBe('dead');
   });
 
