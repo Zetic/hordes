@@ -2,7 +2,7 @@ import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.j
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { WorldMapService } from '../services/worldMap';
-import { PlayerStatus, Location } from '../types/game';
+import { PlayerStatus, PlayerCondition, Location } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -45,15 +45,34 @@ module.exports = {
       
       // Player status display
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerStatus.ALIVE]: '💚',
         [PlayerStatus.DEAD]: '💀'
       };
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.ALIVE]: 'Alive',
         [PlayerStatus.DEAD]: 'Dead'
       };
+
+      // Condition display
+      const conditionEmojis = {
+        [PlayerCondition.HEALTHY]: '💚',
+        [PlayerCondition.WOUNDED]: '🩸',
+        [PlayerCondition.FED]: '🍞',
+        [PlayerCondition.REFRESHED]: '💧',
+        [PlayerCondition.THIRSTY]: '🫗',
+        [PlayerCondition.DEHYDRATED]: '🏜️',
+        [PlayerCondition.EXHAUSTED]: '😴'
+      };
+
+      // Format conditions for display
+      let conditionsDisplay = 'None';
+      if (player.conditions && player.conditions.length > 0) {
+        conditionsDisplay = player.conditions.map(condition => {
+          const emoji = conditionEmojis[condition as PlayerCondition] || '❓';
+          const name = condition.charAt(0).toUpperCase() + condition.slice(1);
+          return `${emoji} ${name}`;
+        }).join(', ');
+      }
       
       // Location display
       const locationDisplay = worldMapService.getLocationDisplay(player.location);
@@ -98,11 +117,6 @@ module.exports = {
             inline: true 
           },
           { 
-            name: '💧 Water', 
-            value: `${player.water} days`, 
-            inline: true 
-          },
-          { 
             name: '📍 Location', 
             value: `${locationDisplay.emoji} ${locationNames[player.location] || locationDisplay.name}${player.x !== null && player.y !== null ? ` (${player.x}, ${player.y})` : ''}`, 
             inline: true 
@@ -111,32 +125,20 @@ module.exports = {
             name: '⏰ Last Action', 
             value: `<t:${Math.floor(player.lastActionTime.getTime() / 1000)}:R>`, 
             inline: true 
-          }
-        ]);
-
-      // Add game info if it's the player's own status
-      if (isOwnStatus && gameState) {
-        const phaseEmoji = gameState.currentPhase === 'play_mode' ? '🌅' : '🌙';
-        const phaseName = gameState.currentPhase === 'play_mode' ? 'Play Mode' : 'Horde Mode';
-        
-        embed.addFields([
-          { name: '\u200B', value: '\u200B', inline: false },
-          { 
-            name: '🎮 Game Status', 
-            value: `**Day ${gameState.currentDay}** • ${phaseEmoji} ${phaseName}`, 
-            inline: true 
           },
           { 
-            name: '⏰ Next Phase', 
-            value: `<t:${Math.floor(gameState.nextPhaseChange.getTime() / 1000)}:R>`, 
-            inline: true 
+            name: '🎯 Conditions', 
+            value: conditionsDisplay, 
+            inline: false 
           }
         ]);
 
-        // Add warnings
+      // Add warnings if it's the player's own status
+      if (isOwnStatus) {
         const warnings = [];
-        if (player.status === PlayerStatus.WOUNDED) warnings.push('🩸 You are wounded! Another injury could be fatal.');
-        if (player.water <= 1) warnings.push('🚨 Running out of water!');
+        if (player.conditions && player.conditions.includes(PlayerCondition.WOUNDED)) {
+          warnings.push('🩸 You are wounded! Another injury could be fatal.');
+        }
         if (player.actionPoints <= 2) warnings.push('💤 Low action points');
         
         if (warnings.length > 0) {

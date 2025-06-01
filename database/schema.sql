@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS players (
   name VARCHAR(255) NOT NULL,
   health INTEGER DEFAULT 100,
   max_health INTEGER DEFAULT 100,
-  status VARCHAR(10) DEFAULT 'healthy',
+  status VARCHAR(10) DEFAULT 'alive',
+  conditions TEXT DEFAULT '["healthy"]',
   action_points INTEGER DEFAULT 10,
   max_action_points INTEGER DEFAULT 10,
   water INTEGER DEFAULT 3,
@@ -140,13 +141,24 @@ DO $$
 BEGIN
     -- Add status column migration for existing data
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'status') THEN
-        ALTER TABLE players ADD COLUMN status VARCHAR(10) DEFAULT 'healthy';
+        ALTER TABLE players ADD COLUMN status VARCHAR(10) DEFAULT 'alive';
         
         -- Migrate existing data: set status based on current health and is_alive
         UPDATE players SET status = CASE 
             WHEN NOT is_alive THEN 'dead'
-            WHEN health < max_health THEN 'wounded'
-            ELSE 'healthy'
+            ELSE 'alive'
+        END;
+    END IF;
+
+    -- Add conditions column for new condition system
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'players' AND column_name = 'conditions') THEN
+        ALTER TABLE players ADD COLUMN conditions TEXT DEFAULT '["healthy"]';
+        
+        -- Migrate existing data: convert old status to conditions
+        UPDATE players SET conditions = CASE 
+            WHEN NOT is_alive THEN '[]'
+            WHEN health < max_health THEN '["wounded"]'
+            ELSE '["healthy"]'
         END;
     END IF;
 

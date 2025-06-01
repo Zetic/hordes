@@ -1,8 +1,17 @@
 // Core game types and interfaces
 export enum PlayerStatus {
+  ALIVE = 'alive',
+  DEAD = 'dead'
+}
+
+export enum PlayerCondition {
   HEALTHY = 'healthy',
   WOUNDED = 'wounded',
-  DEAD = 'dead'
+  FED = 'fed',
+  REFRESHED = 'refreshed',
+  THIRSTY = 'thirsty',
+  DEHYDRATED = 'dehydrated',
+  EXHAUSTED = 'exhausted'
 }
 
 export interface Player {
@@ -12,6 +21,7 @@ export interface Player {
   health: number;
   maxHealth: number;
   status: PlayerStatus;
+  conditions: PlayerCondition[];
   actionPoints: number;
   maxActionPoints: number;
   water: number;
@@ -59,6 +69,7 @@ export interface ItemEffect {
   chance?: number;         // Success chance (0-100)
   breakChance?: number;    // Chance to break on use (0-100)
   transformInto?: string;  // Item to transform into when broken
+  status?: string;         // Status/condition to add or remove
 }
 
 export enum Location {
@@ -182,4 +193,17 @@ export interface ZoneContest {
   zombieCp: number;
   tempUncontestedUntil?: Date;
   lastUpdated: Date;
+}
+
+// Utility functions for conditions
+export function isVitalStatus(condition: PlayerCondition): boolean {
+  return condition === PlayerCondition.HEALTHY || condition === PlayerCondition.WOUNDED;
+}
+
+export function isTemporaryCondition(condition: PlayerCondition): boolean {
+  return condition === PlayerCondition.FED || 
+         condition === PlayerCondition.REFRESHED || 
+         condition === PlayerCondition.THIRSTY || 
+         condition === PlayerCondition.DEHYDRATED || 
+         condition === PlayerCondition.EXHAUSTED;
 }

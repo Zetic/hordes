@@ -1,4 +1,4 @@
-import { Player, Location, GamePhase, PlayerStatus } from '../types/game';
+import { Player, Location, GamePhase, PlayerStatus, PlayerCondition } from '../types/game';
 import { DatabaseService } from '../services/database';
 
 export class PlayerService {
@@ -70,6 +70,85 @@ export class PlayerService {
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error updating player status:', error);
+      return false;
+    }
+  }
+
+  async addPlayerCondition(discordId: string, condition: string): Promise<boolean> {
+    try {
+      // Get current conditions
+      const player = await this.getPlayer(discordId);
+      if (!player) return false;
+
+      // Parse existing conditions or start with empty array
+      let conditions: string[] = [];
+      if (player.conditions && player.conditions.length > 0) {
+        conditions = player.conditions.map(c => typeof c === 'string' ? c : c.toString());
+      }
+
+      // Add condition if not already present
+      if (!conditions.includes(condition)) {
+        conditions.push(condition);
+        
+        // Update database
+        const query = `
+          UPDATE players 
+          SET conditions = $1, updated_at = NOW()
+          WHERE discord_id = $2
+        `;
+        const result = await this.db.pool.query(query, [JSON.stringify(conditions), discordId]);
+        return (result.rowCount || 0) > 0;
+      }
+      
+      return true; // Condition already exists
+    } catch (error) {
+      console.error('Error adding player condition:', error);
+      return false;
+    }
+  }
+
+  async removePlayerCondition(discordId: string, condition: string): Promise<boolean> {
+    try {
+      // Get current conditions
+      const player = await this.getPlayer(discordId);
+      if (!player) return false;
+
+      // Parse existing conditions
+      let conditions: string[] = [];
+      if (player.conditions && player.conditions.length > 0) {
+        conditions = player.conditions.map(c => typeof c === 'string' ? c : c.toString());
+      }
+
+      // Remove condition if present
+      const updatedConditions = conditions.filter(c => c !== condition);
+      
+      // Update database
+      const query = `
+        UPDATE players 
+        SET conditions = $1, updated_at = NOW()
+        WHERE discord_id = $2
+      `;
+      const result = await this.db.pool.query(query, [JSON.stringify(updatedConditions), discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error removing player condition:', error);
+      return false;
+    }
+  }
+
+  async updatePlayerActionPoints(discordId: string, actionPoints: number): Promise<boolean> {
+    try {
+      const query = `
+        UPDATE players 
+        SET action_points = GREATEST(0, LEAST($1, max_action_points)),
+            last_action_time = NOW(),
+            updated_at = NOW()
+        WHERE discord_id = $2
+      `;
+      const result = await this.db.pool.query(query, [actionPoints, discordId]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error updating player action points:', error);
       return false;
     }
   }
@@ -152,13 +231,16 @@ export class PlayerService {
               water = 10,
               is_alive = true,
               status = $1,
-              location = $2,
+              conditions = $2,
+              location = $3,
               x = NULL,
               y = NULL,
               updated_at = NOW()
           WHERE id IS NOT NULL
         `;
-        await client.query(resetQuery, [PlayerStatus.HEALTHY, Location.CITY]);
+        // Set default conditions to HEALTHY only
+        const defaultConditions = JSON.stringify([PlayerCondition.HEALTHY]);
+        await client.query(resetQuery, [PlayerStatus.ALIVE, defaultConditions, Location.CITY]);
         
         await client.query('COMMIT');
         console.log('✅ All players reset to default state with cleared inventories and coordinates');
@@ -193,16 +275,18 @@ export class PlayerService {
 
   async revivePlayer(discordId: string): Promise<boolean> {
     try {
+      const defaultConditions = JSON.stringify([PlayerCondition.HEALTHY]);
       const query = `
         UPDATE players 
         SET health = max_health,
             is_alive = true,
             status = $1,
-            location = $2,
+            conditions = $2,
+            location = $3,
             updated_at = NOW()
-        WHERE discord_id = $3
+        WHERE discord_id = $4
       `;
-      const result = await this.db.pool.query(query, [PlayerStatus.HEALTHY, Location.CITY, discordId]);
+      const result = await this.db.pool.query(query, [PlayerStatus.ALIVE, defaultConditions, Location.CITY, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error reviving player:', error);
@@ -233,6 +317,18 @@ export class PlayerService {
   }
 
   private mapRowToPlayer(row: any): Player {
+    // Parse conditions from JSON string in database, defaulting to empty array
+    let conditions: PlayerCondition[] = [];
+    if (row.conditions) {
+      try {
+        const parsedConditions = JSON.parse(row.conditions);
+        conditions = Array.isArray(parsedConditions) ? parsedConditions : [];
+      } catch (error) {
+        console.error('Error parsing player conditions:', error);
+        conditions = [];
+      }
+    }
+
     return {
       id: row.id,
       discordId: row.discord_id,
@@ -240,6 +336,7 @@ export class PlayerService {
       health: row.health,
       maxHealth: row.max_health,
       status: row.status as PlayerStatus,
+      conditions: conditions,
       actionPoints: row.action_points,
       maxActionPoints: row.max_action_points,
       water: row.water,

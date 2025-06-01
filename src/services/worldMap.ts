@@ -245,6 +245,11 @@ export class WorldMapService {
   isValidCoordinate(x: number, y: number): boolean {
     return x >= 0 && x < this.MAP_SIZE && y >= 0 && y < this.MAP_SIZE;
   }
+
+  // Get the map size
+  getMapSize(): number {
+    return this.MAP_SIZE;
+  }
   
   // Get tile state for rendering
   getTileState(x: number, y: number): TileState {
