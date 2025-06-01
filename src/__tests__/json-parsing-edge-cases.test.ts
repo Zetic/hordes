@@ -16,7 +16,7 @@ describe('JSON Parsing Edge Cases Fix', () => {
       name: 'TestPlayer',
       health: 100,
       max_health: 100,
-      status: PlayerStatus.HEALTHY,
+      status: PlayerStatus.ALIVE,
       conditions: 'refreshed', // Invalid: plain string instead of JSON array
       action_points: 10,
       max_action_points: 10,
@@ -47,7 +47,7 @@ describe('JSON Parsing Edge Cases Fix', () => {
       name: 'TestPlayer',
       health: 100,
       max_health: 100,
-      status: PlayerStatus.HEALTHY,
+      status: PlayerStatus.ALIVE,
       conditions: '"refreshed"', // Valid JSON string but not array
       action_points: 10,
       max_action_points: 10,
@@ -75,7 +75,7 @@ describe('JSON Parsing Edge Cases Fix', () => {
       name: 'TestPlayer',
       health: 100,
       max_health: 100,
-      status: PlayerStatus.HEALTHY,
+      status: PlayerStatus.ALIVE,
       conditions: '', // Empty string
       action_points: 10,
       max_action_points: 10,
@@ -102,7 +102,7 @@ describe('JSON Parsing Edge Cases Fix', () => {
       name: 'TestPlayer',
       health: 100,
       max_health: 100,
-      status: PlayerStatus.HEALTHY,
+      status: PlayerStatus.ALIVE,
       conditions: null, // Null value
       action_points: 10,
       max_action_points: 10,
@@ -129,7 +129,7 @@ describe('JSON Parsing Edge Cases Fix', () => {
       name: 'TestPlayer',
       health: 100,
       max_health: 100,
-      status: PlayerStatus.HEALTHY,
+      status: PlayerStatus.ALIVE,
       conditions: '["refreshed", "fed"]', // Valid JSON array
       action_points: 10,
       max_action_points: 10,
@@ -162,7 +162,7 @@ describe('JSON Parsing Edge Cases Fix', () => {
       name: 'TestPlayer',
       health: 100,
       max_health: 100,
-      status: PlayerStatus.HEALTHY,
+      status: PlayerStatus.ALIVE,
       conditions: 123, // Database returned a number instead of string
       action_points: 10,
       max_action_points: 10,
@@ -207,6 +207,38 @@ describe('JSON Parsing Edge Cases Fix', () => {
       const player = mapRowToPlayer(mockRowWithObject);
       expect(Array.isArray(player.conditions)).toBe(true);
       expect(player.conditions.length).toBe(0);
+    }).not.toThrow();
+  });
+
+  test('should handle JSONB array conditions (already parsed) - critical fix', () => {
+    // This test addresses the core issue: JSONB returns already-parsed arrays, not strings
+    const mockRow = {
+      id: 'test-9',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: PlayerStatus.ALIVE,
+      conditions: ['refreshed', 'fed'], // JSONB case - already a JavaScript array
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date()
+    };
+
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    
+    // Should handle array input without trying to JSON.parse it
+    expect(() => {
+      const player = mapRowToPlayer(mockRow);
+      expect(Array.isArray(player.conditions)).toBe(true);
+      expect(player.conditions.length).toBe(2);
+      expect(player.conditions).toContain('refreshed');
+      expect(player.conditions).toContain('fed');
     }).not.toThrow();
   });
 });
