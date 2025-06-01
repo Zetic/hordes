@@ -115,7 +115,7 @@ module.exports = {
           await handleSpawnCommand(interaction, targetUser, itemName);
           break;
         case 'revealmap':
-          await handleRevealMapCommand(interaction, targetUser);
+          await handleRevealMapCommand(interaction);
           break;
         case 'fillbank':
           await handleFillBankCommand(interaction);
@@ -145,13 +145,21 @@ async function handleResetCommand(interaction: CommandInteraction) {
   // Also reset the map to initial state
   if (success) {
     await worldMapService.resetMap();
+    
+    // Clear bank contents
+    try {
+      await db.pool.query('DELETE FROM bank_inventories');
+      console.log('✅ Bank contents cleared during world reset');
+    } catch (error) {
+      console.error('Error clearing bank contents:', error);
+    }
   }
   
   const embed = new EmbedBuilder()
     .setColor(success ? '#4ecdc4' : '#ff6b6b')
     .setTitle(success ? '🔄 Complete World Reset' : '❌ Reset Failed')
     .setDescription(success 
-      ? 'The entire world has been reset to its initial state. All players have been revived and restored to healthy status with full action points. The map has been reset and players will need to re-explore areas. All player inventories have been cleared and coordinates reset. Zombies have been redistributed across the map.'
+      ? 'The entire world has been reset to its initial state. All players have been revived and restored to healthy status with full action points. The map has been reset and players will need to re-explore areas. All player inventories and bank contents have been cleared and coordinates reset. Zombies have been redistributed across the map.'
       : 'Failed to reset the world. Check the server logs for details.'
     )
     .setTimestamp();
@@ -469,7 +477,7 @@ async function handleSpawnCommand(interaction: CommandInteraction, targetUser: a
   }
 }
 
-async function handleRevealMapCommand(interaction: CommandInteraction, targetUser: any) {
+async function handleRevealMapCommand(interaction: CommandInteraction) {
   if (!targetUser) {
     const embed = new EmbedBuilder()
       .setColor('#ff6b6b')
@@ -493,9 +501,10 @@ async function handleRevealMapCommand(interaction: CommandInteraction, targetUse
   }
 
   try {
-    // Reveal all tiles on the 7x7 map for the player
-    for (let x = 0; x < 7; x++) {
-      for (let y = 0; y < 7; y++) {
+    // Reveal all tiles on the map for everyone (map revelation is global, not per-player)
+    const mapSize = worldMapService.getMapSize();
+    for (let x = 0; x < mapSize; x++) {
+      for (let y = 0; y < mapSize; y++) {
         await worldMapService.markTileExplored(x, y);
       }
     }
@@ -503,7 +512,7 @@ async function handleRevealMapCommand(interaction: CommandInteraction, targetUse
     const embed = new EmbedBuilder()
       .setColor('#4ecdc4')
       .setTitle('🗺️ Map Revealed')
-      .setDescription(`The entire map has been revealed for ${targetUser.username}.`)
+      .setDescription(`The entire ${mapSize}x${mapSize} map has been revealed for all players.`)
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -512,7 +521,7 @@ async function handleRevealMapCommand(interaction: CommandInteraction, targetUse
     const embed = new EmbedBuilder()
       .setColor('#ff6b6b')
       .setTitle('❌ Reveal Failed')
-      .setDescription(`Failed to reveal map for ${targetUser.username}. Check the server logs for details.`)
+      .setDescription('Failed to reveal map for all players. Check the server logs for details.')
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -550,7 +559,7 @@ async function handleFillBankCommand(interaction: CommandInteraction) {
     
     let addedItems = 0;
     for (const item of allItems) {
-      const success = await bankService.addItemToBank(city.id, item.id, 99);
+      const success = await bankService.depositItem(city.id, item.id, 99);
       if (success) {
         addedItems++;
       }
