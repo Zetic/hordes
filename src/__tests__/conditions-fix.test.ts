@@ -1,104 +1,152 @@
 import { PlayerCondition } from '../types/game';
+import { PlayerService } from '../models/player';
 
-describe('Conditions Column Fix', () => {
-  test('should parse conditions JSON correctly', () => {
-    // Test that the conditions parsing logic works correctly
-    const emptyConditions = '[]';
-    const singleCondition = `["${PlayerCondition.FED}"]`;
-    const multipleConditions = `["${PlayerCondition.REFRESHED}", "${PlayerCondition.FED}"]`;
+describe('Conditions Boolean Columns Fix', () => {
+  let playerService: PlayerService;
 
-    // Test JSON parsing for database storage
-    expect(() => JSON.parse(emptyConditions)).not.toThrow();
-    expect(() => JSON.parse(singleCondition)).not.toThrow();
-    expect(() => JSON.parse(multipleConditions)).not.toThrow();
-
-    const parsedEmpty = JSON.parse(emptyConditions);
-    const parsedSingle = JSON.parse(singleCondition);
-    const parsedMultiple = JSON.parse(multipleConditions);
-
-    expect(Array.isArray(parsedEmpty)).toBe(true);
-    expect(parsedEmpty.length).toBe(0);
-
-    expect(Array.isArray(parsedSingle)).toBe(true);
-    expect(parsedSingle.length).toBe(1);
-    expect(parsedSingle[0]).toBe(PlayerCondition.FED);
-
-    expect(Array.isArray(parsedMultiple)).toBe(true);
-    expect(parsedMultiple.length).toBe(2);
-    expect(parsedMultiple).toContain(PlayerCondition.REFRESHED);
-    expect(parsedMultiple).toContain(PlayerCondition.FED);
+  beforeEach(() => {
+    playerService = new PlayerService();
   });
 
-  test('should handle invalid JSON gracefully', () => {
-    // Test the error handling logic in mapRowToPlayer
-    const invalidJson = 'invalid json';
-    const nullValue = null;
-    const undefinedValue = undefined;
-
-    // These should not throw and should return empty array as fallback
-    let conditions: PlayerCondition[] = [];
+  test('should map boolean columns to condition arrays correctly', () => {
+    // Test the new mapping logic from boolean columns to PlayerCondition array
     
-    try {
-      if (invalidJson) {
-        conditions = JSON.parse(invalidJson);
-      }
-    } catch (error) {
-      conditions = [];
-    }
-    expect(Array.isArray(conditions)).toBe(true);
-    expect(conditions.length).toBe(0);
+    // Mock database row with only healthy condition
+    const healthyRow = {
+      condition_healthy: true,
+      condition_wounded: false,
+      condition_fed: false,
+      condition_refreshed: false,
+      condition_thirsty: false,
+      condition_dehydrated: false,
+      condition_exhausted: false
+    };
 
-    conditions = [];
-    try {
-      if (nullValue) {
-        conditions = JSON.parse(nullValue);
-      }
-    } catch (error) {
-      conditions = [];
-    }
-    expect(Array.isArray(conditions)).toBe(true);
-    expect(conditions.length).toBe(0);
+    // Use reflection to test private mapRowToPlayer method
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const mockRowHealthy = {
+      id: 'test-1',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: 'alive',
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date(),
+      ...healthyRow
+    };
 
-    conditions = [];
-    try {
-      if (undefinedValue) {
-        conditions = JSON.parse(undefinedValue);
-      }
-    } catch (error) {
-      conditions = [];
-    }
-    expect(Array.isArray(conditions)).toBe(true);
-    expect(conditions.length).toBe(0);
+    const player = mapRowToPlayer(mockRowHealthy);
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(1);
+    expect(player.conditions[0]).toBe(PlayerCondition.HEALTHY);
   });
 
-  test('should stringify conditions for database storage', () => {
-    // Test the JSON stringification for database storage
-    const emptyConditions: PlayerCondition[] = [];
-    const singleCondition: PlayerCondition[] = [PlayerCondition.FED];
-    const multipleConditions: PlayerCondition[] = [PlayerCondition.REFRESHED, PlayerCondition.FED];
+  test('should handle multiple conditions in boolean columns', () => {
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const mockRowMultiple = {
+      id: 'test-2',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: 'alive',
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date(),
+      // Multiple conditions true
+      condition_healthy: false,
+      condition_wounded: true,
+      condition_fed: true,
+      condition_refreshed: false,
+      condition_thirsty: false,
+      condition_dehydrated: false,
+      condition_exhausted: false
+    };
 
-    const emptyJson = JSON.stringify(emptyConditions);
-    const singleJson = JSON.stringify(singleCondition);
-    const multipleJson = JSON.stringify(multipleConditions);
-
-    expect(emptyJson).toBe('[]');
-    expect(singleJson).toBe(`["${PlayerCondition.FED}"]`);
-    expect(multipleJson).toBe(`["${PlayerCondition.REFRESHED}","${PlayerCondition.FED}"]`);
-
-    // Verify round-trip conversion works
-    expect(JSON.parse(emptyJson)).toEqual(emptyConditions);
-    expect(JSON.parse(singleJson)).toEqual(singleCondition);
-    expect(JSON.parse(multipleJson)).toEqual(multipleConditions);
+    const player = mapRowToPlayer(mockRowMultiple);
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(2);
+    expect(player.conditions).toContain(PlayerCondition.WOUNDED);
+    expect(player.conditions).toContain(PlayerCondition.FED);
   });
 
-  test('should validate database schema column definition', () => {
-    // Test that the column definition is valid for PostgreSQL JSONB
-    const columnDefinition = 'conditions JSONB DEFAULT \'[]\'';
+  test('should handle no conditions (all false)', () => {
+    const mapRowToPlayer = (playerService as any).mapRowToPlayer.bind(playerService);
+    const mockRowNone = {
+      id: 'test-3',
+      discord_id: '123456789',
+      name: 'TestPlayer',
+      health: 100,
+      max_health: 100,
+      status: 'alive',
+      action_points: 10,
+      max_action_points: 10,
+      water: 5,
+      is_alive: true,
+      location: 'city',
+      x: null,
+      y: null,
+      last_action_time: new Date(),
+      // All conditions false
+      condition_healthy: false,
+      condition_wounded: false,
+      condition_fed: false,
+      condition_refreshed: false,
+      condition_thirsty: false,
+      condition_dehydrated: false,
+      condition_exhausted: false
+    };
+
+    const player = mapRowToPlayer(mockRowNone);
+    expect(Array.isArray(player.conditions)).toBe(true);
+    expect(player.conditions.length).toBe(0);
+  });
+
+  test('should validate database schema uses boolean columns', () => {
+    // Test that the new column definition is valid for PostgreSQL boolean columns
+    const expectedColumns = [
+      'condition_healthy BOOLEAN DEFAULT true',
+      'condition_wounded BOOLEAN DEFAULT false',
+      'condition_fed BOOLEAN DEFAULT false',
+      'condition_refreshed BOOLEAN DEFAULT false',
+      'condition_thirsty BOOLEAN DEFAULT false',
+      'condition_dehydrated BOOLEAN DEFAULT false',
+      'condition_exhausted BOOLEAN DEFAULT false'
+    ];
     
-    // Basic validation that the column definition contains required parts
-    expect(columnDefinition).toContain('conditions');
-    expect(columnDefinition).toContain('JSONB');
-    expect(columnDefinition).toContain('DEFAULT');
-    expect(columnDefinition).toContain('\'[]\'');
+    expectedColumns.forEach(columnDef => {
+      expect(columnDef).toContain('BOOLEAN');
+      expect(columnDef).toContain('DEFAULT');
+      expect(columnDef).not.toContain('JSON');
+      expect(columnDef).not.toContain('JSONB');
+    });
+  });
+
+  test('should map condition strings to column names correctly', () => {
+    // Test the condition mapping helper (if accessible)
+    const getConditionColumnName = (playerService as any).getConditionColumnName?.bind(playerService);
+    
+    if (getConditionColumnName) {
+      expect(getConditionColumnName(PlayerCondition.HEALTHY)).toBe('condition_healthy');
+      expect(getConditionColumnName(PlayerCondition.WOUNDED)).toBe('condition_wounded');
+      expect(getConditionColumnName(PlayerCondition.FED)).toBe('condition_fed');
+      expect(getConditionColumnName(PlayerCondition.REFRESHED)).toBe('condition_refreshed');
+      expect(getConditionColumnName(PlayerCondition.THIRSTY)).toBe('condition_thirsty');
+      expect(getConditionColumnName(PlayerCondition.DEHYDRATED)).toBe('condition_dehydrated');
+      expect(getConditionColumnName(PlayerCondition.EXHAUSTED)).toBe('condition_exhausted');
+      expect(getConditionColumnName('invalid_condition')).toBe(null);
+    }
   });
 });

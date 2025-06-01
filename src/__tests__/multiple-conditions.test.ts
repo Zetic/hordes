@@ -126,22 +126,58 @@ describe('Multiple Conditions System', () => {
   });
 
   describe('Database Schema Compatibility', () => {
-    test('should handle empty conditions array in JSON format', () => {
-      const emptyConditionsJson = '[]';
-      const parsedConditions = JSON.parse(emptyConditionsJson);
+    test('should handle empty conditions with all boolean columns false', () => {
+      // Test that empty conditions work correctly with boolean columns
+      const mockDatabaseRow = {
+        condition_healthy: false,
+        condition_wounded: false,
+        condition_fed: false,
+        condition_refreshed: false,
+        condition_thirsty: false,
+        condition_dehydrated: false,
+        condition_exhausted: false
+      };
       
-      expect(Array.isArray(parsedConditions)).toBe(true);
-      expect(parsedConditions.length).toBe(0);
+      // Simulate the boolean-to-array conversion logic
+      const conditions: PlayerCondition[] = [];
+      if (mockDatabaseRow.condition_healthy) conditions.push(PlayerCondition.HEALTHY);
+      if (mockDatabaseRow.condition_wounded) conditions.push(PlayerCondition.WOUNDED);
+      if (mockDatabaseRow.condition_fed) conditions.push(PlayerCondition.FED);
+      if (mockDatabaseRow.condition_refreshed) conditions.push(PlayerCondition.REFRESHED);
+      if (mockDatabaseRow.condition_thirsty) conditions.push(PlayerCondition.THIRSTY);
+      if (mockDatabaseRow.condition_dehydrated) conditions.push(PlayerCondition.DEHYDRATED);
+      if (mockDatabaseRow.condition_exhausted) conditions.push(PlayerCondition.EXHAUSTED);
+      
+      expect(Array.isArray(conditions)).toBe(true);
+      expect(conditions.length).toBe(0);
     });
 
-    test('should handle multiple conditions in JSON format', () => {
-      const multipleConditionsJson = `["${PlayerCondition.REFRESHED}", "${PlayerCondition.FED}"]`;
-      const parsedConditions = JSON.parse(multipleConditionsJson);
+    test('should handle multiple conditions with boolean columns', () => {
+      // Test that multiple conditions work correctly with boolean columns
+      const mockDatabaseRow = {
+        condition_healthy: false,
+        condition_wounded: false,
+        condition_fed: true,
+        condition_refreshed: true,
+        condition_thirsty: false,
+        condition_dehydrated: false,
+        condition_exhausted: false
+      };
       
-      expect(Array.isArray(parsedConditions)).toBe(true);
-      expect(parsedConditions.length).toBe(2);
-      expect(parsedConditions).toContain(PlayerCondition.REFRESHED);
-      expect(parsedConditions).toContain(PlayerCondition.FED);
+      // Simulate the boolean-to-array conversion logic
+      const conditions: PlayerCondition[] = [];
+      if (mockDatabaseRow.condition_healthy) conditions.push(PlayerCondition.HEALTHY);
+      if (mockDatabaseRow.condition_wounded) conditions.push(PlayerCondition.WOUNDED);
+      if (mockDatabaseRow.condition_fed) conditions.push(PlayerCondition.FED);
+      if (mockDatabaseRow.condition_refreshed) conditions.push(PlayerCondition.REFRESHED);
+      if (mockDatabaseRow.condition_thirsty) conditions.push(PlayerCondition.THIRSTY);
+      if (mockDatabaseRow.condition_dehydrated) conditions.push(PlayerCondition.DEHYDRATED);
+      if (mockDatabaseRow.condition_exhausted) conditions.push(PlayerCondition.EXHAUSTED);
+      
+      expect(Array.isArray(conditions)).toBe(true);
+      expect(conditions.length).toBe(2);
+      expect(conditions).toContain(PlayerCondition.REFRESHED);
+      expect(conditions).toContain(PlayerCondition.FED);
     });
   });
 });

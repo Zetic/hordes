@@ -152,22 +152,53 @@ describe('Issue #93 Fix Verification', () => {
   });
 
   describe('Database Schema Migration', () => {
-    test('should support conditions field migration', () => {
-      // Test that the database schema supports the new conditions field
-      const emptyConditions = '[]';
-      const multipleConditions = `["${PlayerCondition.REFRESHED}", "${PlayerCondition.FED}"]`;
+    test('should support conditions field migration from JSON to boolean columns', () => {
+      // Test that the new boolean column schema works properly
+      
+      // Simulate old JSON data that needs to be migrated
+      const emptyConditionsBoolean = {
+        condition_healthy: false,
+        condition_wounded: false,
+        condition_fed: false,
+        condition_refreshed: false,
+        condition_thirsty: false,
+        condition_dehydrated: false,
+        condition_exhausted: false
+      };
+      
+      const multipleConditionsBoolean = {
+        condition_healthy: false,
+        condition_wounded: false,
+        condition_fed: true,
+        condition_refreshed: true,
+        condition_thirsty: false,
+        condition_dehydrated: false,
+        condition_exhausted: false
+      };
 
-      // Test JSON parsing for database storage
-      expect(() => JSON.parse(emptyConditions)).not.toThrow();
-      expect(() => JSON.parse(multipleConditions)).not.toThrow();
+      // Test that boolean column approach works
+      let emptyConditionsArray: PlayerCondition[] = [];
+      Object.entries(emptyConditionsBoolean).forEach(([key, value]) => {
+        if (value) {
+          const condition = key.replace('condition_', '') as PlayerCondition;
+          emptyConditionsArray.push(condition);
+        }
+      });
+      
+      let multipleConditionsArray: PlayerCondition[] = [];
+      Object.entries(multipleConditionsBoolean).forEach(([key, value]) => {
+        if (value) {
+          const condition = key.replace('condition_', '') as PlayerCondition;
+          multipleConditionsArray.push(condition);
+        }
+      });
 
-      const parsedEmpty = JSON.parse(emptyConditions);
-      const parsedMultiple = JSON.parse(multipleConditions);
-
-      expect(Array.isArray(parsedEmpty)).toBe(true);
-      expect(Array.isArray(parsedMultiple)).toBe(true);
-      expect(parsedEmpty.length).toBe(0);
-      expect(parsedMultiple.length).toBe(2);
+      expect(Array.isArray(emptyConditionsArray)).toBe(true);
+      expect(Array.isArray(multipleConditionsArray)).toBe(true);
+      expect(emptyConditionsArray.length).toBe(0);
+      expect(multipleConditionsArray.length).toBe(2);
+      expect(multipleConditionsArray).toContain('fed' as PlayerCondition);
+      expect(multipleConditionsArray).toContain('refreshed' as PlayerCondition);
     });
   });
 });
