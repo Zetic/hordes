@@ -164,10 +164,23 @@ module.exports = {
         const filtered = items
           .filter(item => item.item.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
           .slice(0, 25) // Discord limits to 25 choices
-          .map(item => ({
-            name: `${item.item.name} (x${item.quantity})`,
-            value: item.item.name
-          }));
+          .map(item => {
+            // Discord limits autocomplete names to 100 characters and values to 100 characters
+            const itemDisplay = `${item.item.name} (x${item.quantity})`;
+            const truncatedName = itemDisplay.length > 100 
+              ? itemDisplay.substring(0, 97) + '...' 
+              : itemDisplay;
+            
+            // Also ensure the value (item name) doesn't exceed Discord's limit
+            const truncatedValue = item.item.name.length > 100
+              ? item.item.name.substring(0, 100)
+              : item.item.name;
+            
+            return {
+              name: truncatedName,
+              value: truncatedValue
+            };
+          });
 
         await interaction.respond(filtered);
       }

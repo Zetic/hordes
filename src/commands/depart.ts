@@ -105,7 +105,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')
         .setTitle(`📍 ${locationDisplay.name}`)
-        .setDescription(`You are at the gate to the wasteland. You can explore in any direction or return to the city.`)
+        .setDescription(`${player.name} departs from the city and arrives at the gate...`)
         .addFields([
           { 
             name: '📍 Current Location', 
@@ -113,13 +113,8 @@ module.exports = {
             inline: true 
           },
           { 
-            name: '⚡ Action Points', 
+            name: '⚡ Action Points Remaining', 
             value: `${player.actionPoints}/${player.maxActionPoints}`, 
-            inline: true 
-          },
-          { 
-            name: '❤️ Health', 
-            value: `${player.health}/${player.maxHealth}`, 
             inline: true 
           }
         ])
