@@ -482,27 +482,6 @@ async function handleSpawnCommand(interaction: CommandInteraction, targetUser: a
 }
 
 async function handleRevealMapCommand(interaction: CommandInteraction) {
-  if (!targetUser) {
-    const embed = new EmbedBuilder()
-      .setColor('#ff6b6b')
-      .setTitle('❌ User Required')
-      .setDescription('Please specify a user to reveal the map for.');
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-    return;
-  }
-
-  // Get the target player
-  const player = await playerService.getPlayer(targetUser.id);
-  if (!player) {
-    const embed = new EmbedBuilder()
-      .setColor('#ff6b6b')
-      .setTitle('❌ Player Not Found')
-      .setDescription(`${targetUser.username} is not registered. They need to use \`/join\` first.`);
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-    return;
-  }
 
   try {
     // Reveal all tiles on the map for everyone (map revelation is global, not per-player)
