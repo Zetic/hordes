@@ -1,6 +1,6 @@
 import { ItemEffect, ItemUseContext, ItemUseResult } from '../../types/itemEffects';
 import { PlayerService } from '../../models/player';
-import { PlayerStatus, isVitalStatus, isTemporaryCondition } from '../../types/game';
+import { PlayerStatus, isVitalStatus, isTemporaryCondition, isWoundType } from '../../types/game';
 
 const playerService = new PlayerService();
 
@@ -49,6 +49,29 @@ export async function handleAddStatusEffect(effect: ItemEffect, context: ItemUse
   try {
     const statusToAdd = effect.status as PlayerStatus;
     
+    // Special handling for HEALED status - prevent bandage use if already healed
+    if (statusToAdd === PlayerStatus.HEALED) {
+      if (context.player.conditions && context.player.conditions.includes(PlayerStatus.HEALED)) {
+        return {
+          success: false,
+          message: '🩹 You are already healed and cannot use another bandage.',
+          effectData: { statusAdded: false }
+        };
+      }
+      
+      // Check if player actually has a wound to heal
+      const hasWound = isWoundType(context.player.status) || 
+                       (context.player.conditions && context.player.conditions.some((condition: PlayerStatus) => isWoundType(condition)));
+      
+      if (!hasWound) {
+        return {
+          success: false,
+          message: '🩹 You have no wounds to heal.',
+          effectData: { statusAdded: false }
+        };
+      }
+    }
+    
     // Check if this is a vital status or temporary condition
     if (isVitalStatus(statusToAdd)) {
       // Handle vital status change
@@ -81,7 +104,9 @@ export async function handleAddStatusEffect(effect: ItemEffect, context: ItemUse
       [PlayerStatus.FED]: '🍞 You feel well-fed and satisfied!',
       [PlayerStatus.THIRSTY]: '🫗 You feel thirsty.',
       [PlayerStatus.DEHYDRATED]: '🏜️ You feel severely dehydrated.',
-      [PlayerStatus.EXHAUSTED]: '😴 You feel exhausted.'
+      [PlayerStatus.EXHAUSTED]: '😴 You feel exhausted.',
+      [PlayerStatus.HEALED]: '🩹 You feel healed and restored!',
+      [PlayerStatus.INFECTED]: '🦠 You feel infected and unwell.'
     };
     
     return {
@@ -102,9 +127,39 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
   try {
     const statusToRemove = effect.status as PlayerStatus;
     
-    // Check if this is a vital status or temporary condition
-    if (isVitalStatus(statusToRemove)) {
-      // Handle vital status removal/change
+    // Check if this is a wound type (now handled as conditions)
+    if (isWoundType(statusToRemove)) {
+      // Handle wound removal - check both status and conditions
+      const hasWoundAsStatus = context.player.status === statusToRemove;
+      const hasWoundAsCondition = context.player.conditions && context.player.conditions.includes(statusToRemove);
+      
+      if (!hasWoundAsStatus && !hasWoundAsCondition) {
+        // Silent success if wound isn't present
+        return {
+          success: true,
+          message: '',
+          effectData: { statusRemoved: false }
+        };
+      }
+      
+      // Remove wound from status if present
+      if (hasWoundAsStatus) {
+        // When removing a wound status, player becomes alive
+        await playerService.updatePlayerStatus(context.player.discordId, PlayerStatus.ALIVE);
+      }
+      
+      // Remove wound from conditions if present
+      if (hasWoundAsCondition) {
+        await playerService.removePlayerCondition(context.player.discordId, statusToRemove);
+      }
+      
+      return {
+        success: true,
+        message: `🩹 Wound treated successfully.`,
+        effectData: { statusRemoved: true, removedStatus: statusToRemove }
+      };
+    } else if (isVitalStatus(statusToRemove)) {
+      // Handle vital status removal/change (DEAD)
       if (context.player.status !== statusToRemove) {
         // Silent success if status isn't present
         return {
@@ -114,27 +169,15 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
         };
       }
       
-      // Determine the new vital status after removal
-      let newStatus: PlayerStatus;
-      if (statusToRemove === PlayerStatus.WOUNDED) {
-        newStatus = PlayerStatus.HEALTHY;
-      } else if (statusToRemove === PlayerStatus.DEAD) {
-        newStatus = PlayerStatus.HEALTHY; // Revival case
-      } else {
-        // For other vital statuses, determine based on current health
-        if (context.player.health < context.player.maxHealth) {
-          newStatus = PlayerStatus.WOUNDED;
-        } else {
-          newStatus = PlayerStatus.HEALTHY;
-        }
+      if (statusToRemove === PlayerStatus.DEAD) {
+        // Revival case - player becomes alive
+        await playerService.updatePlayerStatus(context.player.discordId, PlayerStatus.ALIVE);
       }
-      
-      await playerService.updatePlayerStatus(context.player.discordId, newStatus);
       
       return {
         success: true,
         message: `${statusToRemove} status removed.`,
-        effectData: { statusRemoved: true, removedStatus: statusToRemove, newStatus: newStatus }
+        effectData: { statusRemoved: true, removedStatus: statusToRemove }
       };
     } else if (isTemporaryCondition(statusToRemove)) {
       // Handle temporary condition removal
@@ -155,7 +198,9 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
         [PlayerStatus.DEHYDRATED]: '💧 You are no longer dehydrated.',
         [PlayerStatus.EXHAUSTED]: '⚡ You feel more energetic.',
         [PlayerStatus.FED]: '🍞 You are no longer full.',
-        [PlayerStatus.REFRESHED]: '💧 The refreshing effect wears off.'
+        [PlayerStatus.REFRESHED]: '💧 The refreshing effect wears off.',
+        [PlayerStatus.HEALED]: '🩹 The healing effect wears off.',
+        [PlayerStatus.INFECTED]: '🦠 The infection clears up.'
       };
       
       return {

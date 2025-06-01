@@ -1,4 +1,4 @@
-import { GameState, GamePhase, Player, City, Location, PlayerStatus } from '../types/game';
+import { GameState, GamePhase, Player, City, Location, PlayerStatus, isWoundType } from '../types/game';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { ItemService } from '../models/item';
@@ -342,10 +342,19 @@ export class GameEngine {
               if (Math.random() < 0.5) { // 50% chance
                 successfulHits++;
                 
-                if (currentStatus === PlayerStatus.HEALTHY) {
-                  currentStatus = PlayerStatus.WOUNDED;
+                if (currentStatus === PlayerStatus.ALIVE) {
+                  // Apply a random wound
+                  const woundTypes = [
+                    PlayerStatus.WOUNDED_ARM,
+                    PlayerStatus.WOUNDED_EYE,
+                    PlayerStatus.WOUNDED_FOOT,
+                    PlayerStatus.WOUNDED_HAND,
+                    PlayerStatus.WOUNDED_HEAD,
+                    PlayerStatus.WOUNDED_LEG
+                  ];
+                  currentStatus = woundTypes[Math.floor(Math.random() * woundTypes.length)];
                   console.log(`🩸 ${player.name} was wounded by a zombie attack (${successfulHits}/${attackCount} hits)`);
-                } else if (currentStatus === PlayerStatus.WOUNDED) {
+                } else if (isWoundType(currentStatus)) {
                   currentStatus = PlayerStatus.DEAD;
                   console.log(`💀 ${player.name} was killed by a zombie attack (${successfulHits}/${attackCount} hits)`);
                   break; // No point in continuing attacks on a dead player
@@ -480,7 +489,7 @@ export class GameEngine {
       }
       
       // Summary
-      const totalWounded = [...report.playersInTown].filter(p => p.newStatus === PlayerStatus.WOUNDED && p.previousStatus !== PlayerStatus.WOUNDED).length;
+      const totalWounded = [...report.playersInTown].filter(p => isWoundType(p.newStatus) && !isWoundType(p.previousStatus)).length;
       const totalKilled = [...report.playersInTown, ...report.playersKilledOutside].filter(p => p.newStatus === PlayerStatus.DEAD).length;
       
       embed.addFields([
@@ -720,14 +729,14 @@ export class GameEngine {
         switch (player.status) {
           case PlayerStatus.REFRESHED:
             // Refreshed is removed
-            newStatus = PlayerStatus.HEALTHY;
+            newStatus = PlayerStatus.ALIVE;
             statusChanged = true;
             console.log(`📉 ${player.name}: Refreshed status removed`);
             break;
             
           case PlayerStatus.FED:
             // Fed is removed
-            newStatus = PlayerStatus.HEALTHY;
+            newStatus = PlayerStatus.ALIVE;
             statusChanged = true;
             console.log(`📉 ${player.name}: Fed status removed`);
             break;

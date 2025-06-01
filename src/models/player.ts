@@ -236,7 +236,7 @@ export class PlayerService {
               updated_at = NOW()
           WHERE id IS NOT NULL
         `;
-        await client.query(resetQuery, [PlayerStatus.HEALTHY, Location.CITY]);
+        await client.query(resetQuery, [PlayerStatus.ALIVE, Location.CITY]);
         
         await client.query('COMMIT');
         console.log('✅ All players reset to default state with cleared inventories and coordinates');
@@ -281,7 +281,7 @@ export class PlayerService {
             updated_at = NOW()
         WHERE discord_id = $3
       `;
-      const result = await this.db.pool.query(query, [PlayerStatus.HEALTHY, Location.CITY, discordId]);
+      const result = await this.db.pool.query(query, [PlayerStatus.ALIVE, Location.CITY, discordId]);
       return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error('Error reviving player:', error);

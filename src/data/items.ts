@@ -92,6 +92,44 @@ export const itemDefinitions: ItemDefinition[] = [
         status: "exhausted"
       }
     ]
+  },
+  {
+    name: "Bandage",
+    type: ItemType.CONSUMABLE,
+    description: "A medical bandage that can heal wounds and provide healing effect",
+    weight: 1,
+    category: "Items",
+    subCategory: "Medical",
+    effects: [
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "wounded_arm"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "wounded_eye"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "wounded_foot"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "wounded_hand"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "wounded_head"
+      },
+      {
+        type: EffectType.REMOVE_STATUS,
+        status: "wounded_leg"
+      },
+      {
+        type: EffectType.ADD_STATUS,
+        status: "healed"
+      }
+    ]
   }
   // More items can be added here as the system grows
 ];

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
@@ -6,7 +6,7 @@ import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
 import { ZoneContestService } from '../services/zoneContest';
 import { ZombieService } from '../services/zombieService';
-import { Location, Direction, PlayerStatus } from '../types/game';
+import { Location, Direction, PlayerStatus, isWoundType } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -97,6 +97,10 @@ module.exports = {
         const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
         const zombieCount = zombies ? zombies.count : 0;
         
+        // Check if player is wounded - only show flee button if not wounded
+        const hasWound = isWoundType(player.status) || 
+                         (player.conditions && player.conditions.some(condition => isWoundType(condition)));
+        
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('🚫 Zone Contested')
@@ -119,12 +123,30 @@ module.exports = {
             },
             {
               name: '💡 Recommendations',
-              value: '• Use items like Box Cutter to kill zombies\n• Call for help from other players\n• Wait for the zone to become uncontested',
+              value: hasWound 
+                ? '• Use items like Box Cutter to kill zombies\n• Call for help from other players\n• Wait for the zone to become uncontested'
+                : '• Use items like Box Cutter to kill zombies\n• Call for help from other players\n• Wait for the zone to become uncontested\n• Use the Flee button below to escape (you will be wounded)',
               inline: false
             }
           ]);
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        // Add flee button if player is not wounded
+        const components: any[] = [];
+        if (!hasWound) {
+          const fleeButton = new ButtonBuilder()
+            .setCustomId(`flee_${direction}_${player.x}_${player.y}`)
+            .setLabel('🏃 Flee!')
+            .setStyle(ButtonStyle.Danger);
+          
+          const row = new ActionRowBuilder<ButtonBuilder>().addComponents(fleeButton);
+          components.push(row);
+        }
+
+        await interaction.reply({ 
+          embeds: [embed], 
+          components: components,
+          ephemeral: true 
+        });
         return;
       }
 

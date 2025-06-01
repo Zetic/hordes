@@ -3,23 +3,40 @@
 // Player status including both vital status and temporary conditions
 export enum PlayerStatus {
   // Vital statuses (mutually exclusive, based on health/life state)
-  HEALTHY = 'healthy',
-  WOUNDED = 'wounded', 
+  ALIVE = 'alive',
   DEAD = 'dead',
+  
+  // Wound types (mutually exclusive, based on injury)
+  WOUNDED_ARM = 'wounded_arm',
+  WOUNDED_EYE = 'wounded_eye', 
+  WOUNDED_FOOT = 'wounded_foot',
+  WOUNDED_HAND = 'wounded_hand',
+  WOUNDED_HEAD = 'wounded_head',
+  WOUNDED_LEG = 'wounded_leg',
   
   // Temporary conditions (can have multiple simultaneously)
   REFRESHED = 'refreshed',
   FED = 'fed',
   THIRSTY = 'thirsty',
   DEHYDRATED = 'dehydrated',
-  EXHAUSTED = 'exhausted'
+  EXHAUSTED = 'exhausted',
+  HEALED = 'healed',
+  INFECTED = 'infected'
 }
 
 // Helper to categorize status types
 export const VitalStatuses = [
-  PlayerStatus.HEALTHY,
-  PlayerStatus.WOUNDED,
+  PlayerStatus.ALIVE,
   PlayerStatus.DEAD
+] as const;
+
+export const WoundTypes = [
+  PlayerStatus.WOUNDED_ARM,
+  PlayerStatus.WOUNDED_EYE,
+  PlayerStatus.WOUNDED_FOOT,
+  PlayerStatus.WOUNDED_HAND,
+  PlayerStatus.WOUNDED_HEAD,
+  PlayerStatus.WOUNDED_LEG
 ] as const;
 
 export const TemporaryConditions = [
@@ -27,11 +44,17 @@ export const TemporaryConditions = [
   PlayerStatus.FED,
   PlayerStatus.THIRSTY,
   PlayerStatus.DEHYDRATED,
-  PlayerStatus.EXHAUSTED
+  PlayerStatus.EXHAUSTED,
+  PlayerStatus.HEALED,
+  PlayerStatus.INFECTED
 ] as const;
 
 export function isVitalStatus(status: PlayerStatus): boolean {
   return VitalStatuses.includes(status as any);
+}
+
+export function isWoundType(status: PlayerStatus): boolean {
+  return WoundTypes.includes(status as any);
 }
 
 export function isTemporaryCondition(status: PlayerStatus): boolean {

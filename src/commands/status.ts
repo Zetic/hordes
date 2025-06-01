@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { WorldMapService } from '../services/worldMap';
-import { PlayerStatus, Location, isTemporaryCondition } from '../types/game';
+import { PlayerStatus, Location, isTemporaryCondition, isWoundType } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -40,24 +40,36 @@ module.exports = {
       
       // Player status display
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerStatus.WOUNDED_ARM]: '💪',
+        [PlayerStatus.WOUNDED_EYE]: '👁️',
+        [PlayerStatus.WOUNDED_FOOT]: '🦶',
+        [PlayerStatus.WOUNDED_HAND]: '✋',
+        [PlayerStatus.WOUNDED_HEAD]: '🧠',
+        [PlayerStatus.WOUNDED_LEG]: '🦵',
         [PlayerStatus.DEAD]: '💀',
         [PlayerStatus.REFRESHED]: '💧',
         [PlayerStatus.FED]: '🍞',
         [PlayerStatus.THIRSTY]: '🫗',
         [PlayerStatus.DEHYDRATED]: '🏜️',
-        [PlayerStatus.EXHAUSTED]: '😴'
+        [PlayerStatus.EXHAUSTED]: '😴',
+        [PlayerStatus.HEALED]: '🩹',
+        [PlayerStatus.INFECTED]: '🦠'
       };
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.WOUNDED_ARM]: 'Wounded Arm',
+        [PlayerStatus.WOUNDED_EYE]: 'Wounded Eye',
+        [PlayerStatus.WOUNDED_FOOT]: 'Wounded Foot',
+        [PlayerStatus.WOUNDED_HAND]: 'Wounded Hand',
+        [PlayerStatus.WOUNDED_HEAD]: 'Wounded Head',
+        [PlayerStatus.WOUNDED_LEG]: 'Wounded Leg',
         [PlayerStatus.DEAD]: 'Dead',
         [PlayerStatus.REFRESHED]: 'Refreshed',
         [PlayerStatus.FED]: 'Fed',
         [PlayerStatus.THIRSTY]: 'Thirsty',
         [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-        [PlayerStatus.EXHAUSTED]: 'Exhausted'
+        [PlayerStatus.EXHAUSTED]: 'Exhausted',
+        [PlayerStatus.HEALED]: 'Healed',
+        [PlayerStatus.INFECTED]: 'Infected'
       };
       
       // Location display
@@ -93,8 +105,8 @@ module.exports = {
         .setThumbnail(targetUser.displayAvatarURL())
         .addFields([
           { 
-            name: '💚 Status', 
-            value: player.isAlive ? '💚 Alive' : '💀 Dead', 
+            name: '🧍 Status', 
+            value: player.isAlive ? '🧍 Alive' : '💀 Dead', 
             inline: true 
           },
           ...(player.isAlive ? [{ 
@@ -124,7 +136,13 @@ module.exports = {
       // Add warnings for own status
       if (isOwnStatus) {
         const warnings = [];
-        if (player.status === PlayerStatus.WOUNDED) warnings.push('🩸 You are wounded! Another injury could be fatal.');
+        
+        // Check if player has any wound type
+        const hasWound = isWoundType(player.status) || player.conditions.some(condition => isWoundType(condition));
+        if (hasWound) {
+          warnings.push('🩸 You are wounded! Another injury could be fatal.');
+        }
+        
         if (player.water <= 1) warnings.push('🚨 Running out of water!');
         if (player.actionPoints <= 2) warnings.push('💤 Low action points');
         
