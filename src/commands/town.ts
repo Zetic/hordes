@@ -23,7 +23,7 @@ module.exports = {
 
       if (!city) {
         await interaction.reply({
-          content: '❌ No city found. Please contact an administrator.',
+          content: '❌ No town exists yet! Someone needs to create a town first using `/create town <name>`.',
           ephemeral: true
         });
         return;

@@ -44,9 +44,20 @@ export class CityService {
     }
   }
 
+  async hasCities(): Promise<boolean> {
+    try {
+      const query = 'SELECT COUNT(*) as count FROM cities';
+      const result = await this.db.pool.query(query);
+      return parseInt(result.rows[0].count) > 0;
+    } catch (error) {
+      console.error('Error checking for cities:', error);
+      return false;
+    }
+  }
+
   async getDefaultCity(): Promise<City | null> {
     try {
-      // Get the first city or create one if none exists
+      // Get the first city (no auto-creation)
       const query = 'SELECT * FROM cities ORDER BY created_at LIMIT 1';
       const result = await this.db.pool.query(query);
       
@@ -54,10 +65,9 @@ export class CityService {
         const city = this.mapRowToCity(result.rows[0]);
         city.buildings = await this.getCityBuildings(city.id);
         return city;
-      } else {
-        // Create default city
-        return await this.createCity('Sanctuary');
       }
+      
+      return null;
     } catch (error) {
       console.error('Error getting default city:', error);
       return null;
