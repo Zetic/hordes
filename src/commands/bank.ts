@@ -154,6 +154,12 @@ module.exports = {
           return;
         }
         
+        // Ensure items is an array
+        if (!Array.isArray(items)) {
+          await interaction.respond([]);
+          return;
+        }
+        
         // Filter items based on what user is typing
         const filtered = items
           .filter(item => item.item.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
