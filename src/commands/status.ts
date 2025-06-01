@@ -157,15 +157,15 @@ module.exports = {
         .setThumbnail(targetUser.displayAvatarURL())
         .addFields([
           { 
-            name: '🧍 Status', 
-            value: player.isAlive ? '🧍 Alive' : '💀 Dead', 
+            name: player.isAlive ? '❤️ Status' : '💀 Status', 
+            value: player.isAlive ? 'Alive' : 'Dead', 
             inline: true 
           },
           ...(player.isAlive ? [{ 
-            name: '🔄 Conditions', 
+            name: '📊 Conditions', 
             value: player.conditions.length > 0 
               ? player.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
-              : `${statusEmojis[player.status]} ${statusTexts[player.status]}`, 
+              : (player.status !== PlayerStatus.ALIVE ? `${statusEmojis[player.status]} ${statusTexts[player.status]}` : 'No conditions'), 
             inline: true 
           }] : []),
           { 

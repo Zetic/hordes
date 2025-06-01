@@ -338,25 +338,7 @@ export class ScavengingService {
       // Create Discord embed for item discovery
       const embed = new EmbedBuilder()
         .setColor('#4ecdc4')
-        .setTitle('📦 ITEM DISCOVERY')
-        .setDescription(`**${playerName}** has found an item!`)
-        .addFields([
-          { 
-            name: '🔍 Item Found', 
-            value: `**${itemName}**`, 
-            inline: true 
-          },
-          { 
-            name: '📍 Location', 
-            value: `(${x}, ${y})`, 
-            inline: true 
-          },
-          { 
-            name: '⏰ Time', 
-            value: `<t:${Math.floor(Date.now() / 1000)}:R>`, 
-            inline: true 
-          }
-        ])
+        .setTitle(`(${x}, ${y}) ${playerName} Found ${itemName}!`)
         .setTimestamp();
 
       // Send to Discord channel if client and channel are available

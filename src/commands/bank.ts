@@ -208,17 +208,69 @@ async function handleViewBank(interaction: CommandInteraction, cityId: string) {
       }
     ]);
   } else {
-    const itemList = bankInventory.map(inv => 
-      `**${inv.item.name}** x${inv.quantity} - ${inv.item.description}`
-    ).join('\n');
+    // Handle long content by creating multiple embeds if necessary
+    const itemsPerEmbed = 10;
+    const chunks = [];
+    
+    for (let i = 0; i < bankInventory.length; i += itemsPerEmbed) {
+      const chunk = bankInventory.slice(i, i + itemsPerEmbed);
+      const itemList = chunk.map(inv => 
+        `**${inv.item.name}** x${inv.quantity} - ${inv.item.description.length > 50 
+          ? inv.item.description.substring(0, 47) + '...' 
+          : inv.item.description}`
+      ).join('\n');
 
+      // Check if itemList exceeds Discord's field value limit (1024 chars)
+      if (itemList.length <= 1024) {
+        chunks.push(itemList);
+      } else {
+        // Further split if still too long
+        const items = chunk.map(inv => 
+          `**${inv.item.name}** x${inv.quantity}`
+        ).join('\n');
+        chunks.push(items);
+      }
+    }
+
+    // Add the first chunk to the main embed
     embed.addFields([
       {
         name: '📦 Bank Contents',
-        value: itemList,
+        value: chunks[0] || 'No items to display',
         inline: false
       }
     ]);
+
+    // If there are more chunks, we'll send them as separate follow-up messages
+    embed.addFields([
+      {
+        name: '💡 Usage',
+        value: 'Use `/bank deposit <item>` to store items or `/bank take <item>` to retrieve items.',
+        inline: false
+      }
+    ]);
+
+    embed.setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+
+    // Send additional chunks as follow-up messages if needed
+    for (let i = 1; i < chunks.length; i++) {
+      const followUpEmbed = new EmbedBuilder()
+        .setColor('#ffd93d')
+        .setTitle(`🏦 Town Bank (Page ${i + 1})`)
+        .addFields([
+          {
+            name: '📦 Bank Contents (continued)',
+            value: chunks[i],
+            inline: false
+          }
+        ]);
+
+      await interaction.followUp({ embeds: [followUpEmbed], ephemeral: true });
+    }
+    
+    return;
   }
 
   embed.addFields([
@@ -231,7 +283,7 @@ async function handleViewBank(interaction: CommandInteraction, cityId: string) {
 
   embed.setTimestamp();
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
 async function handleDepositItem(interaction: CommandInteraction, playerId: string, cityId: string, itemName: string, quantity: number) {

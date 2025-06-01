@@ -116,7 +116,7 @@ module.exports = {
       const { embed, attachment, components } = await createAreaEmbed({
         player: updatedPlayer,
         title: `📍 ${locationDisplay.name}`,
-        description: `${player.name} departs from the city and arrives at the gate...`,
+        description: `You depart from the city and arrive at the gate...`,
         showMovement: true,  // Depart should show movement options since player can now explore
         showScavenge: false, // No scavenging at gate
         mapImageBuffer
@@ -133,6 +133,14 @@ module.exports = {
 
       // Send followup with movement embed
       await interaction.followUp({ embeds: [embed], files: [attachment], components, ephemeral: true });
+
+      // Send public message
+      const publicEmbed = new EmbedBuilder()
+        .setColor('#95e1d3')
+        .setTitle(`${player.name} has departed from the city and heads out into the wasteland...`)
+        .setTimestamp();
+
+      await interaction.followUp({ embeds: [publicEmbed] });
 
     } catch (error) {
       console.error('Error in depart command:', error);

@@ -73,9 +73,8 @@ module.exports = {
           .setTitle('🧟‍♂️ Already Registered')
           .setDescription(`You're already part of the survival group, ${existingPlayer.name}!`)
           .addFields([
-            { name: '💚 Status', value: `${statusEmojis[existingPlayer.status]} ${statusTexts[existingPlayer.status]}`, inline: true },
-            { name: '⚡ Action Points', value: `${existingPlayer.actionPoints}/${existingPlayer.maxActionPoints}`, inline: true },
-            { name: '💧 Water', value: `${existingPlayer.water}`, inline: true }
+            { name: 'Status', value: existingPlayer.isAlive ? 'Alive' : 'Dead', inline: true },
+            { name: '⚡ Action Points', value: `${existingPlayer.actionPoints}/${existingPlayer.maxActionPoints}`, inline: true }
           ])
           .setTimestamp();
 
@@ -103,12 +102,9 @@ module.exports = {
         .setTitle('🎮 Welcome to DIE2NITE!')
         .setDescription(`Welcome to the zombie apocalypse, **${newPlayer.name}**! You have joined the survivors in their fight against the undead horde.`)
         .addFields([
-          { name: '💚 Status', value: `💚 Healthy`, inline: true },
+          { name: 'Status', value: 'Alive', inline: true },
           { name: '⚡ Action Points', value: `${newPlayer.actionPoints}/${newPlayer.maxActionPoints}`, inline: true },
-          { name: '💧 Water', value: `${newPlayer.water}`, inline: true },
-          { name: '📍 Location', value: `🏠 City (Safe Zone)`, inline: true },
-          { name: '🎯 Alive', value: `Alive and Ready`, inline: true },
-          { name: '\u200B', value: '\u200B', inline: true }
+          { name: '📍 Location', value: `🏠 City (Safe Zone)`, inline: true }
         ])
         .addFields([
           { 

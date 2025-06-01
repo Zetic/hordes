@@ -82,8 +82,8 @@ module.exports = {
         return;
       }
 
-      // Defer reply since we're about to do scavenging operations
-      await interaction.deferReply();
+      // Defer reply as ephemeral since we're about to do scavenging operations
+      await interaction.deferReply({ ephemeral: true });
 
       // Perform initial scavenge
       const scavengeResult = await scavengingService.performScavenge(player.id, player.x, player.y, true);
@@ -106,7 +106,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')
         .setTitle('🔍 Scavenging Begun')
-        .setDescription(`${player.name} begins scavenging the area...`)
+        .setDescription(`You begin scavenging the area...`)
         .addFields([
           {
             name: '📍 Location',
@@ -133,14 +133,16 @@ module.exports = {
       embed.addFields([
         {
           name: '🔄 Continuous Scavenging',
-          value: 'You will continue scavenging every 5 minutes until you move to a different area.',
+          value: 'Scavenging attempts will continue automatically as long as you remain here.',
           inline: false
         },
         {
           name: '⚠️ Area Status',
-          value: scavengeResult.areaInfo.isNearDepletion 
-            ? `Area is getting depleted (${scavengeResult.areaInfo.totalRolls}/6 total rolls). Loot quality may decrease soon.`
-            : `Area has plenty of resources (${scavengeResult.areaInfo.totalRolls}/6 total rolls).`,
+          value: scavengeResult.areaInfo.isDepleted 
+            ? 'Depleted of anything useful'
+            : scavengeResult.areaInfo.isNearDepletion 
+              ? 'Area is getting depleted. Loot quality may decrease soon.'
+              : 'Area has plenty of resources.',
           inline: false
         }
       ]);

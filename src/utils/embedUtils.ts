@@ -60,11 +60,6 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
         inline: true 
       },
       { 
-        name: '⚡ Action Points Used', 
-        value: actionPointsUsed.toString(), 
-        inline: true 
-      },
-      { 
         name: '⚡ Action Points Remaining', 
         value: `${player.actionPoints}/${player.maxActionPoints}`, 
         inline: true 
