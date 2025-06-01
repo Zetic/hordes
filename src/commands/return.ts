@@ -97,7 +97,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor('#4ecdc4')
         .setTitle('🏠 Returned to City')
-        .setDescription(`${player.name} returns to the safety of the city!`)
+        .setDescription(`You return to the safety of the city!`)
         .addFields([
           { 
             name: '📍 Previous Location', 
@@ -131,7 +131,15 @@ module.exports = {
         ])
         .setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      // Send public message
+      const publicEmbed = new EmbedBuilder()
+        .setColor('#4ecdc4')
+        .setTitle(`${player.name} returns to the safety of the city!`)
+        .setTimestamp();
+
+      await interaction.followUp({ embeds: [publicEmbed] });
 
     } catch (error) {
       console.error('Error in return command:', error);

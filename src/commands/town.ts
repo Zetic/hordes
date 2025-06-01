@@ -146,7 +146,7 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], ephemeral: true });
 
     } catch (error) {
       console.error('Error in town command:', error);
