@@ -1,6 +1,6 @@
 import { ItemEffect, ItemUseContext, ItemUseResult } from '../../types/itemEffects';
 import { PlayerService } from '../../models/player';
-import { PlayerStatus, isVitalStatus, isTemporaryCondition } from '../../types/game';
+import { PlayerStatus, PlayerCondition, isVitalStatus, isTemporaryCondition } from '../../types/game';
 
 const playerService = new PlayerService();
 
@@ -9,10 +9,10 @@ export async function handleRestoreAPEffect(effect: ItemEffect, context: ItemUse
     const apToRestore = effect.value || 0;
     
     // Check if player has dehydrated condition - special case for Water Ration
-    if (context.player.conditions && context.player.conditions.includes(PlayerStatus.DEHYDRATED)) {
+    if (context.player.conditions && context.player.conditions.includes(PlayerCondition.DEHYDRATED)) {
       // For dehydrated players using water ration: 0 AP, remove dehydrated and add thirsty
-      await playerService.removePlayerCondition(context.player.discordId, PlayerStatus.DEHYDRATED);
-      await playerService.addPlayerCondition(context.player.discordId, PlayerStatus.THIRSTY);
+      await playerService.removePlayerCondition(context.player.discordId, PlayerCondition.DEHYDRATED);
+      await playerService.addPlayerCondition(context.player.discordId, PlayerCondition.THIRSTY);
       
       return {
         success: true,
@@ -47,21 +47,21 @@ export async function handleRestoreAPEffect(effect: ItemEffect, context: ItemUse
 
 export async function handleAddStatusEffect(effect: ItemEffect, context: ItemUseContext): Promise<ItemUseResult> {
   try {
-    const statusToAdd = effect.status as PlayerStatus;
+    const statusToAdd = effect.status as PlayerCondition;
     
     // Check if this is a vital status or temporary condition
     if (isVitalStatus(statusToAdd)) {
-      // Handle vital status change
-      if (context.player.status === statusToAdd) {
+      // Handle vital status change (HEALTHY/WOUNDED)
+      if (context.player.conditions && context.player.conditions.includes(statusToAdd)) {
         return {
           success: true,
-          message: `You already have the ${statusToAdd} status.`,
+          message: `You already have the ${statusToAdd} condition.`,
           effectData: { statusAdded: false }
         };
       }
       
-      // Update vital status
-      await playerService.updatePlayerStatus(context.player.discordId, statusToAdd);
+      // Add vital condition
+      await playerService.addPlayerCondition(context.player.discordId, statusToAdd);
     } else if (isTemporaryCondition(statusToAdd)) {
       // Handle temporary condition - can have multiple
       if (context.player.conditions && context.player.conditions.includes(statusToAdd)) {
@@ -77,11 +77,13 @@ export async function handleAddStatusEffect(effect: ItemEffect, context: ItemUse
     }
     
     const statusMessages: { [key: string]: string } = {
-      [PlayerStatus.REFRESHED]: '💧 You feel refreshed and hydrated!',
-      [PlayerStatus.FED]: '🍞 You feel well-fed and satisfied!',
-      [PlayerStatus.THIRSTY]: '🫗 You feel thirsty.',
-      [PlayerStatus.DEHYDRATED]: '🏜️ You feel severely dehydrated.',
-      [PlayerStatus.EXHAUSTED]: '😴 You feel exhausted.'
+      [PlayerCondition.REFRESHED]: '💧 You feel refreshed and hydrated!',
+      [PlayerCondition.FED]: '🍞 You feel well-fed and satisfied!',
+      [PlayerCondition.THIRSTY]: '🫗 You feel thirsty.',
+      [PlayerCondition.DEHYDRATED]: '🏜️ You feel severely dehydrated.',
+      [PlayerCondition.EXHAUSTED]: '😴 You feel exhausted.',
+      [PlayerCondition.HEALTHY]: '💚 You feel healthy!',
+      [PlayerCondition.WOUNDED]: '🩸 You are wounded.'
     };
     
     return {
@@ -100,13 +102,13 @@ export async function handleAddStatusEffect(effect: ItemEffect, context: ItemUse
 
 export async function handleRemoveStatusEffect(effect: ItemEffect, context: ItemUseContext): Promise<ItemUseResult> {
   try {
-    const statusToRemove = effect.status as PlayerStatus;
+    const statusToRemove = effect.status as PlayerCondition;
     
     // Check if this is a vital status or temporary condition
     if (isVitalStatus(statusToRemove)) {
-      // Handle vital status removal/change
-      if (context.player.status !== statusToRemove) {
-        // Silent success if status isn't present
+      // Handle vital condition removal/change
+      if (!context.player.conditions || !context.player.conditions.includes(statusToRemove)) {
+        // Silent success if condition isn't present
         return {
           success: true,
           message: '',
@@ -114,28 +116,13 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
         };
       }
       
-      // Determine the new vital status after removal
-      let newStatus: PlayerStatus;
-      if (statusToRemove === PlayerStatus.WOUNDED) {
-        newStatus = PlayerStatus.HEALTHY;
-      } else if (statusToRemove === PlayerStatus.DEAD) {
-        newStatus = PlayerStatus.HEALTHY; // Revival case
-      } else {
-        // For other vital statuses, determine based on current health
-        if (context.player.health < context.player.maxHealth) {
-          newStatus = PlayerStatus.WOUNDED;
-        } else {
-          newStatus = PlayerStatus.HEALTHY;
-        }
+      // Remove the vital condition and handle special cases
+      await playerService.removePlayerCondition(context.player.discordId, statusToRemove);
+      
+      if (statusToRemove === PlayerCondition.WOUNDED) {
+        // When removing wounded, add healthy
+        await playerService.addPlayerCondition(context.player.discordId, PlayerCondition.HEALTHY);
       }
-      
-      await playerService.updatePlayerStatus(context.player.discordId, newStatus);
-      
-      return {
-        success: true,
-        message: `${statusToRemove} status removed.`,
-        effectData: { statusRemoved: true, removedStatus: statusToRemove, newStatus: newStatus }
-      };
     } else if (isTemporaryCondition(statusToRemove)) {
       // Handle temporary condition removal
       if (!context.player.conditions || !context.player.conditions.includes(statusToRemove)) {
@@ -149,21 +136,23 @@ export async function handleRemoveStatusEffect(effect: ItemEffect, context: Item
       
       // Remove the condition
       await playerService.removePlayerCondition(context.player.discordId, statusToRemove);
-      
-      const statusMessages: { [key: string]: string } = {
-        [PlayerStatus.THIRSTY]: '💧 Your thirst is quenched.',
-        [PlayerStatus.DEHYDRATED]: '💧 You are no longer dehydrated.',
-        [PlayerStatus.EXHAUSTED]: '⚡ You feel more energetic.',
-        [PlayerStatus.FED]: '🍞 You are no longer full.',
-        [PlayerStatus.REFRESHED]: '💧 The refreshing effect wears off.'
-      };
-      
-      return {
-        success: true,
-        message: statusMessages[statusToRemove] || `${statusToRemove} condition removed.`,
-        effectData: { statusRemoved: true, removedStatus: statusToRemove }
-      };
     }
+      
+    const statusMessages: { [key: string]: string } = {
+      [PlayerCondition.THIRSTY]: '💧 Your thirst is quenched.',
+      [PlayerCondition.DEHYDRATED]: '💧 You are no longer dehydrated.',
+      [PlayerCondition.EXHAUSTED]: '⚡ You feel more energetic.',
+      [PlayerCondition.FED]: '🍞 You are no longer full.',
+      [PlayerCondition.REFRESHED]: '💧 The refreshing effect wears off.',
+      [PlayerCondition.WOUNDED]: '💚 You feel healthy again.',
+      [PlayerCondition.HEALTHY]: '❓ Health condition removed.'
+    };
+      
+    return {
+      success: true,
+      message: statusMessages[statusToRemove] || `${statusToRemove} condition removed.`,
+      effectData: { statusRemoved: true, removedStatus: statusToRemove }
+    };
     
     // Fallback
     return {
