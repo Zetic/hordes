@@ -3,9 +3,9 @@ import { PlayerStatus, isVitalStatus, isTemporaryCondition } from '../types/game
 describe('Multiple Conditions System', () => {
   describe('Status Categorization', () => {
     test('should correctly identify vital statuses', () => {
-      expect(isVitalStatus(PlayerStatus.HEALTHY)).toBe(true);
-      expect(isVitalStatus(PlayerStatus.WOUNDED)).toBe(true);
+      expect(isVitalStatus(PlayerStatus.ALIVE)).toBe(true);
       expect(isVitalStatus(PlayerStatus.DEAD)).toBe(true);
+      expect(isVitalStatus(PlayerStatus.WOUNDED_ARM)).toBe(false); // Wounds are not vital statuses
     });
 
     test('should correctly identify temporary conditions', () => {
@@ -18,8 +18,7 @@ describe('Multiple Conditions System', () => {
 
     test('should not cross-categorize statuses', () => {
       // Vital statuses should not be identified as temporary conditions
-      expect(isTemporaryCondition(PlayerStatus.HEALTHY)).toBe(false);
-      expect(isTemporaryCondition(PlayerStatus.WOUNDED)).toBe(false);
+      expect(isTemporaryCondition(PlayerStatus.ALIVE)).toBe(false);
       expect(isTemporaryCondition(PlayerStatus.DEAD)).toBe(false);
 
       // Temporary conditions should not be identified as vital statuses
@@ -40,7 +39,7 @@ describe('Multiple Conditions System', () => {
         name: 'Alice',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY, // Vital status
+        status: PlayerStatus.ALIVE, // Vital status
         conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED], // Multiple conditions
         actionPoints: 10,
         maxActionPoints: 10,
@@ -53,8 +52,8 @@ describe('Multiple Conditions System', () => {
         lastActionTime: new Date()
       };
 
-      // Should have healthy vital status
-      expect(playerWithMultipleConditions.status).toBe(PlayerStatus.HEALTHY);
+      // Should have alive vital status
+      expect(playerWithMultipleConditions.status).toBe(PlayerStatus.ALIVE);
       expect(isVitalStatus(playerWithMultipleConditions.status)).toBe(true);
 
       // Should have both refreshed and fed conditions
@@ -69,15 +68,15 @@ describe('Multiple Conditions System', () => {
     });
 
     test('should support wounded player with temporary conditions', () => {
-      // Mock wounded player with conditions
+      // Mock player with wound conditions and temporary conditions
       const woundedPlayerWithConditions = {
         id: 'test-2',
         discordId: 'user2', 
         name: 'Bob',
         health: 50,
         maxHealth: 100,
-        status: PlayerStatus.WOUNDED, // Vital status
-        conditions: [PlayerStatus.THIRSTY, PlayerStatus.EXHAUSTED], // Multiple conditions
+        status: PlayerStatus.ALIVE, // Vital status
+        conditions: [PlayerStatus.WOUNDED_LEG, PlayerStatus.THIRSTY, PlayerStatus.EXHAUSTED], // Wound + conditions
         actionPoints: 3,
         maxActionPoints: 10,
         water: 1,
@@ -89,25 +88,26 @@ describe('Multiple Conditions System', () => {
         lastActionTime: new Date()
       };
 
-      // Should have wounded vital status
-      expect(woundedPlayerWithConditions.status).toBe(PlayerStatus.WOUNDED);
+      // Should have alive vital status
+      expect(woundedPlayerWithConditions.status).toBe(PlayerStatus.ALIVE);
       expect(isVitalStatus(woundedPlayerWithConditions.status)).toBe(true);
 
-      // Should have multiple conditions
+      // Should have multiple conditions including wound
+      expect(woundedPlayerWithConditions.conditions).toContain(PlayerStatus.WOUNDED_LEG);
       expect(woundedPlayerWithConditions.conditions).toContain(PlayerStatus.THIRSTY);
       expect(woundedPlayerWithConditions.conditions).toContain(PlayerStatus.EXHAUSTED);
-      expect(woundedPlayerWithConditions.conditions.length).toBe(2);
+      expect(woundedPlayerWithConditions.conditions.length).toBe(3);
     });
 
     test('should support player with vital status and no conditions', () => {
-      // Mock healthy player with no conditions
-      const healthyPlayerNoConditions = {
+      // Mock player with no conditions
+      const alivePlayerNoConditions = {
         id: 'test-3',
         discordId: 'user3',
         name: 'Charlie',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY,
+        status: PlayerStatus.ALIVE,
         conditions: [], // No conditions
         actionPoints: 10,
         maxActionPoints: 10,
@@ -120,8 +120,8 @@ describe('Multiple Conditions System', () => {
         lastActionTime: new Date()
       };
 
-      expect(healthyPlayerNoConditions.status).toBe(PlayerStatus.HEALTHY);
-      expect(healthyPlayerNoConditions.conditions.length).toBe(0);
+      expect(alivePlayerNoConditions.status).toBe(PlayerStatus.ALIVE);
+      expect(alivePlayerNoConditions.conditions.length).toBe(0);
     });
   });
 
