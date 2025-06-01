@@ -6,7 +6,7 @@ import { ItemService } from '../models/item';
 import { InventoryService } from '../models/inventory';
 import { AreaInventoryService } from '../models/areaInventory';
 import { DatabaseService } from '../services/database';
-import { Location, PlayerStatus } from '../types/game';
+import { Location, PlayerStatus, PlayerCondition } from '../types/game';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -323,16 +323,20 @@ async function handleRespawnCommand(interaction: CommandInteraction, targetUser:
 
   // Perform a full reset for the individual player
   try {
-    // Reset player to healthy state with full action points and return to city
+    // Reset player to alive state with healthy condition, full action points and return to city
     await playerService.updatePlayerHealth(targetUser.id, player.maxHealth);
-    await playerService.updatePlayerStatus(targetUser.id, PlayerStatus.HEALTHY);
+    await playerService.updatePlayerStatus(targetUser.id, PlayerStatus.ALIVE);
     await playerService.updatePlayerLocation(targetUser.id, Location.CITY);
     await playerService.resetPlayerActionPoints(targetUser.id);
+    
+    // Clear all conditions and add healthy condition
+    await playerService.removePlayerCondition(targetUser.id, PlayerCondition.WOUNDED);
+    await playerService.addPlayerCondition(targetUser.id, PlayerCondition.HEALTHY);
 
     const embed = new EmbedBuilder()
       .setColor('#4ecdc4')
       .setTitle('🔄 Player Respawned')
-      .setDescription(`${targetUser.username} has been fully reset - returned to city with healthy status, full health, and maximum action points.`)
+      .setDescription(`${targetUser.username} has been fully reset - returned to city with healthy condition, full health, and maximum action points.`)
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
