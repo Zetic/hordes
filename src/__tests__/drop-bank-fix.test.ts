@@ -4,29 +4,17 @@ import { AreaInventoryService } from '../models/areaInventory';
 
 describe('Drop and Bank Fix', () => {
   describe('Database Schema', () => {
-    test('should include bank_inventories table creation', () => {
-      // Read the database service source file to verify the table creation statements exist
+    test('should verify schema initialization has been removed from database service', () => {
+      // Schema initialization has been removed from database.ts - managed externally now
       const fs = require('fs');
       const path = require('path');
       const databaseServicePath = path.join(__dirname, '..', 'services', 'database.ts');
       const databaseServiceContent = fs.readFileSync(databaseServicePath, 'utf8');
       
-      // Check that bank_inventories table creation is present
-      expect(databaseServiceContent).toContain('CREATE TABLE IF NOT EXISTS bank_inventories');
-      expect(databaseServiceContent).toContain('city_id UUID REFERENCES cities(id) ON DELETE CASCADE');
-      expect(databaseServiceContent).toContain('item_id UUID REFERENCES items(id)');
-    });
-
-    test('should include area_inventories table creation', () => {
-      const fs = require('fs');
-      const path = require('path');
-      const databaseServicePath = path.join(__dirname, '..', 'services', 'database.ts');
-      const databaseServiceContent = fs.readFileSync(databaseServicePath, 'utf8');
-      
-      // Check that area_inventories table creation is present
-      expect(databaseServiceContent).toContain('CREATE TABLE IF NOT EXISTS area_inventories');
-      expect(databaseServiceContent).toContain('location VARCHAR(50) NOT NULL');
-      expect(databaseServiceContent).toContain('item_id UUID REFERENCES items(id)');
+      // Verify that schema initialization is no longer present
+      expect(databaseServiceContent).not.toContain('CREATE TABLE IF NOT EXISTS bank_inventories');
+      expect(databaseServiceContent).not.toContain('CREATE TABLE IF NOT EXISTS area_inventories');
+      expect(databaseServiceContent).toContain('Schema initialization removed - database schema is managed externally');
     });
   });
 
