@@ -33,9 +33,7 @@ describe('Game Mechanics Integration', () => {
     expect(Location.CITY).toBe('city');
     expect(Location.GATE).toBe('gate');
     expect(Location.WASTE).toBe('waste');
-    expect(Location.GREATER_WASTE).toBe('greater_waste');
-    expect(PlayerStatus.HEALTHY).toBe('healthy');
-    expect(PlayerStatus.WOUNDED).toBe('wounded');
+    expect(PlayerStatus.ALIVE).toBe('alive');
     expect(PlayerStatus.DEAD).toBe('dead');
   });
 

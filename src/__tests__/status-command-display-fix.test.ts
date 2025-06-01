@@ -4,8 +4,7 @@ describe('Status Command Display Fix', () => {
   test('should format status title without emoji', () => {
     const playerName = 'TestPlayer';
     const statusEmojis = {
-      [PlayerStatus.HEALTHY]: '💚',
-      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerStatus.ALIVE]: '💚',
       [PlayerStatus.DEAD]: '💀',
       [PlayerStatus.REFRESHED]: '💧',
       [PlayerStatus.FED]: '🍞',
@@ -15,7 +14,7 @@ describe('Status Command Display Fix', () => {
     };
 
     // OLD behavior (incorrect)
-    const oldTitle = `${statusEmojis[PlayerStatus.HEALTHY]} ${playerName}'s Status`;
+    const oldTitle = `${statusEmojis[PlayerStatus.ALIVE]} ${playerName}'s Status`;
     
     // NEW behavior (correct)
     const newTitle = `${playerName}'s Status`;
@@ -33,13 +32,12 @@ describe('Status Command Display Fix', () => {
   test('should display multiple conditions in separate section', () => {
     const mockPlayer = {
       conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED, PlayerStatus.THIRSTY],
-      status: PlayerStatus.WOUNDED,
+      status: PlayerStatus.ALIVE,
       isAlive: true
     };
 
     const statusEmojis = {
-      [PlayerStatus.HEALTHY]: '💚',
-      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerStatus.ALIVE]: '💚',
       [PlayerStatus.DEAD]: '💀',
       [PlayerStatus.REFRESHED]: '💧',
       [PlayerStatus.FED]: '🍞',
@@ -49,8 +47,7 @@ describe('Status Command Display Fix', () => {
     };
     
     const statusTexts = {
-      [PlayerStatus.HEALTHY]: 'Healthy',
-      [PlayerStatus.WOUNDED]: 'Wounded',
+      [PlayerStatus.ALIVE]: 'Healthy',
       [PlayerStatus.DEAD]: 'Dead',
       [PlayerStatus.REFRESHED]: 'Refreshed',
       [PlayerStatus.FED]: 'Fed',
@@ -61,8 +58,8 @@ describe('Status Command Display Fix', () => {
 
     // Test the conditions display logic (from status.ts)
     const conditionsDisplay = mockPlayer.conditions.length > 0 
-      ? mockPlayer.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
-      : `${statusEmojis[mockPlayer.status]} ${statusTexts[mockPlayer.status]}`;
+      ? mockPlayer.conditions.map(condition => `${(statusEmojis as any)[condition]} ${(statusTexts as any)[condition]}`).join('\n')
+      : `${(statusEmojis as any)[mockPlayer.status]} ${(statusTexts as any)[mockPlayer.status]}`;
 
     // Should show all three conditions on separate lines
     expect(conditionsDisplay).toContain('💧 Refreshed');
@@ -77,13 +74,12 @@ describe('Status Command Display Fix', () => {
   test('should show vital status in Status field when no conditions', () => {
     const mockPlayer = {
       conditions: [],
-      status: PlayerStatus.WOUNDED,
+      status: PlayerStatus.ALIVE,
       isAlive: true
     };
 
     const statusEmojis = {
-      [PlayerStatus.HEALTHY]: '💚',
-      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerStatus.ALIVE]: '💚',
       [PlayerStatus.DEAD]: '💀',
       [PlayerStatus.REFRESHED]: '💧',
       [PlayerStatus.FED]: '🍞',
@@ -93,8 +89,7 @@ describe('Status Command Display Fix', () => {
     };
     
     const statusTexts = {
-      [PlayerStatus.HEALTHY]: 'Healthy',
-      [PlayerStatus.WOUNDED]: 'Wounded',
+      [PlayerStatus.ALIVE]: 'Healthy',
       [PlayerStatus.DEAD]: 'Dead',
       [PlayerStatus.REFRESHED]: 'Refreshed',
       [PlayerStatus.FED]: 'Fed',
@@ -105,8 +100,8 @@ describe('Status Command Display Fix', () => {
 
     // Test the conditions display logic (from status.ts)
     const conditionsDisplay = mockPlayer.conditions.length > 0 
-      ? mockPlayer.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
-      : `${statusEmojis[mockPlayer.status]} ${statusTexts[mockPlayer.status]}`;
+      ? mockPlayer.conditions.map(condition => `${(statusEmojis as any)[condition]} ${(statusTexts as any)[condition]}`).join('\n')
+      : `${(statusEmojis as any)[mockPlayer.status]} ${(statusTexts as any)[mockPlayer.status]}`;
 
     // When no conditions, should fall back to showing vital status
     expect(conditionsDisplay).toBe('🩸 Wounded');

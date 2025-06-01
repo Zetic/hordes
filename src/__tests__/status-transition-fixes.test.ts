@@ -90,11 +90,12 @@ describe('Status Transition Fixes', () => {
       expect(result.effectData?.newStatus).toBeDefined();
     });
 
-    test('Wounded status removal should go to Healthy', async () => {
-      // Health-related statuses should still transition properly
+    test('Wound condition removal should keep player alive', async () => {
+      // In the new system, wounds are conditions, not vital status
       const mockWoundedPlayer = {
         discordId: 'healing123',
-        status: PlayerStatus.WOUNDED,
+        status: PlayerStatus.ALIVE, // Vital status remains alive
+        conditions: [PlayerStatus.WOUNDED_ARM], // Wound is a condition
         health: 80,
         maxHealth: 100
       };
@@ -104,17 +105,18 @@ describe('Status Transition Fixes', () => {
         location: { x: 5, y: 5 }
       };
 
-      const removeWoundedEffect: ItemEffect = {
+      const removeWoundEffect: ItemEffect = {
         type: EffectType.REMOVE_STATUS,
-        status: 'wounded'
+        status: 'wounded_arm'
       };
 
-      const result = await handleRemoveStatusEffect(removeWoundedEffect, context);
+      const result = await handleRemoveStatusEffect(removeWoundEffect, context);
       
       expect(result.success).toBe(true);
       expect(result.effectData?.statusRemoved).toBe(true);
-      expect(result.effectData?.removedStatus).toBe('wounded');
-      expect(result.effectData?.newStatus).toBe(PlayerStatus.HEALTHY);
+      expect(result.effectData?.removedStatus).toBe('wounded_arm');
+      // Player status should remain ALIVE
+      expect(result.effectData?.newStatus).toBe(PlayerStatus.ALIVE);
     });
   });
 

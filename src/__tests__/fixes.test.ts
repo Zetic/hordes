@@ -97,7 +97,6 @@ describe('Issue #20 Fixes', () => {
         Location.CITY,
         Location.GATE,
         Location.WASTE,
-        Location.GREATER_WASTE,
         Location.HOME
       ];
       
@@ -114,8 +113,7 @@ describe('Issue #20 Fixes', () => {
   describe('Return Command Changes', () => {
     test('should not provide healing on return', () => {
       const playerStatuses = [
-        PlayerStatus.HEALTHY,
-        PlayerStatus.WOUNDED,
+        PlayerStatus.ALIVE,
         PlayerStatus.DEAD
       ];
       

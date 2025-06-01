@@ -10,7 +10,6 @@ describe('Game Types', () => {
     expect(Location.CITY).toBe('city');
     expect(Location.GATE).toBe('gate');
     expect(Location.WASTE).toBe('waste');
-    expect(Location.GREATER_WASTE).toBe('greater_waste');
   });
 
   test('should define item types', () => {
@@ -19,8 +18,7 @@ describe('Game Types', () => {
   });
 
   test('should define player statuses', () => {
-    expect(PlayerStatus.HEALTHY).toBe('healthy');
-    expect(PlayerStatus.WOUNDED).toBe('wounded');
+    expect(PlayerStatus.ALIVE).toBe('alive');
     expect(PlayerStatus.DEAD).toBe('dead');
   });
 });

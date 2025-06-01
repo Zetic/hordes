@@ -10,7 +10,7 @@ describe('Status Display Revision', () => {
         name: 'Alice',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY,
+        status: PlayerStatus.ALIVE,
         isAlive: true,
         actionPoints: 10,
         maxActionPoints: 10,
@@ -26,13 +26,15 @@ describe('Status Display Revision', () => {
         ...aliveHealthyPlayer,
         name: 'Bob',
         health: 50,
-        status: PlayerStatus.WOUNDED,
+        status: PlayerStatus.ALIVE, // Wounds are conditions, not vital status
+        conditions: [PlayerStatus.WOUNDED_ARM], // Wound as condition
       };
 
       const aliveFedPlayer = {
         ...aliveHealthyPlayer,
         name: 'Charlie',
-        status: PlayerStatus.FED,
+        status: PlayerStatus.ALIVE, // Vital status remains alive
+        conditions: [PlayerStatus.FED], // Fed is a temporary condition
       };
 
       const deadPlayer = {
@@ -51,10 +53,10 @@ describe('Status Display Revision', () => {
       // Dead player should have vital status "Dead"
       expect(deadPlayer.isAlive).toBe(false);
       
-      // Each player should have different conditions
-      expect(aliveHealthyPlayer.status).toBe(PlayerStatus.HEALTHY);
-      expect(aliveWoundedPlayer.status).toBe(PlayerStatus.WOUNDED);
-      expect(aliveFedPlayer.status).toBe(PlayerStatus.FED);
+      // Each player should have proper vital status
+      expect(aliveHealthyPlayer.status).toBe(PlayerStatus.ALIVE);
+      expect(aliveWoundedPlayer.status).toBe(PlayerStatus.ALIVE);
+      expect(aliveFedPlayer.status).toBe(PlayerStatus.ALIVE);
       expect(deadPlayer.status).toBe(PlayerStatus.DEAD);
     });
 
@@ -65,14 +67,22 @@ describe('Status Display Revision', () => {
       };
 
       const conditionTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.ALIVE]: 'Alive',
         [PlayerStatus.DEAD]: 'Dead',
+        [PlayerStatus.WOUNDED_ARM]: 'Wounded Arm',
+        [PlayerStatus.WOUNDED_LEG]: 'Wounded Leg',
+        [PlayerStatus.WOUNDED_HEAD]: 'Wounded Head',
+        [PlayerStatus.WOUNDED_EYE]: 'Wounded Eye',
+        [PlayerStatus.WOUNDED_HAND]: 'Wounded Hand',
+        [PlayerStatus.WOUNDED_FOOT]: 'Wounded Foot',
         [PlayerStatus.REFRESHED]: 'Refreshed',
         [PlayerStatus.FED]: 'Fed',
         [PlayerStatus.THIRSTY]: 'Thirsty',
         [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-        [PlayerStatus.EXHAUSTED]: 'Exhausted'
+        [PlayerStatus.EXHAUSTED]: 'Exhausted',
+        [PlayerStatus.HEALED]: 'Healed',
+        [PlayerStatus.INFECTED]: 'Infected',
+        [PlayerStatus.SCAVENGING]: 'Scavenging'
       };
 
       // Verify mappings exist

@@ -10,7 +10,7 @@ describe('Status Command Integration - Display Revision', () => {
         name: 'TestPlayer',
         health: 75,
         maxHealth: 100,
-        status: PlayerStatus.WOUNDED,
+        status: PlayerStatus.ALIVE,
         isAlive: true,
         actionPoints: 8,
         maxActionPoints: 10,
@@ -24,8 +24,7 @@ describe('Status Command Integration - Display Revision', () => {
 
       // Simulate the logic from the status command
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerStatus.ALIVE]: '💚',
         [PlayerStatus.DEAD]: '💀',
         [PlayerStatus.REFRESHED]: '💧',
         [PlayerStatus.FED]: '🍞',
@@ -35,8 +34,7 @@ describe('Status Command Integration - Display Revision', () => {
       };
       
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.ALIVE]: 'Healthy',
         [PlayerStatus.DEAD]: 'Dead',
         [PlayerStatus.REFRESHED]: 'Refreshed',
         [PlayerStatus.FED]: 'Fed',
@@ -54,7 +52,7 @@ describe('Status Command Integration - Display Revision', () => {
         },
         ...(mockPlayer.isAlive ? [{ 
           name: '🔄 Conditions', 
-          value: `${statusEmojis[mockPlayer.status]} ${statusTexts[mockPlayer.status]}`, 
+          value: `${(statusEmojis as any)[mockPlayer.status]} ${(statusTexts as any)[mockPlayer.status]}`, 
           inline: true 
         }] : []),
         { 
@@ -162,8 +160,8 @@ describe('Status Command Integration - Display Revision', () => {
 
     test('should test various condition statuses for alive players', () => {
       const testCases = [
-        { status: PlayerStatus.HEALTHY, expected: '💚 Healthy' },
-        { status: PlayerStatus.WOUNDED, expected: '🩸 Wounded' },
+        { status: PlayerStatus.ALIVE, expected: '💚 Healthy' },
+        { status: PlayerStatus.ALIVE, expected: '🩸 Wounded' },
         { status: PlayerStatus.REFRESHED, expected: '💧 Refreshed' },
         { status: PlayerStatus.FED, expected: '🍞 Fed' },
         { status: PlayerStatus.THIRSTY, expected: '🫗 Thirsty' },
@@ -172,8 +170,7 @@ describe('Status Command Integration - Display Revision', () => {
       ];
 
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerStatus.ALIVE]: '💚',
         [PlayerStatus.DEAD]: '💀',
         [PlayerStatus.REFRESHED]: '💧',
         [PlayerStatus.FED]: '🍞',
@@ -183,8 +180,7 @@ describe('Status Command Integration - Display Revision', () => {
       };
       
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.ALIVE]: 'Healthy',
         [PlayerStatus.DEAD]: 'Dead',
         [PlayerStatus.REFRESHED]: 'Refreshed',
         [PlayerStatus.FED]: 'Fed',
@@ -194,7 +190,7 @@ describe('Status Command Integration - Display Revision', () => {
       };
 
       testCases.forEach(({ status, expected }) => {
-        const conditionValue = `${statusEmojis[status]} ${statusTexts[status]}`;
+        const conditionValue = `${(statusEmojis as any)[status]} ${(statusTexts as any)[status]}`;
         expect(conditionValue).toBe(expected);
       });
     });

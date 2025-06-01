@@ -14,7 +14,7 @@ describe('Issue #93 Fix Verification', () => {
         name: 'TestPlayer',
         health: 100,
         maxHealth: 100,
-        status: PlayerStatus.HEALTHY, // Vital status
+        status: PlayerStatus.ALIVE, // Vital status
         conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED], // Both conditions
         actionPoints: 10,
         maxActionPoints: 10,
@@ -33,7 +33,7 @@ describe('Issue #93 Fix Verification', () => {
       expect(mockPlayer.conditions.length).toBe(2);
       
       // Verify vital status is separate
-      expect(mockPlayer.status).toBe(PlayerStatus.HEALTHY);
+      expect(mockPlayer.status).toBe(PlayerStatus.ALIVE);
       expect(isVitalStatus(mockPlayer.status)).toBe(true);
       
       // Verify conditions are properly categorized
@@ -46,13 +46,12 @@ describe('Issue #93 Fix Verification', () => {
       // Mock status display logic from status.ts
       const mockPlayer = {
         conditions: [PlayerStatus.REFRESHED, PlayerStatus.FED, PlayerStatus.THIRSTY],
-        status: PlayerStatus.WOUNDED,
+        status: PlayerStatus.ALIVE,
         isAlive: true
       };
 
       const statusEmojis = {
-        [PlayerStatus.HEALTHY]: '💚',
-        [PlayerStatus.WOUNDED]: '🩸',
+        [PlayerStatus.ALIVE]: '💚',
         [PlayerStatus.DEAD]: '💀',
         [PlayerStatus.REFRESHED]: '💧',
         [PlayerStatus.FED]: '🍞',
@@ -62,8 +61,7 @@ describe('Issue #93 Fix Verification', () => {
       };
       
       const statusTexts = {
-        [PlayerStatus.HEALTHY]: 'Healthy',
-        [PlayerStatus.WOUNDED]: 'Wounded',
+        [PlayerStatus.ALIVE]: 'Alive',
         [PlayerStatus.DEAD]: 'Dead',
         [PlayerStatus.REFRESHED]: 'Refreshed',
         [PlayerStatus.FED]: 'Fed',
@@ -74,8 +72,8 @@ describe('Issue #93 Fix Verification', () => {
 
       // Test the conditions display logic
       const conditionsDisplay = mockPlayer.conditions.length > 0 
-        ? mockPlayer.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
-        : `${statusEmojis[mockPlayer.status]} ${statusTexts[mockPlayer.status]}`;
+        ? mockPlayer.conditions.map(condition => `${(statusEmojis as any)[condition]} ${(statusTexts as any)[condition]}`).join('\n')
+        : `${(statusEmojis as any)[mockPlayer.status]} ${(statusTexts as any)[mockPlayer.status]}`;
 
       // Should show all three conditions
       expect(conditionsDisplay).toContain('💧 Refreshed');
@@ -94,13 +92,13 @@ describe('Issue #93 Fix Verification', () => {
       const cityPlayer = {
         location: 'city' as any,
         conditions: [] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        status: PlayerStatus.ALIVE
       };
 
       const homePlayer = {
         location: 'home' as any, 
         conditions: [] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        status: PlayerStatus.ALIVE
       };
 
       // Mock item definitions
@@ -124,13 +122,13 @@ describe('Issue #93 Fix Verification', () => {
       const refreshedPlayer = {
         location: 'waste' as any,
         conditions: [PlayerStatus.REFRESHED] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        status: PlayerStatus.ALIVE
       };
 
       const fedPlayer = {
         location: 'city' as any, // Can be in city
         conditions: [PlayerStatus.FED] as PlayerStatus[],
-        status: PlayerStatus.HEALTHY
+        status: PlayerStatus.ALIVE
       };
 
       // Test restriction logic from checkItemUsageRestrictions

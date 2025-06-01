@@ -21,7 +21,7 @@ describe('Database Integration Test', () => {
     test('should construct valid updatePlayerStatus query', () => {
       // Test the SQL query structure that was failing before
       const discordId = 'test123';
-      const status = PlayerStatus.WOUNDED;
+      const status = PlayerStatus.ALIVE;
       
       const query = `
         UPDATE players 
@@ -38,7 +38,7 @@ describe('Database Integration Test', () => {
       expect(query).toContain('WHERE discord_id = $3');
       
       // Verify parameters match expected types
-      expect(params[0]).toBe(PlayerStatus.WOUNDED);
+      expect(params[0]).toBe(PlayerStatus.ALIVE);
       expect(params[1]).toBe(true); // wounded players are still alive
       expect(params[2]).toBe('test123');
       
@@ -60,7 +60,7 @@ describe('Database Integration Test', () => {
             updated_at = NOW()
         WHERE id IS NOT NULL
       `;
-      const params = [PlayerStatus.HEALTHY, Location.CITY];
+      const params = [PlayerStatus.ALIVE, Location.CITY];
       
       // Verify the query includes all required columns
       expect(query).toContain('SET health = max_health');
@@ -69,7 +69,7 @@ describe('Database Integration Test', () => {
       expect(query).toContain('WHERE id IS NOT NULL');
       
       // Verify parameters
-      expect(params[0]).toBe(PlayerStatus.HEALTHY);
+      expect(params[0]).toBe(PlayerStatus.ALIVE);
       expect(params[1]).toBe(Location.CITY);
     });
   });
@@ -149,7 +149,7 @@ describe('Database Integration Test', () => {
       };
 
       // Verify the status is properly mapped and not undefined
-      expect(mappedPlayer.status).toBe(PlayerStatus.WOUNDED);
+      expect(mappedPlayer.status).toBe(PlayerStatus.ALIVE);
       expect(mappedPlayer.status).not.toBeUndefined();
       expect(mappedPlayer.status).not.toBe('undefined');
     });
@@ -159,8 +159,8 @@ describe('Database Integration Test', () => {
     test('should display proper status transitions in log messages', () => {
       // Test the log message format that was showing "undefined → undefined"
       const playerName = 'TestPlayer';
-      const previousStatus = PlayerStatus.HEALTHY;
-      const newStatus = PlayerStatus.WOUNDED;
+      const previousStatus = PlayerStatus.ALIVE;
+      const newStatus = PlayerStatus.ALIVE;
       const attackCount = 2;
       const successfulHits = 1;
 
@@ -176,18 +176,18 @@ describe('Database Integration Test', () => {
     test('should handle different status transitions', () => {
       const testCases = [
         {
-          previous: PlayerStatus.HEALTHY,
-          new: PlayerStatus.WOUNDED,
+          previous: PlayerStatus.ALIVE,
+          new: PlayerStatus.ALIVE,
           expected: 'healthy → wounded'
         },
         {
-          previous: PlayerStatus.WOUNDED,
+          previous: PlayerStatus.ALIVE,
           new: PlayerStatus.DEAD,
           expected: 'wounded → dead'
         },
         {
-          previous: PlayerStatus.HEALTHY,
-          new: PlayerStatus.HEALTHY,
+          previous: PlayerStatus.ALIVE,
+          new: PlayerStatus.ALIVE,
           expected: 'healthy → healthy'
         }
       ];
