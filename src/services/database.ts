@@ -285,6 +285,9 @@ export class DatabaseService {
       await client.query('BEGIN');
       
       // Delete all data from tables in the correct order to respect foreign key constraints
+      // This order is derived from the schema defined in initializeSchema() method above
+      // and ensures no foreign key violations occur during deletion
+      
       // First delete from tables that reference other tables
       await client.query('DELETE FROM area_inventories');
       await client.query('DELETE FROM explored_tiles');
@@ -299,7 +302,7 @@ export class DatabaseService {
       await client.query('DELETE FROM items');
       await client.query('DELETE FROM cities');
       
-      // Re-create the default city
+      // Re-create the default city to ensure system remains functional
       await client.query(`
         INSERT INTO cities (name, day, game_phase, gate_open)
         VALUES ('Sanctuary', 1, 'play_mode', true)
