@@ -78,15 +78,7 @@ module.exports = {
         ]);
 
       // Add location-specific information
-      if (player.location === Location.GREATER_WASTE) {
-        embed.addFields([
-          {
-            name: 'Greater Waste',
-            value: 'You are in the dangerous outer reaches. Searching here is more risky but may yield better rewards.',
-            inline: false
-          }
-        ]);
-      } else if (player.location === Location.GATE) {
+      if (player.location === Location.GATE) {
         embed.addFields([
           {
             name: 'Gate Area',

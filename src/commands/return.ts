@@ -50,7 +50,6 @@ module.exports = {
             locationMessage = 'You are at home. Use the city interface to move around town.';
             break;
           case Location.WASTE:
-          case Location.GREATER_WASTE:
             locationMessage = 'You must be at the gate to return to the city. Use `/move <direction>` to navigate to the gate first.';
             break;
           default:

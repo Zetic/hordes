@@ -197,6 +197,43 @@ BEGIN
     END IF;
 END $$;
 
+-- Tables for scavenging system
+CREATE TABLE IF NOT EXISTS area_scavenging (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  x INTEGER NOT NULL,
+  y INTEGER NOT NULL,
+  total_rolls INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT false,
+  last_roll_time TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(x, y)
+);
+
+CREATE TABLE IF NOT EXISTS player_area_scavenging (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id UUID REFERENCES players(id) ON DELETE CASCADE,
+  x INTEGER NOT NULL,
+  y INTEGER NOT NULL,
+  scavenged_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(player_id, x, y)
+);
+
+CREATE TABLE IF NOT EXISTS player_conditions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id UUID REFERENCES players(id) ON DELETE CASCADE,
+  condition VARCHAR(50) NOT NULL,
+  added_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Add indexes for scavenging system
+CREATE INDEX IF NOT EXISTS idx_area_scavenging_coords ON area_scavenging(x, y);
+CREATE INDEX IF NOT EXISTS idx_area_scavenging_active ON area_scavenging(is_active);
+CREATE INDEX IF NOT EXISTS idx_player_area_scavenging_coords ON player_area_scavenging(x, y);
+CREATE INDEX IF NOT EXISTS idx_player_area_scavenging_player ON player_area_scavenging(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_conditions_player ON player_conditions(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_conditions_condition ON player_conditions(condition);
+
 COMMENT ON TABLE players IS 'Stores player data and stats';
 COMMENT ON TABLE cities IS 'Stores city/town information';
 COMMENT ON TABLE items IS 'Stores item definitions';
@@ -204,3 +241,6 @@ COMMENT ON TABLE inventory IS 'Stores player inventories';
 COMMENT ON TABLE buildings IS 'Stores city buildings and defenses';
 COMMENT ON TABLE area_inventories IS 'Stores items dropped in exploration areas';
 COMMENT ON TABLE bank_inventories IS 'Stores items in the town bank';
+COMMENT ON TABLE area_scavenging IS 'Tracks scavenging activity and depletion per area';
+COMMENT ON TABLE player_area_scavenging IS 'Tracks which players have scavenged in which areas';
+COMMENT ON TABLE player_conditions IS 'Stores temporary player conditions like scavenging status';

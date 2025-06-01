@@ -13,7 +13,7 @@ export class AreaInventoryService {
 
   // Generate location string for grid-based locations
   private getLocationString(location: Location, x?: number, y?: number): string {
-    if ((location === Location.GATE || location === Location.WASTE || location === Location.GREATER_WASTE) 
+    if ((location === Location.GATE || location === Location.WASTE) 
         && x !== undefined && y !== undefined) {
       return `${location}_${x}_${y}`;
     }
