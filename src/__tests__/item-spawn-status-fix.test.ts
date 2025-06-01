@@ -36,8 +36,8 @@ describe('Item Spawn and Status Fix Tests', () => {
     test('Removing refreshed status should not set to healthy if player is wounded', async () => {
       const mockPlayer = {
         discordId: 'test123',
-        status: PlayerStatus.WOUNDED, // Vital status based on health
-        conditions: [PlayerStatus.REFRESHED], // Temporary condition
+        status: PlayerStatus.ALIVE, // Vital status (alive with wound conditions)
+        conditions: [PlayerStatus.REFRESHED, PlayerStatus.WOUNDED_ARM], // Temporary condition + wound
         health: 50,
         maxHealth: 100
       };
@@ -64,8 +64,8 @@ describe('Item Spawn and Status Fix Tests', () => {
     test('Removing fed status should not set to healthy if player is wounded', async () => {
       const mockPlayer = {
         discordId: 'test456',
-        status: PlayerStatus.WOUNDED, // Vital status based on health
-        conditions: [PlayerStatus.FED], // Temporary condition
+        status: PlayerStatus.ALIVE, // Vital status (alive with wound conditions)
+        conditions: [PlayerStatus.FED, PlayerStatus.WOUNDED_LEG], // Temporary condition + wound
         health: 70,
         maxHealth: 100
       };
