@@ -130,6 +130,21 @@ module.exports = {
           return;
         }
 
+        // Check for portal locks and horde phase restrictions
+        const gameState = await gameEngine.getCurrentGameState();
+        const buildings = await cityService.getCityBuildings(city.id);
+        const hasPortalLock = buildings.some(b => b.type === 'portal_lock');
+        
+        if (hasPortalLock && gameState?.currentPhase === 'horde_mode') {
+          // Check if we're within 15 minutes of horde phase start
+          // For now, just block during all of horde mode
+          await interaction.reply({
+            content: '❌ The Portal Lock prevents the gate from being opened during Horde Mode.',
+            ephemeral: true
+          });
+          return;
+        }
+
         // Open the gate
         const success = await cityService.updateGateStatus(city.id, true);
         if (!success) {

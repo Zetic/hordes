@@ -88,8 +88,14 @@ export class ConstructionService {
       try {
         await client.query('BEGIN');
         
-        // Get project details
-        const projectQuery = 'SELECT * FROM construction_projects WHERE id = $1';
+        // Get project details with materials
+        const projectQuery = `
+          SELECT cp.*, 
+                 cpm.item_name, cpm.required_quantity
+          FROM construction_projects cp
+          LEFT JOIN construction_project_materials cpm ON cp.id = cpm.project_id
+          WHERE cp.id = $1
+        `;
         const projectResult = await client.query(projectQuery, [projectId]);
         
         if (projectResult.rows.length === 0) {
@@ -98,6 +104,37 @@ export class ConstructionService {
         }
         
         const project = projectResult.rows[0];
+        
+        // Check if all materials are available and consume them
+        const materialRequirements = projectResult.rows.map(row => ({
+          itemName: row.item_name,
+          requiredQuantity: row.required_quantity
+        })).filter(req => req.itemName); // Filter out null entries
+        
+        for (const requirement of materialRequirements) {
+          // Get the item by name to check if it exists and get its ID
+          const bankItem = await this.bankService.getItemFromBankByName(project.city_id, requirement.itemName);
+          if (!bankItem) {
+            await client.query('ROLLBACK');
+            console.error(`Item ${requirement.itemName} not found in bank for project ${project.project_name}`);
+            return false;
+          }
+          
+          // Check if the bank has enough of this material
+          if (bankItem.quantity < requirement.requiredQuantity) {
+            await client.query('ROLLBACK');
+            console.error(`Not enough ${requirement.itemName} in bank to complete project ${project.project_name}. Have ${bankItem.quantity}, need ${requirement.requiredQuantity}`);
+            return false;
+          }
+          
+          // Withdraw the required materials from the bank
+          const withdrawn = await this.bankService.withdrawItem(project.city_id, bankItem.itemId, requirement.requiredQuantity);
+          if (!withdrawn) {
+            await client.query('ROLLBACK');
+            console.error(`Failed to withdraw ${requirement.itemName} from bank for project ${project.project_name}`);
+            return false;
+          }
+        }
         
         // Mark project as completed
         const completeQuery = `
@@ -120,6 +157,19 @@ export class ConstructionService {
           project.is_visitable,
           project.defense_bonus
         ]);
+        
+        // Apply special building effects
+        if (project.project_type === 'pump') {
+          // Add 15 water to the well
+          const updateWellQuery = `
+            UPDATE well_water 
+            SET current_water = LEAST(current_water + 15, max_water),
+                updated_at = NOW()
+            WHERE city_id = $1
+          `;
+          await client.query(updateWellQuery, [project.city_id]);
+          console.log(`✅ Pump completed: Added 15 water to the well`);
+        }
         
         await client.query('COMMIT');
         console.log(`✅ Construction project ${project.project_name} completed and building created`);
