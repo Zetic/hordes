@@ -198,7 +198,7 @@ export class ScavengingService {
       const isNearDepletion = areaInfo.totalRolls >= depletionThreshold - 1;
       
       // Get player's location for loot pool
-      const player = await this.playerService.getPlayer(playerId);
+      const player = await this.playerService.getPlayerById(playerId);
       if (!player) {
         return {
           success: false,

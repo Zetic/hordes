@@ -43,6 +43,22 @@ export class PlayerService {
     }
   }
 
+  async getPlayerById(playerId: string): Promise<Player | null> {
+    try {
+      const query = 'SELECT * FROM players WHERE id = $1';
+      const result = await this.db.pool.query(query, [playerId]);
+      
+      if (result.rows.length > 0) {
+        const player = await this.mapRowToPlayer(result.rows[0]);
+        return player;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting player by ID:', error);
+      return null;
+    }
+  }
+
   async updatePlayerHealth(discordId: string, health: number): Promise<boolean> {
     try {
       const isAlive = health > 0;

@@ -1,10 +1,11 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
 import { WorldMapService } from '../services/worldMap';
 import { Location, PlayerStatus } from '../types/game';
+import { createAreaEmbed } from '../utils/embedUtils';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -95,71 +96,43 @@ module.exports = {
       // Update player location to gate
       await playerService.updatePlayerLocation(discordId, Location.GATE, gateCoords.x, gateCoords.y);
 
-      // Show map view
-      const mapImageBuffer = await worldMapService.generateMapView(playerService);
-      const mapAttachment = new AttachmentBuilder(mapImageBuffer, { name: 'map.png' });
+      // Get updated player with new location
+      const updatedPlayer = await playerService.getPlayer(discordId);
+      if (!updatedPlayer) {
+        await interaction.followUp({
+          content: '❌ Error retrieving updated player data.',
+          ephemeral: true
+        });
+        return;
+      }
 
+      // Generate map view
+      const mapImageBuffer = await worldMapService.generateMapView(playerService);
+      
       // Get location display info
       const locationDisplay = worldMapService.getLocationDisplay(Location.GATE);
 
-      const embed = new EmbedBuilder()
-        .setColor('#95e1d3')
-        .setTitle(`📍 ${locationDisplay.name}`)
-        .setDescription(`${player.name} departs from the city and arrives at the gate...`)
-        .addFields([
-          { 
-            name: '📍 Current Location', 
-            value: `${locationDisplay.emoji} ${locationDisplay.name} (${gateCoords.x}, ${gateCoords.y})`, 
-            inline: true 
-          },
-          { 
-            name: '⚡ Action Points Remaining', 
-            value: `${player.actionPoints}/${player.maxActionPoints}`, 
-            inline: true 
-          }
-        ])
-        .addFields([
-          {
-            name: '🚪 Gate Area',
-            value: 'You are at the gate to town. Use `/return` to enter the city (if the gate is open).',
-            inline: false
-          }
-        ])
-        .setImage('attachment://map.png')
-        .addFields([
-          {
-            name: '🔍 Next Steps',
-            value: '• Use movement buttons below to explore further\n• Use `/status` to check your condition',
-            inline: false
-          }
-        ])
-        .setTimestamp();
+      // Create standardized area embed
+      const { embed, attachment, components } = await createAreaEmbed({
+        player: updatedPlayer,
+        title: `📍 ${locationDisplay.name}`,
+        description: `${player.name} departs from the city and arrives at the gate...`,
+        showMovement: true,
+        showScavenge: false, // No scavenging at gate
+        mapImageBuffer
+      });
 
-      // Create movement buttons (same as move command)
-      const northButton = new ButtonBuilder()
-        .setCustomId('move_north')
-        .setLabel('⬆️ North')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const southButton = new ButtonBuilder()
-        .setCustomId('move_south')
-        .setLabel('⬇️ South')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const westButton = new ButtonBuilder()
-        .setCustomId('move_west')
-        .setLabel('⬅️ West')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const eastButton = new ButtonBuilder()
-        .setCustomId('move_east')
-        .setLabel('➡️ East')
-        .setStyle(ButtonStyle.Secondary);
-
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
+      // Add gate-specific information
+      embed.addFields([
+        {
+          name: '🚪 Gate Area',
+          value: 'You are at the gate to town. Use `/return` to enter the city (if the gate is open).',
+          inline: false
+        }
+      ]);
 
       // Send followup with movement embed
-      await interaction.followUp({ embeds: [embed], files: [mapAttachment], components: [row], ephemeral: true });
+      await interaction.followUp({ embeds: [embed], files: [attachment], components, ephemeral: true });
 
     } catch (error) {
       console.error('Error in depart command:', error);
