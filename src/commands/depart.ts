@@ -117,7 +117,7 @@ module.exports = {
         player: updatedPlayer,
         title: `📍 ${locationDisplay.name}`,
         description: `${player.name} departs from the city and arrives at the gate...`,
-        showMovement: true,
+        showMovement: false, // Depart shows current location view, not movement
         showScavenge: false, // No scavenging at gate
         mapImageBuffer
       });

@@ -7,6 +7,7 @@ import { WorldMapService } from '../services/worldMap';
 import { ZoneContestService } from '../services/zoneContest';
 import { ZombieService } from '../services/zombieService';
 import { Location, Direction, PlayerStatus, isWoundType } from '../types/game';
+import { createAreaEmbed } from '../utils/embedUtils';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -181,46 +182,43 @@ export async function handleMoveButton(interaction: ButtonInteraction) {
     await zoneContestService.onPlayerLeaveZone(currentX, currentY); // Player left old zone
     await zoneContestService.onPlayerEnterZone(newCoords.x, newCoords.y); // Player entered new zone
 
-    // Get items in the new area
-    const areaItems = await areaInventoryService.getAreaInventory(newLocation, newCoords.x, newCoords.y);
+    // Get updated player with new location
+    const updatedPlayer = await playerService.getPlayer(discordId);
+    if (!updatedPlayer) {
+      await interaction.editReply({
+        content: '❌ Error retrieving updated player data.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
 
-    // Create response embed
+    // Create response embed using shared function
     const directionDisplay = worldMapService.getDirectionDisplayName(directionEnum);
-    const locationDisplay = worldMapService.getLocationDisplay(newLocation);
     const currentLocationDisplay = worldMapService.getLocationDisplay(player.location);
 
-    const embed = new EmbedBuilder()
-      .setColor('#95e1d3')
-      .setTitle(`🚶 Movement: ${directionDisplay}`)
-      .setDescription(`${player.name} moves ${directionDisplay.toLowerCase()}...`)
-      .addFields([
-        { 
-          name: '📍 Previous Location', 
-          value: `${currentLocationDisplay.emoji} ${currentLocationDisplay.name} (${currentX}, ${currentY})`, 
-          inline: true 
-        },
-        { 
-          name: '📍 New Location', 
-          value: `${locationDisplay.emoji} ${locationDisplay.name} (${newCoords.x}, ${newCoords.y})`, 
-          inline: true 
-        },
-        { 
-          name: '⚡ Action Points Used', 
-          value: '1', 
-          inline: true 
-        }
-      ]);
+    // Generate map view
+    const mapImageBuffer = await worldMapService.generateMapView(playerService);
+    
+    // Create standardized area embed with movement information
+    const { embed, attachment, components } = await createAreaEmbed({
+      player: updatedPlayer,
+      title: `🚶 Movement: ${directionDisplay}`,
+      description: `${player.name} moves ${directionDisplay.toLowerCase()}...`,
+      showMovement: true,
+      showScavenge: true,
+      mapImageBuffer,
+      previousLocation: {
+        name: currentLocationDisplay.name,
+        emoji: currentLocationDisplay.emoji,
+        x: currentX,
+        y: currentY
+      },
+      actionPointsUsed: 1
+    });
 
-    // Add location-specific information
-    if (newLocation === Location.GREATER_WASTE) {
-      embed.addFields([
-        {
-          name: '⚠️ Greater Waste',
-          value: 'You are now in the dangerous outer reaches. Searching here is more risky but may yield better rewards.',
-          inline: false
-        }
-      ]);
-    } else if (newLocation === Location.GATE) {
+    // Add location-specific information for gate
+    if (newLocation === Location.GATE) {
       embed.addFields([
         {
           name: '🚪 Gate Area',
@@ -230,63 +228,7 @@ export async function handleMoveButton(interaction: ButtonInteraction) {
       ]);
     }
 
-    // Show map view
-    const mapImageBuffer = await worldMapService.generateMapView(playerService);
-    const mapAttachment = new AttachmentBuilder(mapImageBuffer, { name: 'map.png' });
-    
-    embed.setImage('attachment://map.png');
-
-    // Show items in area if any
-    if (areaItems.length > 0) {
-      const itemList = areaItems.map(item => 
-        `**${item.item.name}** x${item.quantity} - ${item.item.description}`
-      ).join('\n');
-
-      embed.addFields([
-        {
-          name: '📦 Items on the Ground',
-          value: itemList,
-          inline: false
-        }
-      ]);
-    }
-
-    embed.addFields([
-      {
-        name: '🔍 Next Steps',
-        value: areaItems.length > 0 
-          ? '• Use `/take <item>` to pick up items from the ground\n• Use movement buttons below to explore further\n• Use `/status` to check your condition'
-          : '• Use movement buttons below to explore further\n• Use `/status` to check your condition',
-        inline: false
-      }
-    ]);
-
-    embed.setTimestamp();
-
-    // Create movement buttons
-    const northButton = new ButtonBuilder()
-      .setCustomId('move_north')
-      .setLabel('⬆️ North')
-      .setStyle(ButtonStyle.Secondary);
-    
-    const southButton = new ButtonBuilder()
-      .setCustomId('move_south')
-      .setLabel('⬇️ South')
-      .setStyle(ButtonStyle.Secondary);
-    
-    const westButton = new ButtonBuilder()
-      .setCustomId('move_west')
-      .setLabel('⬅️ West')
-      .setStyle(ButtonStyle.Secondary);
-    
-    const eastButton = new ButtonBuilder()
-      .setCustomId('move_east')
-      .setLabel('➡️ East')
-      .setStyle(ButtonStyle.Secondary);
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
-
-    await interaction.editReply({ embeds: [embed], files: [mapAttachment], components: [row] });
+    await interaction.editReply({ embeds: [embed], files: [attachment], components });
 
   } catch (error) {
     console.error('Error handling move button:', error);
