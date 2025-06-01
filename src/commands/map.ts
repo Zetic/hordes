@@ -47,7 +47,7 @@ module.exports = {
       }
 
       // Defer reply since we're about to do expensive operations (map generation)
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
 
       // Generate map view
       const mapImageBuffer = await worldMapService.generateMapView(playerService);

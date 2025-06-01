@@ -341,10 +341,10 @@ export class ScavengingService {
         .setTitle(`(${x}, ${y}) ${playerName} Found ${itemName}!`)
         .setTimestamp();
 
-      // Send to Discord channel if client and channel are available
-      if (this.discordClient && process.env.DISCORD_ITEM_DISCOVERY_CHANNEL_ID) {
+      // Send to Discord channel if client and channel are available (use same channel as attack reports)
+      if (this.discordClient && process.env.DISCORD_ATTACK_REPORT_CHANNEL_ID) {
         try {
-          const channel = await this.discordClient.channels.fetch(process.env.DISCORD_ITEM_DISCOVERY_CHANNEL_ID);
+          const channel = await this.discordClient.channels.fetch(process.env.DISCORD_ATTACK_REPORT_CHANNEL_ID);
           if (channel && channel.isTextBased() && 'send' in channel) {
             await channel.send({ embeds: [embed] });
             console.log('✅ Item discovery notification sent to Discord channel');
@@ -355,7 +355,7 @@ export class ScavengingService {
           console.error('❌ Failed to send item discovery notification to Discord:', discordError);
         }
       } else {
-        console.log('⚠️ Discord client or item discovery channel ID not configured, skipping Discord message');
+        console.log('⚠️ Discord client or attack report channel ID not configured, skipping Discord message');
       }
       
     } catch (error) {

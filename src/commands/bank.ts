@@ -215,9 +215,7 @@ async function handleViewBank(interaction: CommandInteraction, cityId: string) {
     for (let i = 0; i < bankInventory.length; i += itemsPerEmbed) {
       const chunk = bankInventory.slice(i, i + itemsPerEmbed);
       const itemList = chunk.map(inv => 
-        `**${inv.item.name}** x${inv.quantity} - ${inv.item.description.length > 50 
-          ? inv.item.description.substring(0, 47) + '...' 
-          : inv.item.description}`
+        `**${inv.item.name}** x${inv.quantity}`
       ).join('\n');
 
       // Check if itemList exceeds Discord's field value limit (1024 chars)

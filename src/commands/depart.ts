@@ -84,11 +84,8 @@ module.exports = {
         return;
       }
 
-      // Send public departure message first
-      await interaction.reply({
-        content: `${player.name} has departed from the city and heads out into the wasteland...`,
-        ephemeral: false
-      });
+      // Defer reply since we're about to do expensive operations (map generation)
+      await interaction.deferReply({ ephemeral: true });
 
       // Get gate coordinates
       const gateCoords = worldMapService.getGateCoordinates();
@@ -132,7 +129,7 @@ module.exports = {
       ]);
 
       // Send followup with movement embed
-      await interaction.followUp({ embeds: [embed], files: [attachment], components, ephemeral: true });
+      await interaction.editReply({ embeds: [embed], files: [attachment], components });
 
       // Send public message
       const publicEmbed = new EmbedBuilder()

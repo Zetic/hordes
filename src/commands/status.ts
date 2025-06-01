@@ -164,8 +164,14 @@ module.exports = {
           ...(player.isAlive ? [{ 
             name: '📊 Conditions', 
             value: player.conditions.length > 0 
-              ? player.conditions.map(condition => `${statusEmojis[condition]} ${statusTexts[condition]}`).join('\n')
-              : (player.status !== PlayerStatus.ALIVE ? `${statusEmojis[player.status]} ${statusTexts[player.status]}` : 'No conditions'), 
+              ? player.conditions.map(condition => {
+                  const emoji = statusEmojis[condition] || '❓';
+                  const text = statusTexts[condition] || condition;
+                  return `${emoji} ${text}`;
+                }).join('\n')
+              : (player.status !== PlayerStatus.ALIVE ? 
+                  `${statusEmojis[player.status] || '❓'} ${statusTexts[player.status] || player.status}` : 
+                  'No conditions'), 
             inline: true 
           }] : []),
           { 
