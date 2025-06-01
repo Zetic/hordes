@@ -26,6 +26,7 @@ module.exports = {
         .setRequired(true)
         .addChoices(
           { name: 'reset', value: 'reset' },
+          { name: 'databasewipe', value: 'databasewipe' },
           { name: 'horde', value: 'horde' },
           { name: 'refresh', value: 'refresh' },
           { name: 'hordesize', value: 'hordesize' },
@@ -92,6 +93,9 @@ module.exports = {
       switch (command) {
         case 'reset':
           await handleResetCommand(interaction);
+          break;
+        case 'databasewipe':
+          await handleDatabaseWipeCommand(interaction);
           break;
         case 'horde':
           await handleHordeCommand(interaction);
@@ -561,6 +565,32 @@ async function handleFillBankCommand(interaction: CommandInteraction) {
       .setColor('#ff6b6b')
       .setTitle('❌ Fill Failed')
       .setDescription('Failed to fill bank. Check the server logs for details.')
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+
+async function handleDatabaseWipeCommand(interaction: CommandInteraction) {
+  try {
+    const success = await db.wipeAllData();
+    
+    const embed = new EmbedBuilder()
+      .setColor(success ? '#4ecdc4' : '#ff6b6b')
+      .setTitle(success ? '🗑️ Database Wiped' : '❌ Database Wipe Failed')
+      .setDescription(success 
+        ? 'The entire database has been completely wiped and reset to initial state. All players, items, inventories, buildings, and game data have been cleared. The default city has been recreated.'
+        : 'Failed to wipe the database. Check the server logs for details. The database may be in an inconsistent state.'
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error) {
+    console.error('Error in database wipe command:', error);
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Database Wipe Failed')
+      .setDescription('An error occurred while wiping the database. Check the server logs for details.')
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
