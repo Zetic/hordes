@@ -152,7 +152,7 @@ module.exports = {
       }
 
       // Defer reply since we're about to do expensive operations (map generation and movement processing)
-      await interaction.deferReply({ ephemeral: false });
+      await interaction.deferReply({ ephemeral: true });
 
       // Calculate new coordinates
       const currentX = player.x;
@@ -227,6 +227,32 @@ module.exports = {
         actionPointsUsed: 1
       });
 
+      // Add movement buttons to the move command directly for better UX
+      const northButton = new ButtonBuilder()
+        .setCustomId('move_north')
+        .setLabel('⬆️ North')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const southButton = new ButtonBuilder()
+        .setCustomId('move_south')  
+        .setLabel('⬇️ South')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const westButton = new ButtonBuilder()
+        .setCustomId('move_west')
+        .setLabel('⬅️ West') 
+        .setStyle(ButtonStyle.Secondary);
+      
+      const eastButton = new ButtonBuilder()
+        .setCustomId('move_east')
+        .setLabel('➡️ East')
+        .setStyle(ButtonStyle.Secondary);
+
+      const movementRow = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
+      
+      // Replace the existing components with our enhanced ones
+      const enhancedComponents = [movementRow, ...components.slice(1)]; // Keep other components like scavenge button
+
       // Add location-specific information
       if (newLocation === Location.GATE) {
         embed.addFields([
@@ -238,7 +264,7 @@ module.exports = {
         ]);
       }
 
-      await interaction.editReply({ embeds: [embed], files: [attachment], components });
+      await interaction.editReply({ embeds: [embed], files: [attachment], components: enhancedComponents });
 
     } catch (error) {
       console.error('Error in move command:', error);

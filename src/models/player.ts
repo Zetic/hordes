@@ -153,6 +153,16 @@ export class PlayerService {
 
   async updatePlayerLocation(discordId: string, location: Location, x?: number, y?: number): Promise<boolean> {
     try {
+      // Get current player location to check if moving to different area
+      const currentPlayer = await this.getPlayer(discordId);
+      if (currentPlayer && 
+          currentPlayer.x !== null && currentPlayer.y !== null &&
+          x !== undefined && y !== undefined &&
+          (currentPlayer.x !== x || currentPlayer.y !== y)) {
+        // Player is moving to a different area, clear scavenging condition
+        await this.removeCondition(discordId, PlayerStatus.SCAVENGING);
+      }
+      
       const query = `
         UPDATE players 
         SET location = $1, x = $2, y = $3, updated_at = NOW()

@@ -4,6 +4,7 @@ import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
 import { AreaInventoryService } from '../models/areaInventory';
 import { ScavengingService } from '../services/scavenging';
+import { ZombieService } from '../services/zombieService';
 import { Location, PlayerStatus } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
@@ -13,6 +14,7 @@ const gameEngine = GameEngine.getInstance();
 const inventoryService = new InventoryService();
 const areaInventoryService = new AreaInventoryService();
 const scavengingService = ScavengingService.getInstance();
+const zombieService = ZombieService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -77,6 +79,16 @@ module.exports = {
       if (hasScavenged) {
         await interaction.reply({
           content: '❌ You have already scavenged in this area. Move to a different location to scavenge again.',
+          ephemeral: true
+        });
+        return;
+      }
+
+      // Check if there are zombies in this area
+      const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
+      if (zombies && zombies.count > 0) {
+        await interaction.reply({
+          content: `❌ You cannot scavenge here! There are ${zombies.count} zombies preventing you from scavenging safely.`,
           ephemeral: true
         });
         return;
