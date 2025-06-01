@@ -337,6 +337,34 @@ export class GameEngine {
             let successfulHits = 0;
             let currentStatus = player.status;
             
+            // Check for infection death chance (50% if infected during horde event)
+            if (player.conditions && player.conditions.includes(PlayerStatus.INFECTED)) {
+              if (Math.random() < 0.5) { // 50% chance
+                currentStatus = PlayerStatus.DEAD;
+                console.log(`💀 ${player.name} died from infection during the horde event`);
+                
+                // Update the report entry
+                playerReportEntry.newStatus = currentStatus;
+                playerReportEntry.previousStatus = player.status;
+                
+                // Update player status in database
+                await this.playerService.updatePlayerStatus(player.discordId, currentStatus);
+                
+                // Add to killed players section
+                const killedEntry = `💀 **${player.name}** - Died from infection`;
+                report.playersInTown.push({
+                  playerName: player.name,
+                  discordId: player.discordId,
+                  attacksReceived: 0,
+                  previousStatus: player.status,
+                  newStatus: currentStatus,
+                  location: player.location
+                });
+                
+                continue; // Skip regular attack processing for this player
+              }
+            }
+            
             // Each attack has 50% chance to hit
             for (let attack = 0; attack < attackCount; attack++) {
               if (Math.random() < 0.5) { // 50% chance
@@ -724,6 +752,29 @@ export class GameEngine {
       for (const player of alivePlayers) {
         let statusChanged = false;
         let newStatus = player.status;
+        
+        // Process wound to infection logic - if player has a wound, they become infected
+        if (isWoundType(player.status)) {
+          await this.playerService.addPlayerCondition(player.discordId, PlayerStatus.INFECTED);
+          console.log(`🦠 ${player.name}: Wound became infected`);
+        }
+        
+        // Check for wounds in conditions and convert to infection
+        if (player.conditions) {
+          for (const condition of player.conditions) {
+            if (isWoundType(condition)) {
+              await this.playerService.addPlayerCondition(player.discordId, PlayerStatus.INFECTED);
+              console.log(`🦠 ${player.name}: Wound condition became infected`);
+              break; // Only need to add infection once
+            }
+          }
+        }
+        
+        // Remove HEALED condition after horde event
+        if (player.conditions && player.conditions.includes(PlayerStatus.HEALED)) {
+          await this.playerService.removePlayerCondition(player.discordId, PlayerStatus.HEALED);
+          console.log(`🩹 ${player.name}: Healed condition removed after horde event`);
+        }
         
         // Process status changes according to requirements
         switch (player.status) {
