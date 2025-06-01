@@ -246,13 +246,13 @@ export class ScavengingService {
       
       // Try to add to inventory first
       let addedToInventory = false;
-      const inventoryResult = await this.inventoryService.addItem(player.id, item.id, 1);
+      const inventorySuccess = await this.inventoryService.addItemToInventory(player.id, item.id, 1);
       
-      if (inventoryResult.success) {
+      if (inventorySuccess) {
         addedToInventory = true;
       } else {
         // Add to area inventory if player inventory is full
-        await this.areaInventoryService.addItem(player.location, player.x!, player.y!, item.id, 1);
+        await this.areaInventoryService.addItemToArea(player.location, item.id, 1, player.x!, player.y!);
       }
       
       // Increment area roll count

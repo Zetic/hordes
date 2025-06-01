@@ -46,7 +46,8 @@ module.exports = {
           [PlayerStatus.DEHYDRATED]: '🏜️',
           [PlayerStatus.EXHAUSTED]: '😴',
           [PlayerStatus.HEALED]: '🩹',
-          [PlayerStatus.INFECTED]: '🦠'
+          [PlayerStatus.INFECTED]: '🦠',
+          [PlayerStatus.SCAVENGING]: '🔍'
         };
         const statusTexts = {
           [PlayerStatus.ALIVE]: 'Alive',
@@ -63,7 +64,8 @@ module.exports = {
           [PlayerStatus.DEHYDRATED]: 'Dehydrated',
           [PlayerStatus.EXHAUSTED]: 'Exhausted',
           [PlayerStatus.HEALED]: 'Healed',
-          [PlayerStatus.INFECTED]: 'Infected'
+          [PlayerStatus.INFECTED]: 'Infected',
+          [PlayerStatus.SCAVENGING]: 'Scavenging'
         };
 
         const embed = new EmbedBuilder()
