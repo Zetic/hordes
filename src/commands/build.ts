@@ -1,34 +1,28 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { CityService } from '../models/city';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
-import { BuildingType } from '../types/game';
+import { ConstructionService } from '../services/construction';
 
 const cityService = new CityService();
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
+const constructionService = new ConstructionService();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('build')
-    .setDescription('Construct buildings to defend the city')
+    .setDescription('Work on construction projects to build new structures for the town')
     .addStringOption(option =>
-      option.setName('building')
-        .setDescription('Type of building to construct')
-        .setRequired(true)
-        .addChoices(
-          { name: '🗼 Watchtower (+2 defense)', value: 'watchtower' },
-          { name: '🧱 Wall (+1 defense)', value: 'wall' },
-          { name: '🔨 Workshop (crafting)', value: 'workshop' },
-          { name: '💧 Well (water source)', value: 'well' },
-          { name: '🏥 Hospital (healing)', value: 'hospital' }
-        )
+      option.setName('project')
+        .setDescription('The construction project to work on')
+        .setRequired(false)
     ),
     
   async execute(interaction: CommandInteraction) {
     try {
       const discordId = interaction.user.id;
-      const buildingType = interaction.options.get('building')?.value as string;
+      const projectName = interaction.options.get('project')?.value as string;
 
       // Check if player can perform action
       const actionCheck = await gameEngine.canPerformAction(discordId);
@@ -57,52 +51,13 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
           .setTitle('Cannot Build')
-          .setDescription('You must be in the city to construct buildings. Use `/return` to go back to the city first.');
+          .setDescription('You must be in the city to work on construction projects. Use `/return` to go back to the city first.');
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
         return;
       }
 
-      // Building costs and requirements
-      const buildingInfo = {
-        watchtower: { name: '🗼 Watchtower', cost: 3, description: 'Provides +2 defense against zombie attacks' },
-        wall: { name: '🧱 Wall', cost: 2, description: 'Provides +1 defense against zombie attacks' },
-        workshop: { name: '🔨 Workshop', cost: 2, description: 'Enables advanced crafting recipes' },
-        well: { name: '💧 Well', cost: 2, description: 'Provides daily water for survivors' },
-        hospital: { name: '🏥 Hospital', cost: 3, description: 'Heals wounded survivors' }
-      };
-
-      const building = buildingInfo[buildingType as keyof typeof buildingInfo];
-      if (!building) {
-        await interaction.reply({
-          content: '❌ Invalid building type.',
-          ephemeral: true
-        });
-        return;
-      }
-
-      // Check action points
-      if (player.actionPoints < building.cost) {
-        const embed = new EmbedBuilder()
-          .setColor('#ff6b6b')
-          .setTitle('❌ Insufficient Action Points')
-          .setDescription(`Building a ${building.name} requires ${building.cost} action points.\nYou currently have ${player.actionPoints} action points.`);
-
-        await interaction.reply({ embeds: [embed], ephemeral: true });
-        return;
-      }
-
-      // Spend action points
-      const success = await playerService.spendActionPoints(discordId, building.cost);
-      if (!success) {
-        await interaction.reply({
-          content: '❌ Failed to spend action points. Please try again.',
-          ephemeral: true
-        });
-        return;
-      }
-
-      // Get city and add building
+      // Get city
       const city = await cityService.getDefaultCity();
       if (!city) {
         await interaction.reply({
@@ -112,102 +67,135 @@ module.exports = {
         return;
       }
 
-      const newBuilding = await cityService.addBuilding(city.id, buildingType as BuildingType);
-      if (!newBuilding) {
-        await interaction.reply({
-          content: '❌ Failed to construct building. Please try again.',
-          ephemeral: true
-        });
+      // Initialize default projects and well if needed
+      await constructionService.initializeDefaultProjects(city.id);
+      await constructionService.initializeWell(city.id);
+
+      // Get available construction projects
+      const projects = await constructionService.getAvailableProjects(city.id);
+      
+      if (projects.length === 0) {
+        const embed = new EmbedBuilder()
+          .setColor('#45b7d1')
+          .setTitle('🏗️ Construction Projects')
+          .setDescription('No construction projects are currently available. All projects may be completed!');
+        
+        await interaction.reply({ embeds: [embed], ephemeral: true });
         return;
       }
 
-      // Calculate new defense level
-      const buildings = await cityService.getCityBuildings(city.id);
-      const totalDefense = buildings.reduce((total, b) => {
-        return total + (b.type === 'watchtower' ? 2 : b.type === 'wall' ? 1 : 0);
-      }, 0);
+      // If no specific project was specified, show available projects
+      if (!projectName) {
+        const embed = new EmbedBuilder()
+          .setColor('#45b7d1')
+          .setTitle('🏗️ Available Construction Projects')
+          .setDescription('Choose a project to work on. Use `/build [project_name]` to select a specific project.')
+          .addFields(
+            projects.map(project => ({
+              name: `${project.projectName} (${project.subCategory})`,
+              value: `**Progress:** ${project.currentApProgress}/${project.totalApRequired} AP\n**Description:** ${project.description}`,
+              inline: false
+            }))
+          );
 
-      const embed = new EmbedBuilder()
-        .setColor('#45b7d1')
-        .setTitle('🏗️ Building Constructed!')
-        .setDescription(`${player.name} has successfully built a ${building.name}!`)
-        .addFields([
-          { 
-            name: '🏗️ Building', 
-            value: `${building.name}\n${building.description}`, 
-            inline: true 
-          },
-          { 
-            name: '⚡ Action Points Used', 
-            value: `${building.cost}`, 
-            inline: true 
-          },
-          { 
-            name: '🛡️ City Defense', 
-            value: `${totalDefense}`, 
-            inline: true 
-          }
-        ]);
-
-      // Add special effects based on building type
-      if (buildingType === 'watchtower') {
-        embed.addFields([
-          { 
-            name: '🗼 Watchtower Effect', 
-            value: 'Early warning system active! +2 defense against horde attacks.', 
-            inline: false 
-          }
-        ]);
-      } else if (buildingType === 'wall') {
-        embed.addFields([
-          { 
-            name: '🧱 Wall Effect', 
-            value: 'Physical barrier reinforced! +1 defense against horde attacks.', 
-            inline: false 
-          }
-        ]);
-      } else if (buildingType === 'hospital') {
-        embed.addFields([
-          { 
-            name: '🏥 Hospital Effect', 
-            value: 'Medical facilities available! Wounded survivors can now receive better treatment.', 
-            inline: false 
-          }
-        ]);
-      } else if (buildingType === 'well') {
-        embed.addFields([
-          { 
-            name: '💧 Well Effect', 
-            value: 'Fresh water source secured! Reduces daily water consumption risk.', 
-            inline: false 
-          }
-        ]);
-      } else if (buildingType === 'workshop') {
-        embed.addFields([
-          { 
-            name: '🔨 Workshop Effect', 
-            value: 'Advanced crafting enabled! More powerful items can now be created.', 
-            inline: false 
-          }
-        ]);
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
       }
 
-      embed.addFields([
-        {
-          name: '🤝 Teamwork',
-          value: 'Your contribution helps the entire community survive! Keep building to increase our chances against the horde.',
+      // Find the specific project
+      const project = projects.find(p => 
+        p.projectName.toLowerCase().includes(projectName.toLowerCase()) ||
+        p.projectType.toLowerCase() === projectName.toLowerCase()
+      );
+
+      if (!project) {
+        const embed = new EmbedBuilder()
+          .setColor('#ff6b6b')
+          .setTitle('❌ Project Not Found')
+          .setDescription(`Construction project "${projectName}" not found. Use \`/build\` without arguments to see available projects.`);
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
+      // Check material requirements
+      const materialCheck = await constructionService.checkMaterialRequirements(project.id, city.id);
+      
+      const embed = new EmbedBuilder()
+        .setColor('#45b7d1')
+        .setTitle(`🏗️ ${project.projectName}`)
+        .setDescription(project.description)
+        .addFields([
+          {
+            name: '📊 Progress',
+            value: `${project.currentApProgress}/${project.totalApRequired} AP`,
+            inline: true
+          },
+          {
+            name: '🏭 Category',
+            value: `${project.category} > ${project.subCategory}`,
+            inline: true
+          },
+          {
+            name: '🔧 Materials Required',
+            value: materialCheck.details.map(detail => 
+              `${detail.itemName}: ${detail.available}/${detail.required} ${detail.available >= detail.required ? '✅' : '❌'}`
+            ).join('\n') || 'No materials required',
+            inline: false
+          }
+        ]);
+
+      // Add special effects info
+      if (project.defenseBonus > 0) {
+        embed.addFields([{
+          name: '🛡️ Defense Bonus',
+          value: `+${project.defenseBonus} Defense`,
+          inline: true
+        }]);
+      }
+
+      if (project.isVisitable) {
+        embed.addFields([{
+          name: '🚪 Visitable',
+          value: 'This building can be visited once completed',
+          inline: true
+        }]);
+      }
+
+      // Create build button
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`build_project_${project.id}`)
+            .setLabel('🔨 Add 1 AP to Project')
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(player.actionPoints < 1)
+        );
+
+      if (player.actionPoints < 1) {
+        embed.addFields([{
+          name: '⚠️ Insufficient Action Points',
+          value: 'You need at least 1 Action Point to contribute to this project.',
           inline: false
-        }
-      ]);
+        }]);
+      } else {
+        embed.addFields([{
+          name: '🔨 Ready to Build',
+          value: 'Press the button below to contribute 1 AP to this construction project.',
+          inline: false
+        }]);
+      }
 
-      embed.setTimestamp();
-
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ 
+        embeds: [embed], 
+        components: [row],
+        ephemeral: true 
+      });
 
     } catch (error) {
       console.error('Error in build command:', error);
       await interaction.reply({
-        content: '❌ An error occurred while building.',
+        content: '❌ An error occurred while accessing construction projects.',
         ephemeral: true
       });
     }

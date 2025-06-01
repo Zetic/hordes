@@ -173,6 +173,60 @@ class Die2NiteBot {
               }
             }
           }
+        } else if (customId.startsWith('build_project_')) {
+          const { handleBuildProjectButton } = require('./handlers/buildHandler');
+          try {
+            await handleBuildProjectButton(interaction);
+          } catch (error) {
+            console.error('Error handling build project button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing your construction contribution!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'take_water_ration') {
+          const { handleTakeWaterRationButton } = require('./handlers/visitHandler');
+          try {
+            await handleTakeWaterRationButton(interaction);
+          } catch (error) {
+            console.error('Error handling take water ration button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error taking the water ration!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'observe_horde') {
+          const { handleObserveHordeButton } = require('./handlers/visitHandler');
+          try {
+            await handleObserveHordeButton(interaction);
+          } catch (error) {
+            console.error('Error handling observe horde button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error observing the horde!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         } else if (customId === 'scavenge_area') {
           // Handle scavenge button
           const scavengeCommand = this.commands.get('scavenge');
@@ -223,6 +277,29 @@ class Die2NiteBot {
               } else {
                 await interaction.reply(errorMessage);
               }
+            }
+          }
+        }
+      } else if (interaction.isStringSelectMenu()) {
+        // Handle string select menu interactions
+        const customId = interaction.customId;
+        
+        if (customId === 'workshop_recipe_select') {
+          const { handleWorkshopRecipeSelect } = require('./handlers/visitHandler');
+          try {
+            await handleWorkshopRecipeSelect(interaction);
+          } catch (error) {
+            console.error('Error handling workshop recipe select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the recipe selection!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
             }
           }
         }
