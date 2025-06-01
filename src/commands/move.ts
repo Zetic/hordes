@@ -152,7 +152,7 @@ module.exports = {
       }
 
       // Defer reply since we're about to do expensive operations (map generation and movement processing)
-      await interaction.deferReply({ ephemeral: false });
+      await interaction.deferReply({ ephemeral: true });
 
       // Calculate new coordinates
       const currentX = player.x;

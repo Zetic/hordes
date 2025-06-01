@@ -2,9 +2,11 @@ import { EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, Butto
 import { Player, Location } from '../types/game';
 import { WorldMapService } from '../services/worldMap';
 import { AreaInventoryService } from '../models/areaInventory';
+import { ZombieService } from '../services/zombieService';
 
 const worldMapService = WorldMapService.getInstance();
 const areaInventoryService = new AreaInventoryService();
+const zombieService = ZombieService.getInstance();
 
 export interface AreaEmbedOptions {
   player: Player;
@@ -39,6 +41,13 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
   // Get items in the area
   const areaItems = await areaInventoryService.getAreaInventory(player.location, player.x!, player.y!);
   
+  // Get zombies in the area if player has coordinates
+  let zombieCount = 0;
+  if (player.x !== null && player.x !== undefined && player.y !== null && player.y !== undefined) {
+    const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
+    zombieCount = zombies ? zombies.count : 0;
+  }
+  
   // Create the embed
   const embed = new EmbedBuilder()
     .setColor('#95e1d3')
@@ -65,6 +74,17 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
         inline: true 
       }
     ]);
+    
+    // Add zombie count if zombies present
+    if (zombieCount > 0) {
+      embed.addFields([
+        {
+          name: '🧟 Zombies Present',
+          value: `${zombieCount} zombies in this area`,
+          inline: true
+        }
+      ]);
+    }
   } else {
     // Standard location fields for non-movement actions
     embed.addFields([
@@ -79,6 +99,17 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
         inline: true 
       }
     ]);
+    
+    // Add zombie count if zombies present
+    if (zombieCount > 0) {
+      embed.addFields([
+        {
+          name: '🧟 Zombies Present',
+          value: `${zombieCount} zombies in this area`,
+          inline: true
+        }
+      ]);
+    }
   }
 
   // Add items on ground if any
