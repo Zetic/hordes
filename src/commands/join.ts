@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
-import { PlayerStatus } from '../types/game';
+import { PlayerStatus, PlayerCondition } from '../types/game';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -22,13 +22,11 @@ module.exports = {
       const existingPlayer = await playerService.getPlayer(discordId);
       if (existingPlayer) {
         const statusEmojis = {
-          [PlayerStatus.HEALTHY]: '💚',
-          [PlayerStatus.WOUNDED]: '🩸',
+          [PlayerStatus.ALIVE]: '💚',
           [PlayerStatus.DEAD]: '💀'
         };
         const statusTexts = {
-          [PlayerStatus.HEALTHY]: 'Healthy',
-          [PlayerStatus.WOUNDED]: 'Wounded',
+          [PlayerStatus.ALIVE]: 'Alive',
           [PlayerStatus.DEAD]: 'Dead'
         };
 

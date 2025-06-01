@@ -1,4 +1,4 @@
-import { GameState, GamePhase, Player, City, Location, PlayerStatus } from '../types/game';
+import { GameState, GamePhase, Player, City, Location, PlayerStatus, PlayerCondition } from '../types/game';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { ItemService } from '../models/item';
@@ -305,26 +305,30 @@ export class GameEngine {
             
             let successfulHits = 0;
             let currentStatus = player.status;
+            let hasHealthy = player.conditions.includes(PlayerCondition.HEALTHY);
+            let hasWounded = player.conditions.includes(PlayerCondition.WOUNDED);
             
             // Each attack has 50% chance to hit
             for (let attack = 0; attack < attackCount; attack++) {
               if (Math.random() < 0.5) { // 50% chance
                 successfulHits++;
                 
-                if (currentStatus === PlayerStatus.HEALTHY) {
-                  currentStatus = PlayerStatus.WOUNDED;
+                if (hasHealthy && !hasWounded) {
+                  // Healthy -> Wounded
+                  await this.playerService.removePlayerCondition(player.discordId, PlayerCondition.HEALTHY);
+                  await this.playerService.addPlayerCondition(player.discordId, PlayerCondition.WOUNDED);
+                  hasHealthy = false;
+                  hasWounded = true;
                   console.log(`🩸 ${player.name} was wounded by a zombie attack (${successfulHits}/${attackCount} hits)`);
-                } else if (currentStatus === PlayerStatus.WOUNDED) {
+                } else if (hasWounded) {
+                  // Wounded -> Dead
+                  await this.playerService.removePlayerCondition(player.discordId, PlayerCondition.WOUNDED);
                   currentStatus = PlayerStatus.DEAD;
+                  await this.playerService.updatePlayerStatus(player.discordId, currentStatus);
                   console.log(`💀 ${player.name} was killed by a zombie attack (${successfulHits}/${attackCount} hits)`);
                   break; // No point in continuing attacks on a dead player
                 }
               }
-            }
-            
-            // Update player status if it changed
-            if (currentStatus !== player.status) {
-              await this.playerService.updatePlayerStatus(player.discordId, currentStatus);
             }
             
             playerReportEntry.newStatus = currentStatus;
@@ -445,8 +449,8 @@ export class GameEngine {
         ]);
       }
       
-      // Summary
-      const totalWounded = [...report.playersInTown].filter(p => p.newStatus === PlayerStatus.WOUNDED && p.previousStatus !== PlayerStatus.WOUNDED).length;
+      // Summary - Note: This will need to be updated to properly track condition changes
+      const totalWounded = 0; // Temporarily disabled - needs condition tracking logic
       const totalKilled = [...report.playersInTown, ...report.playersKilledOutside].filter(p => p.newStatus === PlayerStatus.DEAD).length;
       
       embed.addFields([
