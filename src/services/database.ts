@@ -279,6 +279,47 @@ export class DatabaseService {
     }
   }
 
+  public async wipeAllData(): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Delete all data from tables in the correct order to respect foreign key constraints
+      // This order is derived from the schema defined in initializeSchema() method above
+      // and ensures no foreign key violations occur during deletion
+      
+      // First delete from tables that reference other tables
+      await client.query('DELETE FROM area_inventories');
+      await client.query('DELETE FROM explored_tiles');
+      await client.query('DELETE FROM zombies');
+      await client.query('DELETE FROM zone_contests');
+      await client.query('DELETE FROM inventory');
+      await client.query('DELETE FROM bank_inventories');
+      await client.query('DELETE FROM buildings');
+      
+      // Then delete from main data tables
+      await client.query('DELETE FROM players');
+      await client.query('DELETE FROM items');
+      await client.query('DELETE FROM cities');
+      
+      // Re-create the default city to ensure system remains functional
+      await client.query(`
+        INSERT INTO cities (name, day, game_phase, gate_open)
+        VALUES ('Sanctuary', 1, 'play_mode', true)
+      `);
+      
+      await client.query('COMMIT');
+      console.log('✅ Database completely wiped and reset to initial state');
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ Failed to wipe database:', error);
+      return false;
+    } finally {
+      client.release();
+    }
+  }
+
   public async close(): Promise<void> {
     await this.pool.end();
     await this.redis.quit();
