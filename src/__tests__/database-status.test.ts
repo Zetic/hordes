@@ -3,14 +3,13 @@ import { PlayerStatus, Location } from '../types/game';
 describe('Database Status Column', () => {
   describe('Status Column Values', () => {
     test('should define valid status values', () => {
-      expect(PlayerStatus.HEALTHY).toBe('healthy');
-      expect(PlayerStatus.WOUNDED).toBe('wounded');
+      expect(PlayerStatus.ALIVE).toBe('alive');
       expect(PlayerStatus.DEAD).toBe('dead');
     });
 
     test('should use correct default status', () => {
-      const defaultStatus = 'healthy';
-      expect(defaultStatus).toBe(PlayerStatus.HEALTHY);
+      const defaultStatus = 'alive';
+      expect(defaultStatus).toBe(PlayerStatus.ALIVE);
     });
   });
 
@@ -18,7 +17,7 @@ describe('Database Status Column', () => {
     test('should construct valid player update query with status', () => {
       // Simulate the UPDATE query structure used in updatePlayerStatus
       const mockDiscordId = 'test123';
-      const mockStatus = PlayerStatus.WOUNDED;
+      const mockStatus = PlayerStatus.ALIVE;
       const mockIsAlive = true;
       
       const query = `
@@ -30,7 +29,7 @@ describe('Database Status Column', () => {
       
       expect(query).toContain('status = $1');
       expect(query).toContain('WHERE discord_id = $3');
-      expect(params).toEqual([PlayerStatus.WOUNDED, true, 'test123']);
+      expect(params).toEqual([PlayerStatus.ALIVE, true, 'test123']);
     });
 
     test('should construct valid reset all players query', () => {
@@ -46,28 +45,30 @@ describe('Database Status Column', () => {
             updated_at = NOW()
         WHERE id IS NOT NULL
       `;
-      const params = [PlayerStatus.HEALTHY, Location.CITY];
+      const params = [PlayerStatus.ALIVE, Location.CITY];
       
       expect(query).toContain('status = $1');
       expect(query).toContain('location = $2');
       expect(query).toContain('WHERE id IS NOT NULL');
-      expect(params).toEqual([PlayerStatus.HEALTHY, Location.CITY]);
+      expect(params).toEqual([PlayerStatus.ALIVE, Location.CITY]);
     });
   });
 
   describe('Status Transitions', () => {
     test('should handle status transitions during horde attacks', () => {
       // Mock the horde attack status progression logic
-      let currentStatus = PlayerStatus.HEALTHY;
+      let currentStatus = PlayerStatus.ALIVE;
       
-      // First hit: healthy -> wounded
-      if (currentStatus === PlayerStatus.HEALTHY) {
-        currentStatus = PlayerStatus.WOUNDED;
+      // First hit: alive -> alive with wound condition
+      if (currentStatus === PlayerStatus.ALIVE) {
+        // In the new system, wounds are conditions, not primary status
+        // Player remains alive but gets wound conditions
+        currentStatus = PlayerStatus.ALIVE;
       }
-      expect(currentStatus).toBe(PlayerStatus.WOUNDED);
+      expect(currentStatus).toBe(PlayerStatus.ALIVE);
       
-      // Second hit: wounded -> dead
-      if (currentStatus === PlayerStatus.WOUNDED) {
+      // Second hit: alive -> dead
+      if (currentStatus === PlayerStatus.ALIVE) {
         currentStatus = PlayerStatus.DEAD;
       }
       expect(currentStatus).toBe(PlayerStatus.DEAD);
@@ -95,7 +96,7 @@ describe('Database Status Column', () => {
         name: 'TestPlayer',
         health: 80,
         max_health: 100,
-        status: 'wounded',
+        status: 'alive',
         action_points: 5,
         max_action_points: 10,
         water: 3,
@@ -121,22 +122,22 @@ describe('Database Status Column', () => {
         lastActionTime: mockRow.last_action_time
       };
 
-      expect(player.status).toBe(PlayerStatus.WOUNDED);
+      expect(player.status).toBe(PlayerStatus.ALIVE);
       expect(player.status).not.toBe(undefined);
       expect(player.isAlive).toBe(true);
     });
 
     test('should handle status formatting in logs', () => {
       const playerName = 'TestPlayer';
-      const previousStatus = PlayerStatus.HEALTHY;
-      const newStatus = PlayerStatus.WOUNDED;
+      const previousStatus = PlayerStatus.ALIVE;
+      const newStatus = PlayerStatus.DEAD;
       const attackCount = 3;
       const successfulHits = 1;
 
       // Simulate the logging format from gameEngine.ts
       const logMessage = `⚔️ ${playerName} received ${attackCount} attacks, ${successfulHits} hit (${previousStatus} → ${newStatus})`;
       
-      expect(logMessage).toBe('⚔️ TestPlayer received 3 attacks, 1 hit (healthy → wounded)');
+      expect(logMessage).toBe('⚔️ TestPlayer received 3 attacks, 1 hit (alive → dead)');
       expect(logMessage).not.toContain('undefined');
     });
   });

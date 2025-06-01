@@ -19,12 +19,12 @@ describe('Coordinate Zero Fix', () => {
     } as any;
 
     // Test updatePlayerLocation with x=0
-    await playerService.updatePlayerLocation('test-user', Location.GREATER_WASTE, 0, 3);
+    await playerService.updatePlayerLocation('test-user', Location.WASTE, 0, 3);
 
     // Verify that x=0 is passed as 0, not null
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE players'),
-      [Location.GREATER_WASTE, 0, 3, 'test-user']
+      [Location.WASTE, 0, 3, 'test-user']
     );
   });
 
@@ -36,12 +36,12 @@ describe('Coordinate Zero Fix', () => {
     } as any;
 
     // Test updatePlayerLocation with y=0
-    await playerService.updatePlayerLocation('test-user', Location.GREATER_WASTE, 1, 0);
+    await playerService.updatePlayerLocation('test-user', Location.WASTE, 1, 0);
 
     // Verify that y=0 is passed as 0, not null
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE players'),
-      [Location.GREATER_WASTE, 1, 0, 'test-user']
+      [Location.WASTE, 1, 0, 'test-user']
     );
   });
 
@@ -53,12 +53,12 @@ describe('Coordinate Zero Fix', () => {
     } as any;
 
     // Test updatePlayerLocation with both x=0 and y=0
-    await playerService.updatePlayerLocation('test-user', Location.GREATER_WASTE, 0, 0);
+    await playerService.updatePlayerLocation('test-user', Location.WASTE, 0, 0);
 
     // Verify that both x=0 and y=0 are passed as 0, not null
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE players'),
-      [Location.GREATER_WASTE, 0, 0, 'test-user']
+      [Location.WASTE, 0, 0, 'test-user']
     );
   });
 

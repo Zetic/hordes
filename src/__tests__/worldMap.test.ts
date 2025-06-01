@@ -115,19 +115,15 @@ describe('WorldMapService', () => {
     const wasteDisplay = worldMapService.getLocationDisplay(Location.WASTE);
     expect(wasteDisplay.name).toBe('Waste');
     expect(wasteDisplay.emoji).toBe('🌲');
-
-    const greaterWasteDisplay = worldMapService.getLocationDisplay(Location.GREATER_WASTE);
-    expect(greaterWasteDisplay.name).toBe('Greater Waste');
-    expect(greaterWasteDisplay.emoji).toBe('🌲');
     
     // Test some of the POI locations
-    const factoryDisplay = worldMapService.getLocationDisplay(Location.FACTORY);
-    expect(factoryDisplay.name).toBe('Factory');
-    expect(factoryDisplay.emoji).toBe('🏭');
-    
-    const hospitalDisplay = worldMapService.getLocationDisplay(Location.HOSPITAL);
-    expect(hospitalDisplay.name).toBe('Hospital');
+    const hospitalDisplay = worldMapService.getLocationDisplay(Location.ABANDONED_HOSPITAL);
+    expect(hospitalDisplay.name).toBe('Abandoned Hospital');
     expect(hospitalDisplay.emoji).toBe('🏥');
+    
+    const warehouseDisplay = worldMapService.getLocationDisplay(Location.WAREHOUSE);
+    expect(warehouseDisplay.name).toBe('Warehouse');
+    expect(warehouseDisplay.emoji).toBe('🏭');
   });
 
   test('should generate map view as image buffer', async () => {
