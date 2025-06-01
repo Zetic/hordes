@@ -16,48 +16,32 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('bank')
     .setDescription('Interact with the town bank')
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('view')
-        .setDescription('View items in the bank')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('deposit')
-        .setDescription('Deposit an item into the bank')
-        .addStringOption(option =>
-          option.setName('item')
-            .setDescription('Name of the item to deposit')
-            .setRequired(true)
-        )
-        .addIntegerOption(option =>
-          option.setName('quantity')
-            .setDescription('How many to deposit (default: 1)')
-            .setRequired(false)
-            .setMinValue(1)
+    .addStringOption(option =>
+      option.setName('action')
+        .setDescription('What to do at the bank')
+        .setRequired(false)
+        .addChoices(
+          { name: 'View items in bank', value: 'view' },
+          { name: 'Deposit item', value: 'deposit' },
+          { name: 'Take item', value: 'take' }
         )
     )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('take')
-        .setDescription('Take an item from the bank')
-        .addStringOption(option =>
-          option.setName('item')
-            .setDescription('Name of the item to take')
-            .setRequired(true)
-        )
-        .addIntegerOption(option =>
-          option.setName('quantity')
-            .setDescription('How many to take (default: 1)')
-            .setRequired(false)
-            .setMinValue(1)
-        )
+    .addStringOption(option =>
+      option.setName('item')
+        .setDescription('Name of the item to deposit or take')
+        .setRequired(false)
+    )
+    .addIntegerOption(option =>
+      option.setName('quantity')
+        .setDescription('How many to deposit or take (default: 1)')
+        .setRequired(false)
+        .setMinValue(1)
     ),
 
   async execute(interaction: CommandInteraction) {
     try {
       const discordId = interaction.user.id;
-      const subcommand = interaction.options.data.find(option => option.type === 1)?.name || 'view';
+      const action = interaction.options.get('action')?.value as string || 'view';
 
       // Get player
       const player = await playerService.getPlayer(discordId);
@@ -88,7 +72,7 @@ module.exports = {
         return;
       }
 
-      switch (subcommand) {
+      switch (action) {
         case 'view':
           await handleViewBank(interaction, city.id);
           break;
@@ -99,7 +83,7 @@ module.exports = {
           await handleTakeItem(interaction, player.id, city.id);
           break;
         default:
-          // Default to view when no subcommand is provided
+          // Default to view when no action is provided
           await handleViewBank(interaction, city.id);
           break;
       }
@@ -161,6 +145,14 @@ async function handleDepositItem(interaction: CommandInteraction, playerId: stri
   const itemName = interaction.options.get('item')?.value as string;
   const quantity = interaction.options.get('quantity')?.value as number || 1;
 
+  if (!itemName) {
+    await interaction.reply({
+      content: '❌ Please specify an item name to deposit.',
+      ephemeral: true
+    });
+    return;
+  }
+
   // Find the item by name
   const item = await itemService.getItemByName(itemName);
   if (!item) {
@@ -215,6 +207,14 @@ async function handleDepositItem(interaction: CommandInteraction, playerId: stri
 async function handleTakeItem(interaction: CommandInteraction, playerId: string, cityId: string) {
   const itemName = interaction.options.get('item')?.value as string;
   const quantity = interaction.options.get('quantity')?.value as number || 1;
+
+  if (!itemName) {
+    await interaction.reply({
+      content: '❌ Please specify an item name to take.',
+      ephemeral: true
+    });
+    return;
+  }
 
   // Check if player is encumbered
   const isEncumbered = await inventoryService.isPlayerEncumbered(playerId);
