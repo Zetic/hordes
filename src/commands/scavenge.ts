@@ -86,7 +86,7 @@ module.exports = {
       await interaction.deferReply();
 
       // Perform initial scavenge
-      const scavengeResult = await scavengingService.performScavenge(player.id, player.x, player.y);
+      const scavengeResult = await scavengingService.performScavenge(player.id, player.x, player.y, true);
       
       if (!scavengeResult.success) {
         await interaction.editReply({

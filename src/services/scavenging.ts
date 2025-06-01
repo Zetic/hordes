@@ -5,6 +5,7 @@ import { AreaInventoryService } from '../models/areaInventory';
 import { PlayerService } from '../models/player';
 import { ItemDefinition, getAllItemDefinitions } from '../data/items';
 import { Location, PlayerStatus } from '../types/game';
+import { Client, EmbedBuilder } from 'discord.js';
 
 export interface ScavengeResult {
   success: boolean;
@@ -36,6 +37,7 @@ export class ScavengingService {
   private areaInventoryService: AreaInventoryService;
   private playerService: PlayerService;
   private scavengingTimer?: NodeJS.Timeout;
+  private discordClient: Client | null = null;
 
   private constructor() {
     this.db = DatabaseService.getInstance();
@@ -51,6 +53,10 @@ export class ScavengingService {
       ScavengingService.instance = new ScavengingService();
     }
     return ScavengingService.instance;
+  }
+
+  public setDiscordClient(client: Client): void {
+    this.discordClient = client;
   }
 
   // Initialize 5-minute timer for automatic scavenging
@@ -187,7 +193,7 @@ export class ScavengingService {
   }
 
   // Perform a scavenge roll
-  async performScavenge(playerId: string, x: number, y: number): Promise<ScavengeResult> {
+  async performScavenge(playerId: string, x: number, y: number, sendNotification: boolean = false): Promise<ScavengeResult> {
     try {
       // Get area info
       const areaInfo = await this.getAreaScavengingInfo(x, y);
@@ -258,6 +264,11 @@ export class ScavengingService {
       // Increment area roll count
       const newRollCount = await this.incrementAreaRollCount(x, y);
       
+      // Send notification if requested and item was found
+      if (sendNotification) {
+        await this.sendItemDiscoveryNotification(player.name, item.name, x, y);
+      }
+      
       return {
         success: true,
         item: {
@@ -310,18 +321,63 @@ export class ScavengingService {
         console.log(`Processing auto-scavenge for ${playerName} at (${x}, ${y})`);
         
         // Perform scavenge
-        const scavengeResult = await this.performScavenge(playerId, x, y);
+        const scavengeResult = await this.performScavenge(playerId, x, y, true);
         
         if (scavengeResult.success && scavengeResult.item) {
           console.log(`${playerName} found ${scavengeResult.item.name} while scavenging`);
-          
-          // TODO: Send notification to player about the find
-          // This would require access to the Discord client, which should be handled elsewhere
         }
       }
       
     } catch (error) {
       console.error('Error during automatic scavenging:', error);
+    }
+  }
+
+  private async sendItemDiscoveryNotification(playerName: string, itemName: string, x: number, y: number): Promise<void> {
+    try {
+      // Create Discord embed for item discovery
+      const embed = new EmbedBuilder()
+        .setColor('#4ecdc4')
+        .setTitle('📦 ITEM DISCOVERY')
+        .setDescription(`**${playerName}** has found an item!`)
+        .addFields([
+          { 
+            name: '🔍 Item Found', 
+            value: `**${itemName}**`, 
+            inline: true 
+          },
+          { 
+            name: '📍 Location', 
+            value: `(${x}, ${y})`, 
+            inline: true 
+          },
+          { 
+            name: '⏰ Time', 
+            value: `<t:${Math.floor(Date.now() / 1000)}:R>`, 
+            inline: true 
+          }
+        ])
+        .setTimestamp();
+
+      // Send to Discord channel if client and channel are available
+      if (this.discordClient && process.env.DISCORD_ITEM_DISCOVERY_CHANNEL_ID) {
+        try {
+          const channel = await this.discordClient.channels.fetch(process.env.DISCORD_ITEM_DISCOVERY_CHANNEL_ID);
+          if (channel && channel.isTextBased() && 'send' in channel) {
+            await channel.send({ embeds: [embed] });
+            console.log('✅ Item discovery notification sent to Discord channel');
+          } else {
+            console.log('⚠️ Discord channel not found or not text-based');
+          }
+        } catch (discordError) {
+          console.error('❌ Failed to send item discovery notification to Discord:', discordError);
+        }
+      } else {
+        console.log('⚠️ Discord client or item discovery channel ID not configured, skipping Discord message');
+      }
+      
+    } catch (error) {
+      console.error('Error sending item discovery notification:', error);
     }
   }
 

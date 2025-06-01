@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { GameEngine } from './services/gameEngine';
+import { ScavengingService } from './services/scavenging';
 
 config();
 
@@ -31,6 +32,10 @@ class Die2NiteBot {
       // Initialize game engine and set Discord client
       const gameEngine = GameEngine.getInstance();
       gameEngine.setDiscordClient(this.client);
+      
+      // Initialize scavenging service and set Discord client
+      const scavengingService = ScavengingService.getInstance();
+      scavengingService.setDiscordClient(this.client);
       
       // Deploy commands on startup
       if (process.env.DISCORD_CLIENT_ID) {
