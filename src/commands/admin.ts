@@ -317,7 +317,7 @@ async function handleRespawnCommand(interaction: CommandInteraction, targetUser:
   try {
     // Reset player to healthy state with full action points and return to city
     await playerService.updatePlayerHealth(targetUser.id, player.maxHealth);
-    await playerService.updatePlayerStatus(targetUser.id, PlayerStatus.HEALTHY);
+    await playerService.updatePlayerStatus(targetUser.id, PlayerStatus.ALIVE);
     await playerService.updatePlayerLocation(targetUser.id, Location.CITY);
     await playerService.resetPlayerActionPoints(targetUser.id);
 

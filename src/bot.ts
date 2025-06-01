@@ -41,25 +41,48 @@ class Die2NiteBot {
     });
 
     this.client.on('interactionCreate', async (interaction) => {
-      if (!interaction.isChatInputCommand()) return;
+      if (interaction.isChatInputCommand()) {
+        const command = this.commands.get(interaction.commandName);
+        if (!command) return;
 
-      const command = this.commands.get(interaction.commandName);
-      if (!command) return;
+        try {
+          await command.execute(interaction);
+        } catch (error) {
+          console.error('Error executing command:', error);
+          
+          const errorMessage = {
+            content: 'There was an error executing this command!',
+            ephemeral: true
+          };
 
-      try {
-        await command.execute(interaction);
-      } catch (error) {
-        console.error('Error executing command:', error);
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(errorMessage);
+          } else {
+            await interaction.reply(errorMessage);
+          }
+        }
+      } else if (interaction.isButton()) {
+        // Handle button interactions
+        const customId = interaction.customId;
         
-        const errorMessage = {
-          content: 'There was an error executing this command!',
-          ephemeral: true
-        };
+        if (customId.startsWith('flee_')) {
+          const { handleFleeButton } = require('./handlers/fleeHandler');
+          try {
+            await handleFleeButton(interaction);
+          } catch (error) {
+            console.error('Error handling flee button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing your flee attempt!',
+              ephemeral: true
+            };
 
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp(errorMessage);
-        } else {
-          await interaction.reply(errorMessage);
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         }
       }
     });

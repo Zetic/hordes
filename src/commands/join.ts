@@ -32,24 +32,38 @@ module.exports = {
       const existingPlayer = await playerService.getPlayer(discordId);
       if (existingPlayer) {
         const statusEmojis = {
-          [PlayerStatus.HEALTHY]: '💚',
-          [PlayerStatus.WOUNDED]: '🩸',
+          [PlayerStatus.ALIVE]: '🧍',
+          [PlayerStatus.WOUNDED_ARM]: '💪',
+          [PlayerStatus.WOUNDED_EYE]: '👁️',
+          [PlayerStatus.WOUNDED_FOOT]: '🦶',
+          [PlayerStatus.WOUNDED_HAND]: '✋',
+          [PlayerStatus.WOUNDED_HEAD]: '🧠',
+          [PlayerStatus.WOUNDED_LEG]: '🦵',
           [PlayerStatus.DEAD]: '💀',
           [PlayerStatus.REFRESHED]: '💧',
           [PlayerStatus.FED]: '🍞',
           [PlayerStatus.THIRSTY]: '🫗',
           [PlayerStatus.DEHYDRATED]: '🏜️',
-          [PlayerStatus.EXHAUSTED]: '😴'
+          [PlayerStatus.EXHAUSTED]: '😴',
+          [PlayerStatus.HEALED]: '🩹',
+          [PlayerStatus.INFECTED]: '🦠'
         };
         const statusTexts = {
-          [PlayerStatus.HEALTHY]: 'Healthy',
-          [PlayerStatus.WOUNDED]: 'Wounded',
+          [PlayerStatus.ALIVE]: 'Alive',
+          [PlayerStatus.WOUNDED_ARM]: 'Wounded Arm',
+          [PlayerStatus.WOUNDED_EYE]: 'Wounded Eye',
+          [PlayerStatus.WOUNDED_FOOT]: 'Wounded Foot',
+          [PlayerStatus.WOUNDED_HAND]: 'Wounded Hand',
+          [PlayerStatus.WOUNDED_HEAD]: 'Wounded Head',
+          [PlayerStatus.WOUNDED_LEG]: 'Wounded Leg',
           [PlayerStatus.DEAD]: 'Dead',
           [PlayerStatus.REFRESHED]: 'Refreshed',
           [PlayerStatus.FED]: 'Fed',
           [PlayerStatus.THIRSTY]: 'Thirsty',
           [PlayerStatus.DEHYDRATED]: 'Dehydrated',
-          [PlayerStatus.EXHAUSTED]: 'Exhausted'
+          [PlayerStatus.EXHAUSTED]: 'Exhausted',
+          [PlayerStatus.HEALED]: 'Healed',
+          [PlayerStatus.INFECTED]: 'Infected'
         };
 
         const embed = new EmbedBuilder()
