@@ -188,9 +188,9 @@ class Die2NiteBot {
                 options: {
                   get: () => null
                 },
-                deferReply: async () => {
+                deferReply: async (options: any = {}) => {
                   if (!interaction.deferred && !interaction.replied) {
-                    await interaction.deferReply();
+                    await interaction.deferReply(options);
                   }
                 },
                 editReply: async (content: any) => {
