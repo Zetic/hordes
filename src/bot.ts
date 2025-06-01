@@ -61,6 +61,15 @@ class Die2NiteBot {
             await interaction.reply(errorMessage);
           }
         }
+      } else if (interaction.isAutocomplete()) {
+        const command = this.commands.get(interaction.commandName);
+        if (!command || !command.autocomplete) return;
+
+        try {
+          await command.autocomplete(interaction);
+        } catch (error) {
+          console.error('Error handling autocomplete:', error);
+        }
       } else if (interaction.isButton()) {
         // Handle button interactions
         const customId = interaction.customId;
@@ -99,6 +108,64 @@ class Die2NiteBot {
               await interaction.followUp(errorMessage);
             } else {
               await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId.startsWith('use_item_')) {
+          // Handle inventory use item buttons
+          const itemName = customId.replace('use_item_', '');
+          const useCommand = this.commands.get('use');
+          
+          if (useCommand) {
+            try {
+              // Create a mock command interaction for the use command
+              const mockInteraction = {
+                ...interaction,
+                isChatInputCommand: () => true,
+                isButton: () => false,
+                commandName: 'use',
+                options: {
+                  get: (name: string) => {
+                    if (name === 'item') {
+                      return { value: itemName };
+                    }
+                    return null;
+                  }
+                },
+                deferReply: async () => {
+                  if (!interaction.deferred && !interaction.replied) {
+                    await interaction.deferReply();
+                  }
+                },
+                editReply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                },
+                reply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                }
+              };
+              
+              await useCommand.execute(mockInteraction);
+            } catch (error) {
+              console.error('Error handling use item button:', error);
+              
+              const errorMessage = {
+                content: 'There was an error using the item!',
+                ephemeral: true
+              };
+
+              if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(errorMessage);
+              } else {
+                await interaction.reply(errorMessage);
+              }
             }
           }
         }

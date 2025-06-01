@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { InventoryService } from '../models/inventory';
 
@@ -75,7 +75,33 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      // Create action rows with use buttons for each item (max 5 buttons per row, 5 rows max)
+      const components: any[] = [];
+      const maxButtons = 25; // Discord limit
+      const usableItems = inventory.slice(0, maxButtons);
+      
+      for (let i = 0; i < usableItems.length; i += 5) {
+        const row = new ActionRowBuilder<ButtonBuilder>();
+        const itemsInRow = usableItems.slice(i, i + 5);
+        
+        for (const inv of itemsInRow) {
+          const button = new ButtonBuilder()
+            .setCustomId(`use_item_${inv.item.name}`)
+            .setLabel(`Use ${inv.item.name}`)
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🎯');
+          
+          row.addComponents(button);
+        }
+        
+        components.push(row);
+      }
+
+      await interaction.reply({ 
+        embeds: [embed], 
+        components: inventory.length > 0 ? components : [],
+        ephemeral: true 
+      });
 
     } catch (error) {
       console.error('Error in inventory command:', error);

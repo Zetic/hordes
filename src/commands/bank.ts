@@ -16,48 +16,34 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('bank')
     .setDescription('Interact with the town bank')
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('view')
-        .setDescription('View items in the bank')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('deposit')
-        .setDescription('Deposit an item into the bank')
-        .addStringOption(option =>
-          option.setName('item')
-            .setDescription('Name of the item to deposit')
-            .setRequired(true)
-        )
-        .addIntegerOption(option =>
-          option.setName('quantity')
-            .setDescription('How many to deposit (default: 1)')
-            .setRequired(false)
-            .setMinValue(1)
+    .addStringOption(option =>
+      option.setName('action')
+        .setDescription('Action to perform')
+        .setRequired(false)
+        .addChoices(
+          { name: 'deposit', value: 'deposit' },
+          { name: 'withdraw', value: 'withdraw' }
         )
     )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('take')
-        .setDescription('Take an item from the bank')
-        .addStringOption(option =>
-          option.setName('item')
-            .setDescription('Name of the item to take')
-            .setRequired(true)
-        )
-        .addIntegerOption(option =>
-          option.setName('quantity')
-            .setDescription('How many to take (default: 1)')
-            .setRequired(false)
-            .setMinValue(1)
-        )
+    .addStringOption(option =>
+      option.setName('item')
+        .setDescription('Name of the item')
+        .setRequired(false)
+        .setAutocomplete(true)
+    )
+    .addIntegerOption(option =>
+      option.setName('quantity')
+        .setDescription('How many items (default: 1)')
+        .setRequired(false)
+        .setMinValue(1)
     ),
 
   async execute(interaction: CommandInteraction) {
     try {
       const discordId = interaction.user.id;
-      const subcommand = interaction.options.data.find(option => option.type === 1)?.name || 'view';
+      const action = interaction.options.get('action')?.value as string;
+      const itemName = interaction.options.get('item')?.value as string;
+      const quantity = interaction.options.get('quantity')?.value as number || 1;
 
       // Get player
       const player = await playerService.getPlayer(discordId);
@@ -88,20 +74,33 @@ module.exports = {
         return;
       }
 
-      switch (subcommand) {
-        case 'view':
-          await handleViewBank(interaction, city.id);
-          break;
+      // If no action is specified, default to view
+      if (!action || action === 'view') {
+        await handleViewBank(interaction, city.id);
+        return;
+      }
+
+      // For deposit and withdraw, item name is required
+      if (!itemName) {
+        await interaction.reply({
+          content: `❌ You must specify an item name for ${action} action.`,
+          ephemeral: true
+        });
+        return;
+      }
+
+      switch (action) {
         case 'deposit':
-          await handleDepositItem(interaction, player.id, city.id);
+          await handleDepositItem(interaction, player.id, city.id, itemName, quantity);
           break;
-        case 'take':
-          await handleTakeItem(interaction, player.id, city.id);
+        case 'withdraw':
+          await handleWithdrawItem(interaction, player.id, city.id, itemName, quantity);
           break;
         default:
-          // Default to view when no subcommand is provided
-          await handleViewBank(interaction, city.id);
-          break;
+          await interaction.reply({
+            content: '❌ Invalid action. Use "deposit" or "withdraw".',
+            ephemeral: true
+          });
       }
 
     } catch (error) {
@@ -110,6 +109,65 @@ module.exports = {
         content: '❌ An error occurred while accessing the bank.',
         ephemeral: true
       });
+    }
+  },
+
+  async autocomplete(interaction: any) {
+    try {
+      const focusedOption = interaction.options.getFocused(true);
+      
+      if (focusedOption.name === 'item') {
+        const discordId = interaction.user.id;
+        const action = interaction.options.get('action')?.value as string;
+        
+        // Get player
+        const player = await playerService.getPlayer(discordId);
+        if (!player) {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Check if player is in town
+        if (player.location !== Location.CITY) {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Get city
+        const city = await cityService.getDefaultCity();
+        if (!city) {
+          await interaction.respond([]);
+          return;
+        }
+
+        let items: Array<{item: {name: string}, quantity: number}> = [];
+
+        if (action === 'deposit') {
+          // Show inventory items for deposit
+          items = await inventoryService.getDetailedPlayerInventory(player.id);
+        } else if (action === 'withdraw') {
+          // Show bank items for withdrawal
+          items = await bankService.getBankInventory(city.id);
+        } else {
+          // If no action specified, don't show suggestions
+          await interaction.respond([]);
+          return;
+        }
+        
+        // Filter items based on what user is typing
+        const filtered = items
+          .filter(item => item.item.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
+          .slice(0, 25) // Discord limits to 25 choices
+          .map(item => ({
+            name: `${item.item.name} (x${item.quantity})`,
+            value: item.item.name
+          }));
+
+        await interaction.respond(filtered);
+      }
+    } catch (error) {
+      console.error('Error in bank command autocomplete:', error);
+      await interaction.respond([]);
     }
   }
 };
@@ -157,9 +215,7 @@ async function handleViewBank(interaction: CommandInteraction, cityId: string) {
   await interaction.reply({ embeds: [embed] });
 }
 
-async function handleDepositItem(interaction: CommandInteraction, playerId: string, cityId: string) {
-  const itemName = interaction.options.get('item')?.value as string;
-  const quantity = interaction.options.get('quantity')?.value as number || 1;
+async function handleDepositItem(interaction: CommandInteraction, playerId: string, cityId: string, itemName: string, quantity: number) {
 
   // Find the item by name
   const item = await itemService.getItemByName(itemName);
@@ -212,9 +268,7 @@ async function handleDepositItem(interaction: CommandInteraction, playerId: stri
   await interaction.reply({ embeds: [embed] });
 }
 
-async function handleTakeItem(interaction: CommandInteraction, playerId: string, cityId: string) {
-  const itemName = interaction.options.get('item')?.value as string;
-  const quantity = interaction.options.get('quantity')?.value as number || 1;
+async function handleWithdrawItem(interaction: CommandInteraction, playerId: string, cityId: string, itemName: string, quantity: number) {
 
   // Check if player is encumbered
   const isEncumbered = await inventoryService.isPlayerEncumbered(playerId);
@@ -280,8 +334,8 @@ async function handleTakeItem(interaction: CommandInteraction, playerId: string,
 
   const embed = new EmbedBuilder()
     .setColor('#95e1d3')
-    .setTitle('🏦 Item Taken')
-    .setDescription(`Successfully took **${bankItem.item.name}** x${quantity} from the bank`)
+    .setTitle('🏦 Item Withdrawn')
+    .setDescription(`Successfully withdrew **${bankItem.item.name}** x${quantity} from the bank`)
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });

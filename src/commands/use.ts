@@ -24,6 +24,7 @@ module.exports = {
       option.setName('item')
         .setDescription('Name of the item to use')
         .setRequired(true)
+        .setAutocomplete(true)
     ),
 
   async execute(interaction: CommandInteraction) {
@@ -87,6 +88,40 @@ module.exports = {
       await interaction[replyMethod]({
         content: '❌ An error occurred while using the item.'
       });
+    }
+  },
+
+  async autocomplete(interaction: any) {
+    try {
+      const focusedOption = interaction.options.getFocused(true);
+      
+      if (focusedOption.name === 'item') {
+        const discordId = interaction.user.id;
+        
+        // Get player
+        const player = await playerService.getPlayer(discordId);
+        if (!player) {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Get player's inventory
+        const inventory = await inventoryService.getDetailedPlayerInventory(player.id);
+        
+        // Filter items based on what user is typing
+        const filtered = inventory
+          .filter(inv => inv.item.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
+          .slice(0, 25) // Discord limits to 25 choices
+          .map(inv => ({
+            name: `${inv.item.name} (x${inv.quantity})`,
+            value: inv.item.name
+          }));
+
+        await interaction.respond(filtered);
+      }
+    } catch (error) {
+      console.error('Error in use command autocomplete:', error);
+      await interaction.respond([]);
     }
   }
 };

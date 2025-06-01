@@ -16,6 +16,7 @@ module.exports = {
       option.setName('item')
         .setDescription('Name of the item to take')
         .setRequired(true)
+        .setAutocomplete(true)
     )
     .addIntegerOption(option =>
       option.setName('quantity')
@@ -155,6 +156,46 @@ module.exports = {
         content: '❌ An error occurred while taking the item.',
         ephemeral: true
       });
+    }
+  },
+
+  async autocomplete(interaction: any) {
+    try {
+      const focusedOption = interaction.options.getFocused(true);
+      
+      if (focusedOption.name === 'item') {
+        const discordId = interaction.user.id;
+        
+        // Get player
+        const player = await playerService.getPlayer(discordId);
+        if (!player) {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Check if player is in an exploration area
+        if (player.location === Location.CITY || player.location === Location.HOME) {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Get area inventory
+        const areaItems = await areaInventoryService.getAreaInventory(player.location, player.x || undefined, player.y || undefined);
+        
+        // Filter items based on what user is typing
+        const filtered = areaItems
+          .filter(item => item.item.name.toLowerCase().includes(focusedOption.value.toLowerCase()))
+          .slice(0, 25) // Discord limits to 25 choices
+          .map(item => ({
+            name: `${item.item.name} (x${item.quantity})`,
+            value: item.item.name
+          }));
+
+        await interaction.respond(filtered);
+      }
+    } catch (error) {
+      console.error('Error in take command autocomplete:', error);
+      await interaction.respond([]);
     }
   }
 };
