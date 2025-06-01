@@ -18,6 +18,16 @@ module.exports = {
       const discordId = interaction.user.id;
       const userName = interaction.user.displayName || interaction.user.username;
 
+      // Check if a city exists first
+      const city = await cityService.getDefaultCity();
+      if (!city) {
+        await interaction.reply({
+          content: '❌ No town exists yet! Someone needs to create a town first using `/create town <name>`.',
+          ephemeral: true
+        });
+        return;
+      }
+
       // Check if player already exists
       const existingPlayer = await playerService.getPlayer(discordId);
       if (existingPlayer) {
@@ -68,7 +78,6 @@ module.exports = {
       }
 
       // Update city population
-      const city = await cityService.getDefaultCity();
       if (city) {
         await cityService.updateCityPopulation(city.id);
       }

@@ -130,11 +130,6 @@ CREATE INDEX IF NOT EXISTS idx_zone_contests_coords ON zone_contests(x, y);
 CREATE INDEX IF NOT EXISTS idx_zone_contests_status ON zone_contests(status);
 CREATE INDEX IF NOT EXISTS idx_zone_contests_temp_timer ON zone_contests(temp_uncontested_until);
 
--- Insert default city if it doesn't exist
-INSERT INTO cities (name, day, game_phase)
-SELECT 'Sanctuary', 1, 'play_mode'
-WHERE NOT EXISTS (SELECT 1 FROM cities);
-
 -- Add grid coordinates and gate status migration
 DO $$
 BEGIN

@@ -82,7 +82,11 @@ export class GameEngine {
       // Get default city
       const city = await this.cityService.getDefaultCity();
       if (!city) {
-        throw new Error('No city found');
+        // No city exists yet, set gameState to null
+        // Game state will be initialized when a city is created
+        this.gameState = null;
+        console.log('ℹ️ No city found - game state will be initialized when town is created');
+        return;
       }
 
       // Get existing horde size from Redis or initialize
@@ -107,6 +111,33 @@ export class GameEngine {
       await this.db.redis.set('game_state', JSON.stringify(this.gameState));
     } catch (error) {
       console.error('Error loading game state:', error);
+    }
+  }
+
+  // Initialize game state for a newly created city
+  public async initializeGameStateForCity(cityId: string): Promise<void> {
+    try {
+      const city = await this.cityService.getCity(cityId);
+      if (!city) {
+        console.error('Cannot initialize game state - city not found');
+        return;
+      }
+
+      this.gameState = {
+        cityId: city.id,
+        currentDay: city.day,
+        currentPhase: city.gamePhase,
+        lastHordeAttack: new Date(),
+        nextPhaseChange: this.calculateNextPhaseChange(city.gamePhase),
+        hordeSize: parseInt(process.env.INITIAL_HORDE_SIZE || '10')
+      };
+
+      // Store in Redis for quick access
+      await this.db.redis.set('game_state', JSON.stringify(this.gameState));
+      
+      console.log('✅ Game state initialized for new city');
+    } catch (error) {
+      console.error('Error initializing game state for city:', error);
     }
   }
 
