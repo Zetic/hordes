@@ -57,7 +57,7 @@ module.exports = {
         player,
         title: 'Current Area View',
         description: `${player.name} surveys the surrounding area...`,
-        showMovement: false, // Map command shows view only
+        showMovement: true,  // Map command should show movement buttons for exploration
         showScavenge: true,  // Show scavenge button if available
         mapImageBuffer
       });
