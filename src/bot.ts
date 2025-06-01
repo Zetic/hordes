@@ -168,6 +168,58 @@ class Die2NiteBot {
               }
             }
           }
+        } else if (customId === 'scavenge_area') {
+          // Handle scavenge button
+          const scavengeCommand = this.commands.get('scavenge');
+          
+          if (scavengeCommand) {
+            try {
+              // Create a mock command interaction for the scavenge command
+              const mockInteraction = {
+                ...interaction,
+                isChatInputCommand: () => true,
+                isButton: () => false,
+                commandName: 'scavenge',
+                options: {
+                  get: () => null
+                },
+                deferReply: async () => {
+                  if (!interaction.deferred && !interaction.replied) {
+                    await interaction.deferReply();
+                  }
+                },
+                editReply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                },
+                reply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                }
+              };
+              
+              await scavengeCommand.execute(mockInteraction);
+            } catch (error) {
+              console.error('Error handling scavenge button:', error);
+              
+              const errorMessage = {
+                content: 'There was an error while scavenging!',
+                ephemeral: true
+              };
+
+              if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(errorMessage);
+              } else {
+                await interaction.reply(errorMessage);
+              }
+            }
+          }
         }
       }
     });

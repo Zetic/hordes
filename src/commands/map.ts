@@ -1,16 +1,13 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction } from 'discord.js';
 import { PlayerService } from '../models/player';
-import { AreaInventoryService } from '../models/areaInventory';
 import { WorldMapService } from '../services/worldMap';
-import { ZombieService } from '../services/zombieService';
 import { Location } from '../types/game';
+import { createAreaEmbed } from '../utils/embedUtils';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
 const playerService = new PlayerService();
-const areaInventoryService = new AreaInventoryService();
 const worldMapService = WorldMapService.getInstance();
-const zombieService = ZombieService.getInstance();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -52,76 +49,31 @@ module.exports = {
       // Defer reply since we're about to do expensive operations (map generation)
       await interaction.deferReply();
 
-      // Get current location information
-      const locationDisplay = worldMapService.getLocationDisplay(player.location);
-      const areaItems = await areaInventoryService.getAreaInventory(player.location, player.x, player.y);
+      // Generate map view
+      const mapImageBuffer = await worldMapService.generateMapView(playerService);
       
-      // Get zombie count in the area
-      const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
-      const zombieCount = zombies ? zombies.count : 0;
+      // Create standardized area embed
+      const { embed, attachment, components } = await createAreaEmbed({
+        player,
+        title: 'Current Area View',
+        description: `${player.name} surveys the surrounding area...`,
+        showMovement: false, // Map command shows view only
+        showScavenge: true,  // Show scavenge button if available
+        mapImageBuffer
+      });
 
-      const embed = new EmbedBuilder()
-        .setColor('#95e1d3')
-        .setTitle('Current Area View')
-        .setDescription(`${player.name} surveys the surrounding area...`)
-        .addFields([
-          { 
-            name: 'Current Location', 
-            value: `${locationDisplay.emoji} ${locationDisplay.name} (${player.x}, ${player.y})`, 
-            inline: true 
-          },
-          {
-            name: '🧟 Zombie Count',
-            value: `${zombieCount} zombies in this area`,
-            inline: true
-          }
-        ]);
-
-      // Add location-specific information
+      // Add location-specific information for gate
       if (player.location === Location.GATE) {
         embed.addFields([
           {
-            name: 'Gate Area',
+            name: '🚪 Gate Area',
             value: 'You are at the gate to town. Use `/return` to enter the city (if the gate is open).',
             inline: false
           }
         ]);
       }
 
-      // Show map view
-      const mapImageBuffer = await worldMapService.generateMapView(playerService);
-      const mapAttachment = new AttachmentBuilder(mapImageBuffer, { name: 'map.png' });
-      
-      embed.setImage('attachment://map.png');
-
-      // Show items in area if any
-      if (areaItems.length > 0) {
-        const itemList = areaItems.map(item => 
-          `**${item.item.name}** x${item.quantity} - ${item.item.description}`
-        ).join('\n');
-
-        embed.addFields([
-          {
-            name: 'Items on the Ground',
-            value: itemList,
-            inline: false
-          }
-        ]);
-      }
-
-      embed.addFields([
-        {
-          name: 'Available Actions',
-          value: areaItems.length > 0 
-            ? '• Use `/take <item>` to pick up items from the ground\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition'
-            : '• Use `/move <direction>` to explore further\n• Use `/status` to check your condition',
-          inline: false
-        }
-      ]);
-
-      embed.setTimestamp();
-
-      await interaction.editReply({ embeds: [embed], files: [mapAttachment] });
+      await interaction.editReply({ embeds: [embed], files: [attachment], components });
 
     } catch (error) {
       console.error('Error in area command:', error);
