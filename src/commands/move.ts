@@ -151,7 +151,7 @@ module.exports = {
       }
 
       // Defer reply since we're about to do expensive operations (map generation and movement processing)
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
 
       // Calculate new coordinates
       const currentX = player.x;
@@ -266,15 +266,38 @@ module.exports = {
         {
           name: '🔍 Next Steps',
           value: areaItems.length > 0 
-            ? '• Use `/take <item>` to pick up items from the ground\n• Use `/move <direction>` to explore further\n• Use `/status` to check your condition'
-            : '• Use `/move <direction>` to explore further\n• Use `/status` to check your condition',
+            ? '• Use `/take <item>` to pick up items from the ground\n• Use movement buttons below to explore further\n• Use `/status` to check your condition'
+            : '• Use movement buttons below to explore further\n• Use `/status` to check your condition',
           inline: false
         }
       ]);
 
       embed.setTimestamp();
 
-      await interaction.editReply({ embeds: [embed], files: [mapAttachment] });
+      // Create movement buttons
+      const northButton = new ButtonBuilder()
+        .setCustomId('move_north')
+        .setLabel('⬆️ North')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const southButton = new ButtonBuilder()
+        .setCustomId('move_south')
+        .setLabel('⬇️ South')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const westButton = new ButtonBuilder()
+        .setCustomId('move_west')
+        .setLabel('⬅️ West')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const eastButton = new ButtonBuilder()
+        .setCustomId('move_east')
+        .setLabel('➡️ East')
+        .setStyle(ButtonStyle.Secondary);
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
+
+      await interaction.editReply({ embeds: [embed], files: [mapAttachment], components: [row] });
 
     } catch (error) {
       console.error('Error in move command:', error);

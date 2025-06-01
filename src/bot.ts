@@ -83,6 +83,24 @@ class Die2NiteBot {
               await interaction.reply(errorMessage);
             }
           }
+        } else if (customId.startsWith('move_')) {
+          const { handleMoveButton } = require('./handlers/moveHandler');
+          try {
+            await handleMoveButton(interaction);
+          } catch (error) {
+            console.error('Error handling move button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing your movement!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         }
       }
     });
