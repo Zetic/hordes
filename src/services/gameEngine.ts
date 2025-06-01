@@ -352,11 +352,57 @@ export class GameEngine {
       // Update city population
       await this.cityService.updateCityPopulation(city.id);
       
+      // Process condition changes after horde event
+      await this.processHordeConditionEffects();
+      
       // Process zombie spread after horde attack
       await this.zombieService.processHordeSpread();
       
     } catch (error) {
       console.error('Error processing horde attack:', error);
+    }
+  }
+
+  private async processHordeConditionEffects(): Promise<void> {
+    try {
+      console.log('🧟‍♂️ Processing horde condition effects...');
+      
+      // Get all alive players
+      const alivePlayers = await this.playerService.getAlivePlayers();
+      
+      for (const player of alivePlayers) {
+        let conditionsChanged = false;
+        
+        // If Refreshed: Refreshed is removed
+        if (player.conditions.includes(PlayerCondition.REFRESHED)) {
+          await this.playerService.removePlayerCondition(player.discordId, PlayerCondition.REFRESHED);
+          conditionsChanged = true;
+          console.log(`💧 ${player.name}: Refreshed condition removed`);
+        }
+        
+        // If Fed: Fed is removed
+        if (player.conditions.includes(PlayerCondition.FED)) {
+          await this.playerService.removePlayerCondition(player.discordId, PlayerCondition.FED);
+          conditionsChanged = true;
+          console.log(`🍞 ${player.name}: Fed condition removed`);
+        }
+        
+        // If Thirsty: Thirsty is removed and Dehydrated is added
+        if (player.conditions.includes(PlayerCondition.THIRSTY)) {
+          await this.playerService.removePlayerCondition(player.discordId, PlayerCondition.THIRSTY);
+          await this.playerService.addPlayerCondition(player.discordId, PlayerCondition.DEHYDRATED);
+          conditionsChanged = true;
+          console.log(`🏜️ ${player.name}: Thirsty removed, Dehydrated added`);
+        }
+        
+        if (conditionsChanged) {
+          console.log(`✅ Updated conditions for ${player.name}`);
+        }
+      }
+      
+      console.log('✅ Horde condition effects processed');
+    } catch (error) {
+      console.error('Error processing horde condition effects:', error);
     }
   }
 
