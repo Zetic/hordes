@@ -1,15 +1,17 @@
-import { ButtonInteraction, StringSelectMenuInteraction, EmbedBuilder } from 'discord.js';
+import { ButtonInteraction, StringSelectMenuInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { ConstructionService } from '../services/construction';
 import { CityService } from '../models/city';
 import { InventoryService } from '../models/inventory';
+import { ItemService } from '../models/item';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
 const constructionService = new ConstructionService();
 const cityService = new CityService();
 const inventoryService = new InventoryService();
+const itemService = new ItemService();
 
 export async function handleTakeWaterRationButton(interaction: ButtonInteraction) {
   try {
@@ -198,12 +200,17 @@ export async function handleWorkshopRecipeSelect(interaction: StringSelectMenuIn
         inline: false
       }]);
       
-      // TODO: Add craft button here when we implement the actual crafting system
-      embed.addFields([{
-        name: '🚧 Coming Soon',
-        value: 'The crafting system is currently under development.',
-        inline: false
-      }]);
+      // Add craft button
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`craft_recipe_${selectedRecipe}`)
+            .setLabel('🔨 Craft Item (3 AP)')
+            .setStyle(ButtonStyle.Primary)
+        );
+      
+      await interaction.update({ embeds: [embed], components: [row] });
+      return;
     }
 
     await interaction.update({ embeds: [embed], components: [] });
@@ -298,6 +305,178 @@ export async function handleObserveHordeButton(interaction: ButtonInteraction) {
       .setColor('#ff6b6b')
       .setTitle('❌ Error')
       .setDescription('An error occurred while observing the horde.');
+
+    try {
+      await interaction.update({ embeds: [embed], components: [] });
+    } catch (updateError) {
+      console.error('Failed to update interaction with error message:', updateError);
+    }
+  }
+}
+export async function handleCraftRecipeButton(interaction: ButtonInteraction) {
+  try {
+    const customId = interaction.customId;
+    const [, , selectedRecipe] = customId.split('_'); // craft_recipe_{recipe}
+    const discordId = interaction.user.id;
+
+    // Get player
+    const player = await playerService.getPlayer(discordId);
+    if (!player) {
+      await interaction.update({
+        content: '❌ Player not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Check action points
+    if (player.actionPoints < 3) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Insufficient Action Points')
+        .setDescription('You need at least 3 Action Points to use the workshop.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Get player inventory
+    const inventory = await inventoryService.getDetailedPlayerInventory(player.id);
+
+    let inputItemName = '';
+    let outputItemName = '';
+
+    if (selectedRecipe === 'rotten_log_to_twisted_plank') {
+      inputItemName = 'Rotten Log';
+      outputItemName = 'Twisted Plank';
+    } else if (selectedRecipe === 'scrap_metal_to_wrought_metal') {
+      inputItemName = 'Scrap Metal';
+      outputItemName = 'Wrought Metal';
+    } else {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Invalid Recipe')
+        .setDescription('The selected recipe is not valid.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Check if player has the input item
+    const inputItem = inventory.find(item => item.item.name === inputItemName);
+    if (!inputItem || inputItem.quantity < 1) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Missing Materials')
+        .setDescription(`You don't have any ${inputItemName} to convert.`);
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Spend action points
+    const apSuccess = await playerService.spendActionPoints(discordId, 3);
+    if (!apSuccess) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Failed to Spend Action Points')
+        .setDescription('Failed to spend action points. Please try again.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Remove input item from inventory
+    const removeSuccess = await inventoryService.removeItemFromInventory(player.id, inputItem.itemId, 1);
+    if (!removeSuccess) {
+      // Refund action points if item removal failed
+      await playerService.updatePlayerActionPoints(discordId, player.actionPoints + 3);
+      
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Failed to Remove Materials')
+        .setDescription('Failed to remove input materials. Please try again.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Add output item to inventory
+    const outputItem = await itemService.getItemByName(outputItemName);
+    if (!outputItem) {
+      // Refund everything if output item doesn't exist
+      await playerService.updatePlayerActionPoints(discordId, player.actionPoints + 3);
+      await inventoryService.addItemToInventory(player.id, inputItem.itemId, 1);
+      
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Output Item Not Found')
+        .setDescription(`The output item "${outputItemName}" was not found in the item database.`);
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    const addSuccess = await inventoryService.addItemToInventory(player.id, outputItem.id, 1);
+    if (!addSuccess) {
+      // Refund everything if add failed
+      await playerService.updatePlayerActionPoints(discordId, player.actionPoints + 3);
+      await inventoryService.addItemToInventory(player.id, inputItem.itemId, 1);
+      
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Failed to Add Output Item')
+        .setDescription('Failed to add the crafted item to your inventory. Please try again.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Success!
+    const embed = new EmbedBuilder()
+      .setColor('#00ff00')
+      .setTitle('🔨 Item Crafted Successfully!')
+      .setDescription(`You have successfully converted **${inputItemName}** into **${outputItemName}** at the Workshop.`)
+      .addFields([
+        {
+          name: '📦 Conversion',
+          value: `${inputItemName} → ${outputItemName}`,
+          inline: true
+        },
+        {
+          name: '⚡ Action Points Used',
+          value: '3 AP',
+          inline: true
+        },
+        {
+          name: '🏭 Location',
+          value: 'Workshop',
+          inline: true
+        }
+      ]);
+
+    await interaction.update({ embeds: [embed], components: [] });
+
+    // Send public crafting message
+    const publicEmbed = new EmbedBuilder()
+      .setColor('#d4af37')
+      .setTitle('🔨 Workshop Activity')
+      .setDescription(`${player.name} crafted **${outputItemName}** at the Workshop.`);
+
+    try {
+      await interaction.followUp({ embeds: [publicEmbed] });
+    } catch (error) {
+      console.error('Failed to send public crafting message:', error);
+    }
+
+  } catch (error) {
+    console.error('Error handling craft recipe button:', error);
+    
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Error')
+      .setDescription('An error occurred while crafting the item.');
 
     try {
       await interaction.update({ embeds: [embed], components: [] });

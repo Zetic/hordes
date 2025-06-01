@@ -227,6 +227,24 @@ class Die2NiteBot {
               await interaction.reply(errorMessage);
             }
           }
+        } else if (customId.startsWith('craft_recipe_')) {
+          const { handleCraftRecipeButton } = require('./handlers/visitHandler');
+          try {
+            await handleCraftRecipeButton(interaction);
+          } catch (error) {
+            console.error('Error handling craft recipe button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the crafting request!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         } else if (customId === 'scavenge_area') {
           // Handle scavenge button
           const scavengeCommand = this.commands.get('scavenge');
