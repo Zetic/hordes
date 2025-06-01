@@ -29,12 +29,13 @@ describe('Gate Open Database Schema', () => {
     expect(migrationQuery).toContain('ADD COLUMN IF NOT EXISTS gate_open BOOLEAN');
   });
 
-  test('should verify database service includes gate_open schema', () => {
+  test('should verify database service no longer includes schema initialization', () => {
     const fs = require('fs');
     const path = require('path');
     const databaseServiceContent = fs.readFileSync(path.join(__dirname, '../services/database.ts'), 'utf8');
     
-    expect(databaseServiceContent).toContain('gate_open BOOLEAN DEFAULT true');
-    expect(databaseServiceContent).toContain('ADD COLUMN IF NOT EXISTS gate_open');
+    // Schema initialization has been removed - database schema is managed externally
+    expect(databaseServiceContent).toContain('Schema initialization removed - database schema is managed externally');
+    expect(databaseServiceContent).not.toContain('initializeSchema()');
   });
 });
