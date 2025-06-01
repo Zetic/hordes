@@ -215,7 +215,11 @@ export class CityService {
       type: row.type as BuildingType,
       level: row.level,
       health: row.health,
-      maxHealth: row.max_health
+      maxHealth: row.max_health,
+      category: row.category,
+      subCategory: row.sub_category,
+      isVisitable: row.is_visitable,
+      defenseBonus: row.defense_bonus
     };
   }
 }

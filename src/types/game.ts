@@ -210,6 +210,49 @@ export interface Building {
   level: number;
   health: number;
   maxHealth: number;
+  category?: string;
+  subCategory?: string;
+  isVisitable?: boolean;
+  defenseBonus?: number;
+}
+
+export interface ConstructionProject {
+  id: string;
+  cityId: string;
+  projectType: string;
+  projectName: string;
+  description: string;
+  category: string;
+  subCategory: string;
+  totalApRequired: number;
+  currentApProgress: number;
+  isVisitable: boolean;
+  defenseBonus: number;
+  isCompleted: boolean;
+  completedAt?: Date;
+  materialRequirements: ProjectMaterialRequirement[];
+}
+
+export interface ProjectMaterialRequirement {
+  id: string;
+  projectId: string;
+  itemName: string;
+  requiredQuantity: number;
+}
+
+export interface WellWater {
+  id: string;
+  cityId: string;
+  currentWater: number;
+  maxWater: number;
+}
+
+export interface DailyWaterRation {
+  id: string;
+  playerId: string;
+  cityId: string;
+  rationsTaken: number;
+  date: string;
 }
 
 export enum BuildingType {
@@ -217,7 +260,12 @@ export enum BuildingType {
   WALL = 'wall',
   WORKSHOP = 'workshop',
   WELL = 'well',
-  HOSPITAL = 'hospital'
+  HOSPITAL = 'hospital',
+  // New building types
+  DEFENSIVE_WALL = 'defensive_wall',
+  PUMP = 'pump',
+  WATCH_TOWER = 'watch_tower',
+  PORTAL_LOCK = 'portal_lock'
 }
 
 export interface CityResource {

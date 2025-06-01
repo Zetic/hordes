@@ -29,23 +29,35 @@ module.exports = {
         return;
       }
 
-      // Count buildings by type
+      // Count buildings by type and calculate total defense
       const buildingCounts = {
         watchtower: 0,
         wall: 0,
         workshop: 0,
         well: 0,
-        hospital: 0
+        hospital: 0,
+        defensive_wall: 0,
+        pump: 0,
+        watch_tower: 0,
+        portal_lock: 0
       };
+
+      let totalDefense = 0;
 
       city.buildings.forEach(building => {
         if (buildingCounts.hasOwnProperty(building.type)) {
           buildingCounts[building.type as keyof typeof buildingCounts]++;
         }
+        
+        // Add defense bonus from each building
+        if (building.defenseBonus) {
+          totalDefense += building.defenseBonus;
+        } else {
+          // Legacy building defense calculation for old buildings
+          if (building.type === 'watchtower') totalDefense += 2;
+          if (building.type === 'wall') totalDefense += 1;
+        }
       });
-
-      // Calculate defense level
-      const totalDefense = buildingCounts.watchtower * 2 + buildingCounts.wall * 1;
       
       // Game phase info
       const phaseEmoji = gameState?.currentPhase === 'play_mode' ? '🌅' : '🌙';
@@ -83,11 +95,19 @@ module.exports = {
 
       // Buildings section
       const buildingsInfo = [];
+      
+      // Legacy buildings
       if (buildingCounts.watchtower > 0) buildingsInfo.push(`🗼 ${buildingCounts.watchtower}x Watchtower`);
       if (buildingCounts.wall > 0) buildingsInfo.push(`🧱 ${buildingCounts.wall}x Wall`);
       if (buildingCounts.workshop > 0) buildingsInfo.push(`🔨 ${buildingCounts.workshop}x Workshop`);
       if (buildingCounts.well > 0) buildingsInfo.push(`💧 ${buildingCounts.well}x Well`);
       if (buildingCounts.hospital > 0) buildingsInfo.push(`🏥 ${buildingCounts.hospital}x Hospital`);
+      
+      // New construction project buildings
+      if (buildingCounts.defensive_wall > 0) buildingsInfo.push(`🛡️ ${buildingCounts.defensive_wall}x Defensive Wall`);
+      if (buildingCounts.pump > 0) buildingsInfo.push(`⚙️ ${buildingCounts.pump}x Pump`);
+      if (buildingCounts.watch_tower > 0) buildingsInfo.push(`🗼 ${buildingCounts.watch_tower}x Watch Tower`);
+      if (buildingCounts.portal_lock > 0) buildingsInfo.push(`🚪 ${buildingCounts.portal_lock}x Portal Lock`);
 
       if (buildingsInfo.length > 0) {
         embed.addFields([
@@ -101,7 +121,7 @@ module.exports = {
         embed.addFields([
           { 
             name: '🏗️ Buildings', 
-            value: 'No buildings constructed yet.\nUse `/build` to start construction!', 
+            value: 'No buildings constructed yet.\nUse `/build` to see available construction projects!', 
             inline: false 
           }
         ]);
