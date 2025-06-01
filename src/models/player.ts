@@ -1,5 +1,6 @@
 import { Player, Location, GamePhase, PlayerStatus, PlayerCondition } from '../types/game';
 import { DatabaseService } from '../services/database';
+import { safeJsonParseArray } from '../utils/jsonUtils';
 
 export class PlayerService {
   private db: DatabaseService;
@@ -83,7 +84,7 @@ export class PlayerService {
       // Parse existing conditions or start with empty array
       let conditions: string[] = [];
       if (player.conditions && player.conditions.length > 0) {
-        conditions = player.conditions.map(c => typeof c === 'string' ? c : c.toString());
+        conditions = player.conditions.map(c => typeof c === 'string' ? c : String(c));
       }
 
       // Add condition if not already present
@@ -116,7 +117,7 @@ export class PlayerService {
       // Parse existing conditions
       let conditions: string[] = [];
       if (player.conditions && player.conditions.length > 0) {
-        conditions = player.conditions.map(c => typeof c === 'string' ? c : c.toString());
+        conditions = player.conditions.map(c => typeof c === 'string' ? c : String(c));
       }
 
       // Remove condition if present
@@ -317,16 +318,23 @@ export class PlayerService {
   }
 
   private mapRowToPlayer(row: any): Player {
-    // Parse conditions from JSON string in database, defaulting to empty array
+    // Handle both JSON (string) and JSONB (already parsed) formats for conditions
     let conditions: PlayerCondition[] = [];
+    
     if (row.conditions) {
-      try {
-        const parsedConditions = JSON.parse(row.conditions);
-        conditions = Array.isArray(parsedConditions) ? parsedConditions : [];
-      } catch (error) {
-        console.error('Error parsing player conditions:', error);
-        conditions = [];
+      if (Array.isArray(row.conditions)) {
+        // JSONB case - already parsed by PostgreSQL
+        conditions = row.conditions as PlayerCondition[];
+      } else if (typeof row.conditions === 'string') {
+        // JSON case - needs parsing, use utility function that handles single values
+        const conditionsResult = safeJsonParseArray<PlayerCondition>(
+          row.conditions,
+          [],
+          `player conditions for ${row.discord_id}`
+        );
+        conditions = conditionsResult.data;
       }
+      // For any other type (number, boolean, object), default to empty array
     }
 
     return {
