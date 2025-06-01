@@ -295,9 +295,22 @@ module.exports = {
         .setLabel('➡️ East')
         .setStyle(ButtonStyle.Secondary);
 
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
+      const movementRow = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
+      
+      const components = [movementRow];
 
-      await interaction.editReply({ embeds: [embed], files: [mapAttachment], components: [row] });
+      // Add scavenging button if not at gate and not in city/home
+      if (newLocation !== Location.GATE && newLocation !== Location.CITY && newLocation !== Location.HOME) {
+        const scavengeButton = new ButtonBuilder()
+          .setCustomId('scavenge_area')
+          .setLabel('🔍 Scavenge')
+          .setStyle(ButtonStyle.Primary);
+        
+        const scavengeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(scavengeButton);
+        components.push(scavengeRow);
+      }
+
+      await interaction.editReply({ embeds: [embed], files: [mapAttachment], components });
 
     } catch (error) {
       console.error('Error in move command:', error);

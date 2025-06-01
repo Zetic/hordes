@@ -152,13 +152,13 @@ export class WorldMapService {
   // Generate 7 POI locations for the world
   private generatePOILocations() {
     const poiLocationTypes = [
-      Location.FACTORY,
-      Location.HOSPITAL,
-      Location.SCHOOL_CAMPUS,
-      Location.SHOPPING_MALL,
-      Location.RADIO_TOWER,
-      Location.ABANDONED_MANSION,
-      Location.CAMP_GROUNDS
+      Location.ABANDONED_BUNKER,
+      Location.ABANDONED_HOSPITAL,
+      Location.AMBULANCE,
+      Location.ARMY_OUTPOST,
+      Location.BURNT_SCHOOL,
+      Location.CAVE,
+      Location.CITIZENS_HOME
     ];
     
     const usedCoordinates = new Set<string>();
@@ -361,44 +361,139 @@ export class WorldMapService {
         return { name: 'Gate', emoji: '🚪' };
       case Location.WASTE:
         return { name: 'Waste', emoji: '🌲' };
-      case Location.GREATER_WASTE:
-        return { name: 'Greater Waste', emoji: '🌲' };
       case Location.CITY:
         return { name: 'City', emoji: '🏠' };
       case Location.HOME:
         return { name: 'Home', emoji: '🏡' };
-      case Location.FACTORY:
-        return { name: 'Factory', emoji: '🏭' };
-      case Location.ABANDONED_MANSION:
-        return { name: 'Abandoned Mansion', emoji: '🏚️' };
-      case Location.MODEST_NEIGHBORHOOD:
-        return { name: 'Modest Neighborhood', emoji: '🏠' };
-      case Location.GATED_COMMUNITY:
-        return { name: 'Gated Community', emoji: '🏡' };
-      case Location.CONVENIENCE_STORE:
-        return { name: 'Convenience Store Street', emoji: '🏪' };
-      case Location.OFFICE_DISTRICT:
-        return { name: 'Office District', emoji: '🏢' };
-      case Location.HOSPITAL:
-        return { name: 'Hospital', emoji: '🏥' };
-      case Location.SCHOOL_CAMPUS:
-        return { name: 'School Campus', emoji: '🏫' };
-      case Location.SHOPPING_MALL:
-        return { name: 'Shopping Mall', emoji: '🏬' };
-      case Location.HOTEL:
-        return { name: 'Hotel', emoji: '🏨' };
-      case Location.CITY_PARK:
-        return { name: 'City Park', emoji: '⛲' };
-      case Location.AMUSEMENT_PARK:
-        return { name: 'Amusement Park', emoji: '🎡' };
-      case Location.CONSTRUCTION_SITE:
-        return { name: 'Construction Site', emoji: '🏗️' };
-      case Location.RADIO_TOWER:
-        return { name: 'Radio Tower', emoji: '🗼' };
-      case Location.CAMP_GROUNDS:
-        return { name: 'Camp Grounds', emoji: '🏕️' };
-      case Location.LAKE_SIDE:
-        return { name: 'Lake Side', emoji: '💧' };
+      // New POI locations
+      case Location.ABANDONED_BUNKER:
+        return { name: 'Abandoned Bunker', emoji: '🏚️' };
+      case Location.ABANDONED_CONSTRUCTION_SITE:
+        return { name: 'Abandoned Construction Site', emoji: '🏗️' };
+      case Location.ABANDONED_HOSPITAL:
+        return { name: 'Abandoned Hospital', emoji: '🏥' };
+      case Location.ABANDONED_HOTEL:
+        return { name: 'Abandoned Hotel', emoji: '🏨' };
+      case Location.ABANDONED_PARK:
+        return { name: 'Abandoned Park', emoji: '🌳' };
+      case Location.ABANDONED_WELL:
+        return { name: 'Abandoned Well', emoji: '🗿' };
+      case Location.AMBULANCE:
+        return { name: 'Ambulance', emoji: '🚑' };
+      case Location.ARMY_OUTPOST:
+        return { name: 'Army Outpost', emoji: '⚔️' };
+      case Location.BLOCKED_ROAD:
+        return { name: 'Blocked Road', emoji: '🚧' };
+      case Location.BROKEN_DOWN_TANK:
+        return { name: 'Broken-down Tank', emoji: '🛡️' };
+      case Location.BURNT_SCHOOL:
+        return { name: 'Burnt School', emoji: '🏫' };
+      case Location.CAVE:
+        return { name: 'Cave', emoji: '🕳️' };
+      case Location.CITIZENS_HOME:
+        return { name: "Citizen's Home", emoji: '🏠' };
+      case Location.CITIZENS_TENT:
+        return { name: "Citizen's Tent", emoji: '⛺' };
+      case Location.COLLAPSED_MINESHAFT:
+        return { name: 'Collapsed Mineshaft', emoji: '⛏️' };
+      case Location.COLLAPSED_QUARRY:
+        return { name: 'Collapsed Quarry', emoji: '🗻' };
+      case Location.CONSTRUCTION_SITE_SHELTER:
+        return { name: 'Construction Site Shelter', emoji: '🏗️' };
+      case Location.COSMETICS_LAB:
+        return { name: 'Cosmetics Lab', emoji: '💄' };
+      case Location.CROWSFIT_GYM:
+        return { name: "Crows'fit Gym", emoji: '💪' };
+      case Location.DARK_WOODS:
+        return { name: 'Dark Woods', emoji: '🌲' };
+      case Location.DERELICT_VILLA:
+        return { name: 'Derelict Villa', emoji: '🏚️' };
+      case Location.DESERTED_FREIGHT_YARD:
+        return { name: 'Deserted Freight Yard', emoji: '🚛' };
+      case Location.DESTROYED_PHARMACY:
+        return { name: 'Destroyed Pharmacy', emoji: '💊' };
+      case Location.DILAPIDATED_BUILDING:
+        return { name: 'Dilapidated Building', emoji: '🏚️' };
+      case Location.DISUSED_CAR_PARK:
+        return { name: 'Disused Car Park', emoji: '🅿️' };
+      case Location.DISUSED_SILOS:
+        return { name: 'Disused Silos', emoji: '🏭' };
+      case Location.DISUSED_WAREHOUSE:
+        return { name: 'Disused Warehouse', emoji: '🏭' };
+      case Location.DUKES_VILLA:
+        return { name: "Duke's Villa", emoji: '🏰' };
+      case Location.EQUIPPED_TRENCH:
+        return { name: 'Equipped Trench', emoji: '⚔️' };
+      case Location.FAIRGROUND_STALL:
+        return { name: 'Fairground Stall', emoji: '🎪' };
+      case Location.FAMILY_TOMB:
+        return { name: 'Family Tomb', emoji: '⚰️' };
+      case Location.FAST_FOOD_RESTAURANT:
+        return { name: 'Fast Food Restaurant', emoji: '🍔' };
+      case Location.FRASER_DS_KEBAB_ISH:
+        return { name: "Fraser D's Kebab-ish", emoji: '🥙' };
+      case Location.GARDEN_SHED:
+        return { name: 'Garden Shed', emoji: '🏚️' };
+      case Location.GUNS_N_ZOMBIES_ARMOURY:
+        return { name: "Guns 'n' Zombies Armoury", emoji: '🔫' };
+      case Location.HOME_DEPOT:
+        return { name: 'Home Depot', emoji: '🔨' };
+      case Location.INDIAN_BURIAL_GROUND:
+        return { name: 'Indian Burial Ground', emoji: '🪦' };
+      case Location.LOOTED_SUPERMARKET:
+        return { name: 'Looted Supermarket', emoji: '🏪' };
+      case Location.MACS_ATOMIC_CAFE:
+        return { name: "Mac's Atomic Cafe", emoji: '☕' };
+      case Location.MINI_MARKET:
+        return { name: 'Mini-Market', emoji: '🏪' };
+      case Location.MOTEL_666_DUSK:
+        return { name: 'Motel 666 Dusk', emoji: '🏨' };
+      case Location.MOTORWAY_SERVICES:
+        return { name: 'Motorway Services', emoji: '⛽' };
+      case Location.NUCLEAR_BUNKER:
+        return { name: 'Nuclear Bunker', emoji: '☢️' };
+      case Location.OLD_AERODROME:
+        return { name: 'Old Aerodrome', emoji: '✈️' };
+      case Location.OLD_BICYCLE_HIRE_SHOP:
+        return { name: 'Old Bicycle Hire Shop', emoji: '🚲' };
+      case Location.OLD_FIELD_HOSPITAL:
+        return { name: 'Old Field Hospital', emoji: '🏥' };
+      case Location.OLD_HYDRAULIC_PUMP:
+        return { name: 'Old Hydraulic Pump', emoji: '🔧' };
+      case Location.OLD_POLICE_STATION:
+        return { name: 'Old Police Station', emoji: '🚔' };
+      case Location.ONCE_INHABITED_CAVE:
+        return { name: 'Once-inhabited Cave', emoji: '🕳️' };
+      case Location.PI_KEYA_FURNITURE:
+        return { name: 'PI-KEYA Furniture', emoji: '🪑' };
+      case Location.PLANE_CRASH_SITE:
+        return { name: 'Plane Crash Site', emoji: '✈️' };
+      case Location.POST_OFFICE:
+        return { name: 'Post Office', emoji: '📮' };
+      case Location.SCOTTISH_SMITHS_SUPERSTORE:
+        return { name: "Scottish Smith's Superstore", emoji: '🏪' };
+      case Location.SHADY_BAR:
+        return { name: 'Shady Bar', emoji: '🍺' };
+      case Location.SMALL_HOUSE:
+        return { name: 'Small House', emoji: '🏠' };
+      case Location.SMUGGLERS_CACHE:
+        return { name: "Smugglers' Cache", emoji: '📦' };
+      case Location.STRANGE_CIRCULAR_DEVICE:
+        return { name: 'Strange Circular Device', emoji: '🛸' };
+      case Location.THE_MAYOR_MOBILE:
+        return { name: "The 'Mayor-Mobile'", emoji: '🚗' };
+      case Location.THE_SHATTERED_ILLUSIONS_BAR:
+        return { name: "The 'Shattered Illusions' Bar", emoji: '🍻' };
+      case Location.TOWN_LIBRARY:
+        return { name: 'Town Library', emoji: '📚' };
+      case Location.WAREHOUSE:
+        return { name: 'Warehouse', emoji: '🏭' };
+      case Location.WATER_PROCESSING_PLANT:
+        return { name: 'Water Processing Plant', emoji: '💧' };
+      case Location.WRECKED_CARS:
+        return { name: 'Wrecked Cars', emoji: '🚗' };
+      case Location.WRECKED_TRANSPORTER:
+        return { name: 'Wrecked Transporter', emoji: '🚛' };
       default:
         return { name: 'Unknown', emoji: '❓' };
     }

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { CityService } from '../models/city';
 import { GameEngine } from '../services/gameEngine';
@@ -83,8 +83,11 @@ module.exports = {
         return;
       }
 
-      // Defer reply since we're about to do expensive operations (map generation)
-      await interaction.deferReply();
+      // Send public departure message first
+      await interaction.reply({
+        content: `${player.name} has departed from the city and heads out into the wasteland...`,
+        ephemeral: false
+      });
 
       // Get gate coordinates
       const gateCoords = worldMapService.getGateCoordinates();
@@ -96,52 +99,72 @@ module.exports = {
       const mapImageBuffer = await worldMapService.generateMapView(playerService);
       const mapAttachment = new AttachmentBuilder(mapImageBuffer, { name: 'map.png' });
 
+      // Get location display info
+      const locationDisplay = worldMapService.getLocationDisplay(Location.GATE);
+
       const embed = new EmbedBuilder()
         .setColor('#95e1d3')
-        .setTitle('🚪 Departed from City')
-        .setDescription(`${player.name} leaves the safety of the city through the gate...`)
+        .setTitle(`📍 ${locationDisplay.name}`)
+        .setDescription(`You are at the gate to the wasteland. You can explore in any direction or return to the city.`)
         .addFields([
           { 
-            name: '📍 Previous Location', 
-            value: '🏠 City (Safe Zone)', 
+            name: '📍 Current Location', 
+            value: `${locationDisplay.emoji} ${locationDisplay.name} (${gateCoords.x}, ${gateCoords.y})`, 
             inline: true 
           },
           { 
-            name: '📍 New Location', 
-            value: `🚪 Gate (${gateCoords.x}, ${gateCoords.y})`, 
+            name: '⚡ Action Points', 
+            value: `${player.actionPoints}/${player.maxActionPoints}`, 
             inline: true 
           },
           { 
-            name: '✅ Status', 
-            value: 'Ready to explore', 
+            name: '❤️ Health', 
+            value: `${player.health}/${player.maxHealth}`, 
             inline: true 
           }
         ])
         .addFields([
           {
             name: '🚪 Gate Area',
-            value: 'You are now at the gate to the wasteland. You can explore in any direction using `/move <direction>` or return to the city with `/return`.',
+            value: 'You are at the gate to town. Use `/return` to enter the city (if the gate is open).',
             inline: false
           }
         ])
         .setImage('attachment://map.png')
         .addFields([
           {
-            name: '⚠️ Warning',
-            value: 'You are no longer in the safety of the city. Be careful when searching for items!',
-            inline: false
-          }
-        ])
-        .addFields([
-          {
             name: '🔍 Next Steps',
-            value: '• Use `/move <direction>` to explore (8 directions available)\n• Use `/return` to go back to the city\n• Use `/status` to check your condition',
+            value: '• Use movement buttons below to explore further\n• Use `/status` to check your condition',
             inline: false
           }
         ])
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [embed], files: [mapAttachment] });
+      // Create movement buttons (same as move command)
+      const northButton = new ButtonBuilder()
+        .setCustomId('move_north')
+        .setLabel('⬆️ North')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const southButton = new ButtonBuilder()
+        .setCustomId('move_south')
+        .setLabel('⬇️ South')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const westButton = new ButtonBuilder()
+        .setCustomId('move_west')
+        .setLabel('⬅️ West')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const eastButton = new ButtonBuilder()
+        .setCustomId('move_east')
+        .setLabel('➡️ East')
+        .setStyle(ButtonStyle.Secondary);
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(northButton, westButton, eastButton, southButton);
+
+      // Send followup with movement embed
+      await interaction.followUp({ embeds: [embed], files: [mapAttachment], components: [row], ephemeral: true });
 
     } catch (error) {
       console.error('Error in depart command:', error);

@@ -33,7 +33,8 @@ export class PlayerService {
       const result = await this.db.pool.query(query, [discordId]);
       
       if (result.rows.length > 0) {
-        return this.mapRowToPlayer(result.rows[0]);
+        const player = await this.mapRowToPlayer(result.rows[0]);
+        return player;
       }
       return null;
     } catch (error) {
@@ -341,5 +342,74 @@ export class PlayerService {
       inventory: [], // Will be loaded separately
       lastActionTime: row.last_action_time
     };
+  }
+
+  // New methods using player_conditions table
+  async addCondition(discordId: string, condition: PlayerStatus): Promise<boolean> {
+    try {
+      // Get player first
+      const player = await this.getPlayer(discordId);
+      if (!player) return false;
+
+      // Check if condition already exists
+      const existsQuery = `
+        SELECT COUNT(*) as count 
+        FROM player_conditions 
+        WHERE player_id = $1 AND condition = $2
+      `;
+      const existsResult = await this.db.pool.query(existsQuery, [player.id, condition]);
+      
+      if (parseInt(existsResult.rows[0].count) > 0) {
+        return true; // Already has condition
+      }
+
+      // Add condition
+      const insertQuery = `
+        INSERT INTO player_conditions (player_id, condition)
+        VALUES ($1, $2)
+      `;
+      const result = await this.db.pool.query(insertQuery, [player.id, condition]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error adding player condition:', error);
+      return false;
+    }
+  }
+
+  async removeCondition(discordId: string, condition: PlayerStatus): Promise<boolean> {
+    try {
+      // Get player first
+      const player = await this.getPlayer(discordId);
+      if (!player) return false;
+
+      const query = `
+        DELETE FROM player_conditions 
+        WHERE player_id = $1 AND condition = $2
+      `;
+      const result = await this.db.pool.query(query, [player.id, condition]);
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error removing player condition:', error);
+      return false;
+    }
+  }
+
+  async getPlayerConditions(discordId: string): Promise<PlayerStatus[]> {
+    try {
+      // Get player first
+      const player = await this.getPlayer(discordId);
+      if (!player) return [];
+
+      const query = `
+        SELECT condition 
+        FROM player_conditions 
+        WHERE player_id = $1
+      `;
+      const result = await this.db.pool.query(query, [player.id]);
+      return result.rows.map(row => row.condition as PlayerStatus);
+    } catch (error) {
+      console.error('Error getting player conditions:', error);
+      return [];
+    }
   }
 }
