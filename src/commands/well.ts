@@ -88,8 +88,8 @@ module.exports = {
       return;
     }
 
-    // Check if player has already taken water today
-    const { success: canTake, message, rationsTaken } = await constructionService.takeWaterRation(player.id, cityId);
+    // Check water ration status without taking water
+    const { canTake, message, rationsTaken } = await constructionService.checkWaterRationStatus(player.id, cityId);
 
     const embed = new EmbedBuilder()
       .setColor('#4ecdc4')
@@ -120,7 +120,7 @@ module.exports = {
           .setCustomId('take_water_ration')
           .setLabel('💧 Take Water Ration')
           .setStyle(ButtonStyle.Primary)
-          .setDisabled(wellWater.currentWater <= 0)
+          .setDisabled(wellWater.currentWater <= 0 || !canTake)
       );
 
     if (wellWater.currentWater <= 0) {
