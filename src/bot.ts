@@ -315,6 +315,96 @@ class Die2NiteBot {
               }
             }
           }
+        } else if (customId.startsWith('nav_')) {
+          // Handle navigation buttons
+          const { handleNavigationButton } = require('./handlers/navigationHandler');
+          try {
+            await handleNavigationButton(interaction);
+          } catch (error) {
+            console.error('Error handling navigation button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error with navigation!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId.startsWith('gate_')) {
+          // Handle gate action buttons
+          const { handleNavigationButton } = require('./handlers/navigationHandler');
+          try {
+            await handleNavigationButton(interaction);
+          } catch (error) {
+            console.error('Error handling gate button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error with the gate action!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'return_to_city') {
+          // Handle return to city button
+          const returnCommand = this.commands.get('return');
+          
+          if (returnCommand) {
+            try {
+              // Create a mock command interaction for the return command
+              const mockInteraction = {
+                ...interaction,
+                isChatInputCommand: () => true,
+                isButton: () => false,
+                commandName: 'return',
+                options: {
+                  get: () => null
+                },
+                deferReply: async (options: any = {}) => {
+                  if (!interaction.deferred && !interaction.replied) {
+                    await interaction.deferReply(options);
+                  }
+                },
+                editReply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                },
+                reply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                }
+              };
+              
+              await returnCommand.execute(mockInteraction);
+            } catch (error) {
+              console.error('Error handling return to city button:', error);
+              
+              const errorMessage = {
+                content: 'There was an error returning to the city!',
+                ephemeral: true
+              };
+
+              if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(errorMessage);
+              } else {
+                await interaction.reply(errorMessage);
+              }
+            }
+          }
         }
       } else if (interaction.isStringSelectMenu()) {
         // Handle string select menu interactions
@@ -347,6 +437,60 @@ class Die2NiteBot {
             
             const errorMessage = {
               content: 'There was an error processing the recipe selection!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'bank_deposit_select') {
+          const { handleBankDepositSelect } = require('./handlers/navigationHandler');
+          try {
+            await handleBankDepositSelect(interaction);
+          } catch (error) {
+            console.error('Error handling bank deposit select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the deposit!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'bank_withdraw_select') {
+          const { handleBankWithdrawSelect } = require('./handlers/navigationHandler');
+          try {
+            await handleBankWithdrawSelect(interaction);
+          } catch (error) {
+            console.error('Error handling bank withdraw select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the withdrawal!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'build_project_select') {
+          const { handleBuildProjectSelect } = require('./handlers/navigationHandler');
+          try {
+            await handleBuildProjectSelect(interaction);
+          } catch (error) {
+            console.error('Error handling build project select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the project selection!',
               ephemeral: true
             };
 

@@ -116,6 +116,7 @@ module.exports = {
         description: `You depart from the city and arrive at the gate...`,
         showMovement: true,  // Depart should show movement options since player can now explore
         showScavenge: false, // No scavenging at gate
+        showGateOptions: true, // Show bag and return buttons since player is now at gate
         mapImageBuffer
       });
 

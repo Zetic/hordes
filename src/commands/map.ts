@@ -59,6 +59,7 @@ module.exports = {
         description: `${player.name} surveys the surrounding area...`,
         showMovement: true,  // Map command should show movement buttons for exploration
         showScavenge: true,  // Show scavenge button if available
+        showGateOptions: player.location === Location.GATE, // Show bag and return buttons if at gate
         mapImageBuffer
       });
 
