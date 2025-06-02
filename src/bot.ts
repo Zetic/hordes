@@ -353,6 +353,58 @@ class Die2NiteBot {
               await interaction.reply(errorMessage);
             }
           }
+        } else if (customId === 'return_to_city') {
+          // Handle return to city button
+          const returnCommand = this.commands.get('return');
+          
+          if (returnCommand) {
+            try {
+              // Create a mock command interaction for the return command
+              const mockInteraction = {
+                ...interaction,
+                isChatInputCommand: () => true,
+                isButton: () => false,
+                commandName: 'return',
+                options: {
+                  get: () => null
+                },
+                deferReply: async (options: any = {}) => {
+                  if (!interaction.deferred && !interaction.replied) {
+                    await interaction.deferReply(options);
+                  }
+                },
+                editReply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                },
+                reply: async (content: any) => {
+                  if (interaction.deferred || interaction.replied) {
+                    return await interaction.editReply(content);
+                  } else {
+                    return await interaction.reply(content);
+                  }
+                }
+              };
+              
+              await returnCommand.execute(mockInteraction);
+            } catch (error) {
+              console.error('Error handling return to city button:', error);
+              
+              const errorMessage = {
+                content: 'There was an error returning to the city!',
+                ephemeral: true
+              };
+
+              if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(errorMessage);
+              } else {
+                await interaction.reply(errorMessage);
+              }
+            }
+          }
         }
       } else if (interaction.isStringSelectMenu()) {
         // Handle string select menu interactions

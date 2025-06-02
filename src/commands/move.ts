@@ -217,6 +217,7 @@ module.exports = {
         description: `${player.name} moves ${directionDisplay.toLowerCase()}...`,
         showMovement: true,
         showScavenge: true,
+        showGateOptions: updatedPlayer.location === Location.GATE, // Show bag and return buttons if at gate
         mapImageBuffer,
         previousLocation: {
           name: currentLocationDisplay.name,

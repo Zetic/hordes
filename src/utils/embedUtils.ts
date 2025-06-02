@@ -14,6 +14,7 @@ export interface AreaEmbedOptions {
   description?: string;
   showMovement?: boolean;
   showScavenge?: boolean;
+  showGateOptions?: boolean; // New option for gate-specific buttons
   mapImageBuffer: Buffer;
   // Movement-specific options
   previousLocation?: {
@@ -33,7 +34,7 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
   attachment: AttachmentBuilder;
   components: ActionRowBuilder<ButtonBuilder>[];
 }> {
-  const { player, title, description, showMovement = true, showScavenge = true, mapImageBuffer, previousLocation, actionPointsUsed } = options;
+  const { player, title, description, showMovement = true, showScavenge = true, showGateOptions = false, mapImageBuffer, previousLocation, actionPointsUsed } = options;
   
   // Get location display info
   const locationDisplay = worldMapService.getLocationDisplay(player.location);
@@ -181,6 +182,22 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
     
     const scavengeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(scavengeButton);
     components.push(scavengeRow);
+  }
+
+  // Add gate-specific options if requested and player is at gate
+  if (showGateOptions && player.location === Location.GATE) {
+    const bagButton = new ButtonBuilder()
+      .setCustomId('nav_bag')
+      .setLabel('🎒 Bag')
+      .setStyle(ButtonStyle.Primary);
+    
+    const returnButton = new ButtonBuilder()
+      .setCustomId('return_to_city')
+      .setLabel('🏠 Return to City')
+      .setStyle(ButtonStyle.Success);
+    
+    const gateRow = new ActionRowBuilder<ButtonBuilder>().addComponents(bagButton, returnButton);
+    components.push(gateRow);
   }
 
   return {
