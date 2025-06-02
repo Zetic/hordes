@@ -69,8 +69,8 @@ module.exports = {
       const discordId = interaction.user.id;
       const projectName = interaction.options.get('project')?.value as string;
 
-      // Check if player can perform action
-      const actionCheck = await gameEngine.canPerformAction(discordId);
+      // Check if player can perform action (0 AP required for viewing build menu)
+      const actionCheck = await gameEngine.canPerformAction(discordId, 0);
       if (!actionCheck.canAct) {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')

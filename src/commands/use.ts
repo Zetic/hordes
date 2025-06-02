@@ -3,6 +3,7 @@ import { PlayerService } from '../models/player';
 import { InventoryService } from '../models/inventory';
 import { ItemService } from '../models/item';
 import { ZombieService } from '../services/zombieService';
+import { GameEngine } from '../services/gameEngine';
 import { Location, ItemType } from '../types/game';
 import { ItemEffectService } from '../services/itemEffectService';
 import { EffectType, ItemUseContext, ItemUseResult } from '../types/itemEffects';
@@ -14,6 +15,7 @@ const playerService = new PlayerService();
 const inventoryService = new InventoryService();
 const itemService = new ItemService();
 const zombieService = ZombieService.getInstance();
+const gameEngine = GameEngine.getInstance();
 const effectService = ItemEffectService.getInstance();
 
 module.exports = {
@@ -29,11 +31,20 @@ module.exports = {
 
   async execute(interaction: CommandInteraction) {
     try {
-      // Defer reply to handle long operations
-      await interaction.deferReply();
+      // Defer reply to handle long operations - make it ephemeral for /use
+      await interaction.deferReply({ ephemeral: true });
 
       const discordId = interaction.user.id;
       const itemName = interaction.options.get('item')?.value as string;
+
+      // Check if player can perform action (0 AP required for using items)
+      const actionCheck = await gameEngine.canPerformAction(discordId, 0);
+      if (!actionCheck.canAct) {
+        await interaction.editReply({
+          content: actionCheck.reason || 'Cannot perform this action.'
+        });
+        return;
+      }
 
       // Get player
       const player = await playerService.getPlayer(discordId);

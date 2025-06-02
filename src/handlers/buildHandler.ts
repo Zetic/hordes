@@ -29,8 +29,8 @@ async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
     
     const discordId = interaction.user.id;
 
-    // Check if player can perform action
-    const actionCheck = await gameEngine.canPerformAction(discordId);
+    // Check if player can perform action (1 AP required for building)
+    const actionCheck = await gameEngine.canPerformAction(discordId, 1);
     if (!actionCheck.canAct) {
       const embed = new EmbedBuilder()
         .setColor('#ff6b6b')
@@ -204,6 +204,16 @@ async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
       // Project still in progress
       const progressPercent = Math.round((updatedProject.currentApProgress / updatedProject.totalApRequired) * 100);
       
+      // Get city and check material requirements for live updates
+      const city = await cityService.getDefaultCity();
+      let materialRequirementsText = 'No materials required';
+      if (city) {
+        const materialCheck = await constructionService.checkMaterialRequirements(projectId, city.id);
+        materialRequirementsText = materialCheck.details.map(detail => 
+          `${detail.itemName}: ${detail.available}/${detail.required} ${detail.available >= detail.required ? '✅' : '❌'}`
+        ).join('\n') || 'No materials required';
+      }
+      
       embed = new EmbedBuilder()
         .setColor('#45b7d1')
         .setTitle('🔨 Contribution Added!')
@@ -218,6 +228,11 @@ async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
             name: '⚡ Action Points Used',
             value: '1 AP',
             inline: true
+          },
+          {
+            name: '🔧 Materials Status',
+            value: materialRequirementsText,
+            inline: false
           },
           {
             name: '🏭 Project Category',
@@ -324,8 +339,8 @@ async function handleBuildProject5ApButton(interaction: ButtonInteraction) {
     
     const discordId = interaction.user.id;
 
-    // Check if player can perform action
-    const actionCheck = await gameEngine.canPerformAction(discordId);
+    // Check if player can perform action (5 AP required for 5 AP building)
+    const actionCheck = await gameEngine.canPerformAction(discordId, 5);
     if (!actionCheck.canAct) {
       const embed = new EmbedBuilder()
         .setColor('#ff6b6b')
@@ -503,6 +518,16 @@ async function handleBuildProject5ApButton(interaction: ButtonInteraction) {
       // Project still in progress
       const progressPercent = Math.round((updatedProject.currentApProgress / updatedProject.totalApRequired) * 100);
       
+      // Get city and check material requirements for live updates
+      const city = await cityService.getDefaultCity();
+      let materialRequirementsText = 'No materials required';
+      if (city) {
+        const materialCheck = await constructionService.checkMaterialRequirements(projectId, city.id);
+        materialRequirementsText = materialCheck.details.map(detail => 
+          `${detail.itemName}: ${detail.available}/${detail.required} ${detail.available >= detail.required ? '✅' : '❌'}`
+        ).join('\n') || 'No materials required';
+      }
+      
       embed = new EmbedBuilder()
         .setColor('#45b7d1')
         .setTitle('⚡ Major Contribution Added!')
@@ -517,6 +542,11 @@ async function handleBuildProject5ApButton(interaction: ButtonInteraction) {
             name: '⚡ Action Points Used',
             value: `${apToAdd} AP`,
             inline: true
+          },
+          {
+            name: '🔧 Materials Status',
+            value: materialRequirementsText,
+            inline: false
           },
           {
             name: '🏭 Project Category',

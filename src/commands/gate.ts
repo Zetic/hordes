@@ -109,8 +109,8 @@ module.exports = {
         return;
       }
 
-      // Check if player can perform action
-      const actionCheck = await gameEngine.canPerformAction(discordId);
+      // Check if player can perform action (1 AP required for gate control, but not for status check)
+      const actionCheck = await gameEngine.canPerformAction(discordId, 1);
       if (!actionCheck.canAct) {
         const embed = new EmbedBuilder()
           .setColor('#ff6b6b')
