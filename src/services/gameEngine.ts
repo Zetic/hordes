@@ -594,7 +594,7 @@ export class GameEngine {
     }
   }
 
-  public async canPerformAction(discordId: string): Promise<{ canAct: boolean, reason?: string }> {
+  public async canPerformAction(discordId: string, requiredAp: number = 1): Promise<{ canAct: boolean, reason?: string }> {
     try {
       const gameState = await this.getCurrentGameState();
       if (!gameState) {
@@ -614,8 +614,9 @@ export class GameEngine {
         return { canAct: false, reason: 'You are dead!' };
       }
 
-      if (player.actionPoints <= 0) {
-        return { canAct: false, reason: 'No action points remaining' };
+      // Only check AP if the action actually requires AP
+      if (requiredAp > 0 && player.actionPoints < requiredAp) {
+        return { canAct: false, reason: `You need at least ${requiredAp} action point${requiredAp > 1 ? 's' : ''} to perform this action` };
       }
 
       return { canAct: true };
