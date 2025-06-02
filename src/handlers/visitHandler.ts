@@ -5,6 +5,7 @@ import { ConstructionService } from '../services/construction';
 import { CityService } from '../models/city';
 import { InventoryService } from '../models/inventory';
 import { ItemService } from '../models/item';
+import { BankService } from '../models/bank';
 
 const playerService = new PlayerService();
 const gameEngine = GameEngine.getInstance();
@@ -12,6 +13,7 @@ const constructionService = new ConstructionService();
 const cityService = new CityService();
 const inventoryService = new InventoryService();
 const itemService = new ItemService();
+const bankService = new BankService();
 
 export async function handleTakeWaterRationButton(interaction: ButtonInteraction) {
   try {
@@ -313,6 +315,259 @@ export async function handleObserveHordeButton(interaction: ButtonInteraction) {
     }
   }
 }
+export async function handleCraftRecipeSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const discordId = interaction.user.id;
+    const selectedRecipe = interaction.values[0];
+
+    // Get player
+    const player = await playerService.getPlayer(discordId);
+    if (!player) {
+      await interaction.update({
+        content: '❌ Player not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Get city
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      await interaction.update({
+        content: '❌ No city found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Process recipe like the craft command does
+    const recipeModule = require('../commands/craft');
+    await recipeModule.craftRecipe(interaction, player, city.id, selectedRecipe);
+
+  } catch (error) {
+    console.error('Error handling craft recipe select:', error);
+    
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Error')
+      .setDescription('An error occurred while processing the recipe selection.');
+
+    try {
+      await interaction.update({ embeds: [embed], components: [] });
+    } catch (updateError) {
+      console.error('Failed to update interaction with error message:', updateError);
+    }
+  }
+}
+
+export async function handleConfirmCraftButton(interaction: ButtonInteraction) {
+  try {
+    const customId = interaction.customId;
+    // Format: confirm_craft_{recipe}_{source}
+    const parts = customId.split('_');
+    if (parts.length < 4) {
+      throw new Error('Invalid custom ID format');
+    }
+    
+    const recipe = parts[2];
+    const sourceLocation = parts[3];
+    const discordId = interaction.user.id;
+
+    // Get player
+    const player = await playerService.getPlayer(discordId);
+    if (!player) {
+      await interaction.update({
+        content: '❌ Player not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Get city
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      await interaction.update({
+        content: '❌ No city found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Define recipe mappings
+    const RECIPES = {
+      'rotten_log_to_twisted_plank': {
+        input: 'Rotten Log',
+        output: 'Twisted Plank'
+      },
+      'scrap_metal_to_wrought_metal': {
+        input: 'Scrap Metal',
+        output: 'Wrought Metal'
+      }
+    };
+
+    const recipeInfo = RECIPES[recipe as keyof typeof RECIPES];
+    if (!recipeInfo) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Invalid Recipe')
+        .setDescription('The selected recipe is not valid.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Check action points
+    if (player.actionPoints < 3) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Insufficient Action Points')
+        .setDescription('You need at least 3 Action Points to craft.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Get input and output items
+    const inputItem = await itemService.getItemByName(recipeInfo.input);
+    const outputItem = await itemService.getItemByName(recipeInfo.output);
+    
+    if (!inputItem || !outputItem) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Recipe Error')
+        .setDescription('One or more recipe items not found in database.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Remove input item from source (inventory or bank)
+    let removeSuccess = false;
+    if (sourceLocation === 'inventory') {
+      removeSuccess = await inventoryService.removeItemFromInventory(player.id, inputItem.id, 1);
+    } else if (sourceLocation === 'bank') {
+      removeSuccess = await bankService.withdrawItem(city.id, inputItem.id, 1);
+    }
+
+    if (!removeSuccess) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Failed to Remove Materials')
+        .setDescription(`Failed to remove ${recipeInfo.input} from ${sourceLocation}.`);
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Spend action points
+    const apSuccess = await playerService.spendActionPoints(discordId, 3);
+    if (!apSuccess) {
+      // Refund the input item if AP spending failed
+      if (sourceLocation === 'inventory') {
+        await inventoryService.addItemToInventory(player.id, inputItem.id, 1);
+      } else if (sourceLocation === 'bank') {
+        await bankService.depositItem(city.id, inputItem.id, 1);
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Failed to Spend Action Points')
+        .setDescription('Failed to spend action points. Please try again.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Try to add output item to inventory first, then bank if inventory is full
+    let outputLocation = 'inventory';
+    let addSuccess = await inventoryService.addItemToInventory(player.id, outputItem.id, 1);
+    
+    if (!addSuccess) {
+      // Try to add to bank instead
+      addSuccess = await bankService.depositItem(city.id, outputItem.id, 1);
+      outputLocation = 'bank';
+    }
+
+    if (!addSuccess) {
+      // Refund everything if both failed
+      await playerService.updatePlayerActionPoints(discordId, player.actionPoints + 3);
+      if (sourceLocation === 'inventory') {
+        await inventoryService.addItemToInventory(player.id, inputItem.id, 1);
+      } else if (sourceLocation === 'bank') {
+        await bankService.depositItem(city.id, inputItem.id, 1);
+      }
+      
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Failed to Store Output')
+        .setDescription('Failed to add the crafted item to inventory or bank. Both are full!');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Success!
+    const embed = new EmbedBuilder()
+      .setColor('#00ff00')
+      .setTitle('🔨 Item Crafted Successfully!')
+      .setDescription(`You have successfully converted **${recipeInfo.input}** into **${recipeInfo.output}** at the Workshop.`)
+      .addFields([
+        {
+          name: '📦 Conversion',
+          value: `${recipeInfo.input} → ${recipeInfo.output}`,
+          inline: true
+        },
+        {
+          name: '📍 Materials From',
+          value: sourceLocation === 'inventory' ? '🎒 Your Inventory' : '🏦 Town Bank',
+          inline: true
+        },
+        {
+          name: '📍 Output To',
+          value: outputLocation === 'inventory' ? '🎒 Your Inventory' : '🏦 Town Bank',
+          inline: true
+        },
+        {
+          name: '⚡ Action Points Used',
+          value: '3 AP',
+          inline: true
+        }
+      ]);
+
+    await interaction.update({ embeds: [embed], components: [] });
+
+    // Send public crafting message
+    const publicEmbed = new EmbedBuilder()
+      .setColor('#d4af37')
+      .setTitle('🔨 Workshop Activity')
+      .setDescription(`${player.name} crafted **${recipeInfo.output}** at the Workshop.`);
+
+    try {
+      await interaction.followUp({ embeds: [publicEmbed] });
+    } catch (error) {
+      console.error('Failed to send public crafting message:', error);
+    }
+
+  } catch (error) {
+    console.error('Error handling confirm craft button:', error);
+    
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Error')
+      .setDescription('An error occurred while crafting the item.');
+
+    try {
+      await interaction.update({ embeds: [embed], components: [] });
+    } catch (updateError) {
+      console.error('Failed to update interaction with error message:', updateError);
+    }
+  }
+}
+
 export async function handleCraftRecipeButton(interaction: ButtonInteraction) {
   try {
     const customId = interaction.customId;
