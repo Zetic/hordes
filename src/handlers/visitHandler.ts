@@ -145,9 +145,9 @@ export async function handleWorkshopRecipeSelect(interaction: StringSelectMenuIn
       };
     } else if (selectedRecipe === 'scrap_metal_to_wrought_metal') {
       inputItemName = 'Scrap Metal';
-      outputItemName = 'Wrought Metal';
+      outputItemName = 'Wrought Iron';
       recipeDetails = {
-        name: 'Scrap Metal → Wrought Metal',
+        name: 'Scrap Metal → Wrought Iron',
         description: 'Process scrap metal into sturdy wrought metal',
         input: inputItemName,
         output: outputItemName
@@ -343,8 +343,8 @@ export async function handleCraftRecipeSelect(interaction: StringSelectMenuInter
     }
 
     // Process recipe like the craft command does
-    const recipeModule = require('../commands/craft');
-    await recipeModule.craftRecipe(interaction, player, city.id, selectedRecipe);
+    const craftCommand = require('../commands/craft');
+    await craftCommand.craftRecipe(interaction, player, city.id, selectedRecipe);
 
   } catch (error) {
     console.error('Error handling craft recipe select:', error);
@@ -405,7 +405,7 @@ export async function handleConfirmCraftButton(interaction: ButtonInteraction) {
       },
       'scrap_metal_to_wrought_metal': {
         input: 'Scrap Metal',
-        output: 'Wrought Metal'
+        output: 'Wrought Iron'
       }
     };
 
@@ -607,7 +607,7 @@ export async function handleCraftRecipeButton(interaction: ButtonInteraction) {
       outputItemName = 'Twisted Plank';
     } else if (selectedRecipe === 'scrap_metal_to_wrought_metal') {
       inputItemName = 'Scrap Metal';
-      outputItemName = 'Wrought Metal';
+      outputItemName = 'Wrought Iron';
     } else {
       const embed = new EmbedBuilder()
         .setColor('#ff6b6b')
