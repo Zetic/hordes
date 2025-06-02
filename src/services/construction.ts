@@ -385,6 +385,49 @@ export class ConstructionService {
     }
   }
 
+  async checkWaterRationStatus(playerId: string, cityId: string): Promise<{canTake: boolean, message: string, rationsTaken: number}> {
+    try {
+      // Check well water availability
+      const wellQuery = 'SELECT current_water FROM well_water WHERE city_id = $1';
+      const wellResult = await this.db.pool.query(wellQuery, [cityId]);
+      
+      if (wellResult.rows.length === 0 || wellResult.rows[0].current_water <= 0) {
+        return { canTake: false, message: 'No water available in the well', rationsTaken: 0 };
+      }
+      
+      // Check daily ration limit
+      const today = new Date().toISOString().split('T')[0];
+      const rationQuery = `
+        SELECT rations_taken FROM daily_water_rations 
+        WHERE player_id = $1 AND city_id = $2 AND date = $3
+      `;
+      const rationResult = await this.db.pool.query(rationQuery, [playerId, cityId, today]);
+      
+      const currentRations = rationResult.rows.length > 0 ? rationResult.rows[0].rations_taken : 0;
+      
+      // Check if pump exists to determine max rations per day
+      const pumpQuery = `
+        SELECT COUNT(*) as pump_count FROM buildings 
+        WHERE city_id = $1 AND type = 'pump'
+      `;
+      const pumpResult = await this.db.pool.query(pumpQuery, [cityId]);
+      const maxRationsPerDay = pumpResult.rows[0].pump_count > 0 ? 2 : 1;
+      
+      if (currentRations >= maxRationsPerDay) {
+        return { 
+          canTake: false, 
+          message: `You have already taken your ${maxRationsPerDay} water ration${maxRationsPerDay > 1 ? 's' : ''} for today`, 
+          rationsTaken: currentRations 
+        };
+      }
+      
+      return { canTake: true, message: 'You can take a water ration', rationsTaken: currentRations };
+    } catch (error) {
+      console.error('Error checking water ration status:', error);
+      return { canTake: false, message: 'Failed to check water ration status', rationsTaken: 0 };
+    }
+  }
+
   async takeWaterRation(playerId: string, cityId: string): Promise<{success: boolean, message: string, rationsTaken: number}> {
     try {
       const client = await this.db.pool.connect();
