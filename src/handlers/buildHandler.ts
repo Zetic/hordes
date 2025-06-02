@@ -167,7 +167,7 @@ async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
       if (updatedProject.isVisitable) {
         embed.addFields([{
           name: '🚪 New Building Available',
-          value: `You can now visit the ${updatedProject.projectName} using the \`/visit\` command!`,
+          value: `The ${updatedProject.projectName} is now available for use!`,
           inline: false
         }]);
       }
@@ -268,6 +268,37 @@ async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
       }]);
 
       await interaction.update({ embeds: [embed], components: [row] });
+
+      // Send milestone announcements
+      const prevProgress = updatedProject.currentApProgress - 1;
+      const isFirstContribution = prevProgress === 0;
+      const prevPercent = Math.round((prevProgress / updatedProject.totalApRequired) * 100);
+      const currentPercent = Math.round((updatedProject.currentApProgress / updatedProject.totalApRequired) * 100);
+      const hit50Percent = prevPercent < 50 && currentPercent >= 50;
+
+      if (isFirstContribution) {
+        const firstContribEmbed = new EmbedBuilder()
+          .setColor('#4ecdc4')
+          .setTitle('🏁 Construction Started!')
+          .setDescription(`${player.name} laid the first foundation for the **${updatedProject.projectName}** project!`);
+        
+        try {
+          await interaction.followUp({ embeds: [firstContribEmbed] });
+        } catch (error) {
+          console.error('Failed to send first contribution announcement:', error);
+        }
+      } else if (hit50Percent) {
+        const halfwayEmbed = new EmbedBuilder()
+          .setColor('#f39c12')
+          .setTitle('🎯 Halfway There!')
+          .setDescription(`The **${updatedProject.projectName}** project has reached ${currentPercent}% completion! Keep building!`);
+        
+        try {
+          await interaction.followUp({ embeds: [halfwayEmbed] });
+        } catch (error) {
+          console.error('Failed to send 50% completion announcement:', error);
+        }
+      }
     }
 
   } catch (error) {
@@ -435,7 +466,7 @@ async function handleBuildProject5ApButton(interaction: ButtonInteraction) {
       if (updatedProject.isVisitable) {
         embed.addFields([{
           name: '🚪 New Building Available',
-          value: `You can now visit the ${updatedProject.projectName} using the \`/visit\` command!`,
+          value: `The ${updatedProject.projectName} is now available for use!`,
           inline: false
         }]);
       }
@@ -536,6 +567,37 @@ async function handleBuildProject5ApButton(interaction: ButtonInteraction) {
       }]);
 
       await interaction.update({ embeds: [embed], components: [row] });
+
+      // Send milestone announcements
+      const prevProgress = updatedProject.currentApProgress - apToAdd;
+      const isFirstContribution = prevProgress === 0;
+      const prevPercent = Math.round((prevProgress / updatedProject.totalApRequired) * 100);
+      const currentPercent = Math.round((updatedProject.currentApProgress / updatedProject.totalApRequired) * 100);
+      const hit50Percent = prevPercent < 50 && currentPercent >= 50;
+
+      if (isFirstContribution) {
+        const firstContribEmbed = new EmbedBuilder()
+          .setColor('#4ecdc4')
+          .setTitle('🏁 Construction Started!')
+          .setDescription(`${player.name} laid the first foundation for the **${updatedProject.projectName}** project!`);
+        
+        try {
+          await interaction.followUp({ embeds: [firstContribEmbed] });
+        } catch (error) {
+          console.error('Failed to send first contribution announcement:', error);
+        }
+      } else if (hit50Percent) {
+        const halfwayEmbed = new EmbedBuilder()
+          .setColor('#f39c12')
+          .setTitle('🎯 Halfway There!')
+          .setDescription(`The **${updatedProject.projectName}** project has reached ${currentPercent}% completion! Keep building!`);
+        
+        try {
+          await interaction.followUp({ embeds: [halfwayEmbed] });
+        } catch (error) {
+          console.error('Failed to send 50% completion announcement:', error);
+        }
+      }
     }
 
   } catch (error) {

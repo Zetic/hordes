@@ -41,12 +41,30 @@ export async function handleTakeWaterRationButton(interaction: ButtonInteraction
       return;
     }
 
+    // Check if player's inventory is full first
+    const isEncumbered = await inventoryService.isPlayerEncumbered(player.id);
+    if (isEncumbered) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Inventory Full')
+        .setDescription('Your inventory is full. You cannot take a water ration right now.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
     // Take water ration
     const result = await constructionService.takeWaterRation(player.id, city.id);
     
     let embed: EmbedBuilder;
     
     if (result.success) {
+      // Actually give the player a water ration item
+      const waterRationItem = await itemService.getItemByName('Water Ration');
+      if (waterRationItem) {
+        await inventoryService.addItemToInventory(player.id, waterRationItem.id, 1);
+      }
+
       embed = new EmbedBuilder()
         .setColor('#4ecdc4')
         .setTitle('💧 Water Ration Taken!')
@@ -55,6 +73,11 @@ export async function handleTakeWaterRationButton(interaction: ButtonInteraction
           {
             name: '📅 Daily Status',
             value: `You have now taken ${result.rationsTaken} water ration(s) today`,
+            inline: false
+          },
+          {
+            name: '🎒 Inventory',
+            value: 'A water ration has been added to your inventory',
             inline: false
           }
         ]);

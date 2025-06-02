@@ -241,21 +241,18 @@ export class GameEngine {
       const hordeSize = this.gameState!.hordeSize;
       
       // Calculate defense from buildings (same logic as in town.ts)
-      const buildingCounts = {
-        watchtower: 0,
-        wall: 0,
-        workshop: 0,
-        well: 0,
-        hospital: 0
-      };
+      let cityDefense = 0;
 
       city.buildings.forEach(building => {
-        if (buildingCounts.hasOwnProperty(building.type)) {
-          buildingCounts[building.type as keyof typeof buildingCounts]++;
+        // Add defense bonus from each building
+        if (building.defenseBonus) {
+          cityDefense += building.defenseBonus;
+        } else {
+          // Legacy building defense calculation for old buildings
+          if (building.type === 'watchtower') cityDefense += 2;
+          if (building.type === 'wall') cityDefense += 1;
         }
       });
-
-      const cityDefense = buildingCounts.watchtower * 2 + buildingCounts.wall * 1;
 
       console.log(`⚔️ Horde Attack - Day ${this.gameState!.currentDay}`);
       console.log(`🧟‍♂️ Horde Size: ${hordeSize}, City Defense: ${cityDefense}`);

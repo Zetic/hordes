@@ -17,7 +17,52 @@ module.exports = {
       option.setName('project')
         .setDescription('The construction project to work on')
         .setRequired(false)
+        .setAutocomplete(true)
     ),
+
+  async autocomplete(interaction: any) {
+    try {
+      const focusedOption = interaction.options.getFocused(true);
+      
+      if (focusedOption.name === 'project') {
+        const discordId = interaction.user.id;
+        
+        // Get player
+        const player = await playerService.getPlayer(discordId);
+        if (!player || player.location !== 'city') {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Get city
+        const city = await cityService.getDefaultCity();
+        if (!city) {
+          await interaction.respond([]);
+          return;
+        }
+
+        // Get available construction projects
+        const projects = await constructionService.getAvailableProjects(city.id);
+        
+        // Filter projects based on what user is typing
+        const filtered = projects
+          .filter(project => 
+            project.projectName.toLowerCase().includes(focusedOption.value.toLowerCase()) ||
+            project.projectType.toLowerCase().includes(focusedOption.value.toLowerCase())
+          )
+          .slice(0, 25) // Discord limits to 25 choices
+          .map(project => ({
+            name: `${project.projectName} (${project.currentApProgress}/${project.totalApRequired} AP)`,
+            value: project.projectName
+          }));
+
+        await interaction.respond(filtered);
+      }
+    } catch (error) {
+      console.error('Error in build command autocomplete:', error);
+      await interaction.respond([]);
+    }
+  },
     
   async execute(interaction: CommandInteraction) {
     try {
@@ -162,15 +207,29 @@ module.exports = {
         }]);
       }
 
-      // Create build button
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
+      // Create build buttons
+      const row = new ActionRowBuilder<ButtonBuilder>();
+      
+      // Always add the 1 AP button
+      row.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`build_project_${project.id}`)
+          .setLabel('🔨 Add 1 AP to Project')
+          .setStyle(ButtonStyle.Primary)
+          .setDisabled(player.actionPoints < 1)
+      );
+
+      // Add 5 AP button if player has enough AP and project needs at least 5 AP
+      const remainingAp = project.totalApRequired - project.currentApProgress;
+      if (remainingAp >= 5) {
+        row.addComponents(
           new ButtonBuilder()
-            .setCustomId(`build_project_${project.id}`)
-            .setLabel('🔨 Add 1 AP to Project')
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(player.actionPoints < 1)
+            .setCustomId(`build_project_5ap_${project.id}`)
+            .setLabel('⚡ Add 5 AP to Project')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(player.actionPoints < 5)
         );
+      }
 
       if (player.actionPoints < 1) {
         embed.addFields([{
@@ -179,9 +238,13 @@ module.exports = {
           inline: false
         }]);
       } else {
+        const buildOptions = remainingAp >= 5 && player.actionPoints >= 5 
+          ? 'Press the buttons below to contribute 1 AP or 5 AP to this construction project.'
+          : 'Press the button below to contribute 1 AP to this construction project.';
+        
         embed.addFields([{
           name: '🔨 Ready to Build',
-          value: 'Press the button below to contribute 1 AP to this construction project.',
+          value: buildOptions,
           inline: false
         }]);
       }
