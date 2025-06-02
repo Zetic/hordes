@@ -34,7 +34,9 @@ module.exports = {
           { name: 'return', value: 'return' },
           { name: 'spawn', value: 'spawn' },
           { name: 'revealmap', value: 'revealmap' },
-          { name: 'fillbank', value: 'fillbank' }
+          { name: 'fillbank', value: 'fillbank' },
+          { name: 'build', value: 'build' },
+          { name: 'buildall', value: 'buildall' }
         )
     )
     .addStringOption(option =>
@@ -56,6 +58,11 @@ module.exports = {
       option.setName('itemname')
         .setDescription('Item name (required for spawn command)')
         .setRequired(false)
+    )
+    .addStringOption(option =>
+      option.setName('projectname')
+        .setDescription('Project name (required for build command)')
+        .setRequired(false)
     ),
     
   async execute(interaction: CommandInteraction) {
@@ -65,6 +72,7 @@ module.exports = {
       const targetUser = interaction.options.get('user')?.user;
       const value = interaction.options.get('value')?.value as number;
       const itemName = interaction.options.get('itemname')?.value as string;
+      const projectName = interaction.options.get('projectname')?.value as string;
 
       // Validate admin password
       const adminPassword = process.env.ADMIN_PASSWORD;
@@ -119,6 +127,12 @@ module.exports = {
           break;
         case 'fillbank':
           await handleFillBankCommand(interaction);
+          break;
+        case 'build':
+          await handleBuildCommand(interaction, projectName);
+          break;
+        case 'buildall':
+          await handleBuildAllCommand(interaction);
           break;
         default:
           const embed = new EmbedBuilder()
@@ -550,6 +564,149 @@ async function handleFillBankCommand(interaction: CommandInteraction) {
       .setColor('#ff6b6b')
       .setTitle('❌ Fill Failed')
       .setDescription('Failed to fill bank. Check the server logs for details.')
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+async function handleBuildCommand(interaction: CommandInteraction, projectName: string | undefined) {
+  if (!projectName) {
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Project Name Required')
+      .setDescription('Please specify a project name to complete.');
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+
+  try {
+    // Get the default city
+    const cityService = new (require('../models/city')).CityService();
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ City Not Found')
+        .setDescription('Default city not found.');
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    // Get construction service
+    const constructionService = new (require('../services/construction')).ConstructionService();
+    
+    // Get available projects
+    const projects = await constructionService.getAvailableProjects(city.id);
+    
+    // Find the project
+    const project = projects.find((p: any) => 
+      p.projectName.toLowerCase().includes(projectName.toLowerCase()) ||
+      p.projectType.toLowerCase() === projectName.toLowerCase()
+    );
+
+    if (!project) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Project Not Found')
+        .setDescription(`Construction project "${projectName}" not found.`);
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    if (project.isCompleted) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Project Already Completed')
+        .setDescription(`The ${project.projectName} project is already completed.`);
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    // Complete the project by adding all remaining AP
+    const remainingAp = project.totalApRequired - project.currentApProgress;
+    const success = await constructionService.addApToProject(project.id, remainingAp);
+
+    const embed = new EmbedBuilder()
+      .setColor(success ? '#4ecdc4' : '#ff6b6b')
+      .setTitle(success ? '🏗️ Project Completed' : '❌ Build Failed')
+      .setDescription(success 
+        ? `The ${project.projectName} project has been instantly completed.`
+        : `Failed to complete ${project.projectName}. Check the server logs for details.`
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error) {
+    console.error('Error in admin build command:', error);
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Build Failed')
+      .setDescription('Failed to complete project. Check the server logs for details.')
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+
+async function handleBuildAllCommand(interaction: CommandInteraction) {
+  try {
+    // Get the default city
+    const cityService = new (require('../models/city')).CityService();
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ City Not Found')
+        .setDescription('Default city not found.');
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    // Get construction service
+    const constructionService = new (require('../services/construction')).ConstructionService();
+    
+    // Get available projects
+    const projects = await constructionService.getAvailableProjects(city.id);
+    
+    if (projects.length === 0) {
+      const embed = new EmbedBuilder()
+        .setColor('#4ecdc4')
+        .setTitle('✅ No Projects to Complete')
+        .setDescription('All construction projects are already completed.');
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    let completedCount = 0;
+    for (const project of projects) {
+      if (!project.isCompleted) {
+        const remainingAp = project.totalApRequired - project.currentApProgress;
+        const success = await constructionService.addApToProject(project.id, remainingAp);
+        if (success) {
+          completedCount++;
+        }
+      }
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#4ecdc4')
+      .setTitle('🏗️ All Projects Completed')
+      .setDescription(`Successfully completed ${completedCount} construction project${completedCount !== 1 ? 's' : ''}.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error) {
+    console.error('Error in admin buildall command:', error);
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('❌ Build All Failed')
+      .setDescription('Failed to complete all projects. Check the server logs for details.')
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
