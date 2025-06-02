@@ -334,6 +334,25 @@ class Die2NiteBot {
               await interaction.reply(errorMessage);
             }
           }
+        } else if (customId.startsWith('gate_')) {
+          // Handle gate action buttons
+          const { handleNavigationButton } = require('./handlers/navigationHandler');
+          try {
+            await handleNavigationButton(interaction);
+          } catch (error) {
+            console.error('Error handling gate button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error with the gate action!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         }
       } else if (interaction.isStringSelectMenu()) {
         // Handle string select menu interactions
@@ -402,6 +421,24 @@ class Die2NiteBot {
             
             const errorMessage = {
               content: 'There was an error processing the withdrawal!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'build_project_select') {
+          const { handleBuildProjectSelect } = require('./handlers/navigationHandler');
+          try {
+            await handleBuildProjectSelect(interaction);
+          } catch (error) {
+            console.error('Error handling build project select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the project selection!',
               ephemeral: true
             };
 
