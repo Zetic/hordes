@@ -245,6 +245,24 @@ class Die2NiteBot {
               await interaction.reply(errorMessage);
             }
           }
+        } else if (customId.startsWith('confirm_craft_')) {
+          const { handleConfirmCraftButton } = require('./handlers/visitHandler');
+          try {
+            await handleConfirmCraftButton(interaction);
+          } catch (error) {
+            console.error('Error handling confirm craft button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error confirming the crafting request!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         } else if (customId === 'scavenge_area') {
           // Handle scavenge button
           const scavengeCommand = this.commands.get('scavenge');
@@ -308,6 +326,24 @@ class Die2NiteBot {
             await handleWorkshopRecipeSelect(interaction);
           } catch (error) {
             console.error('Error handling workshop recipe select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the recipe selection!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'craft_recipe_select') {
+          const { handleCraftRecipeSelect } = require('./handlers/visitHandler');
+          try {
+            await handleCraftRecipeSelect(interaction);
+          } catch (error) {
+            console.error('Error handling craft recipe select:', error);
             
             const errorMessage = {
               content: 'There was an error processing the recipe selection!',
