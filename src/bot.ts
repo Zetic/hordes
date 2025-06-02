@@ -315,6 +315,25 @@ class Die2NiteBot {
               }
             }
           }
+        } else if (customId.startsWith('nav_')) {
+          // Handle navigation buttons
+          const { handleNavigationButton } = require('./handlers/navigationHandler');
+          try {
+            await handleNavigationButton(interaction);
+          } catch (error) {
+            console.error('Error handling navigation button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error with navigation!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
         }
       } else if (interaction.isStringSelectMenu()) {
         // Handle string select menu interactions
@@ -347,6 +366,42 @@ class Die2NiteBot {
             
             const errorMessage = {
               content: 'There was an error processing the recipe selection!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'bank_deposit_select') {
+          const { handleBankDepositSelect } = require('./handlers/navigationHandler');
+          try {
+            await handleBankDepositSelect(interaction);
+          } catch (error) {
+            console.error('Error handling bank deposit select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the deposit!',
+              ephemeral: true
+            };
+
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(errorMessage);
+            } else {
+              await interaction.reply(errorMessage);
+            }
+          }
+        } else if (customId === 'bank_withdraw_select') {
+          const { handleBankWithdrawSelect } = require('./handlers/navigationHandler');
+          try {
+            await handleBankWithdrawSelect(interaction);
+          } catch (error) {
+            console.error('Error handling bank withdraw select:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the withdrawal!',
               ephemeral: true
             };
 
