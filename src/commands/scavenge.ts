@@ -6,6 +6,7 @@ import { AreaInventoryService } from '../models/areaInventory';
 import { ScavengingService } from '../services/scavenging';
 import { ZombieService } from '../services/zombieService';
 import { Location, PlayerStatus } from '../types/game';
+import { safeInteractionReply, handleDiscordError } from '../utils/discordErrorHandler';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -166,16 +167,14 @@ module.exports = {
     } catch (error) {
       console.error('Error in scavenge command:', error);
       
-      // Check if reply was already deferred
-      if (interaction.deferred) {
-        await interaction.editReply({
-          content: '❌ An error occurred while scavenging.'
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while scavenging.',
-          ephemeral: true
-        });
+      const errorMessage = {
+        content: '❌ An error occurred while scavenging.',
+        ephemeral: true
+      };
+      
+      const replied = await safeInteractionReply(interaction, errorMessage);
+      if (!replied) {
+        handleDiscordError(error, 'scavenge command');
       }
     }
   }

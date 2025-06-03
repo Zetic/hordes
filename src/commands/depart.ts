@@ -6,6 +6,7 @@ import { InventoryService } from '../models/inventory';
 import { WorldMapService } from '../services/worldMap';
 import { Location, PlayerStatus } from '../types/game';
 import { createAreaEmbed } from '../utils/embedUtils';
+import { safeInteractionReply, handleDiscordError } from '../utils/discordErrorHandler';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -143,16 +144,14 @@ module.exports = {
     } catch (error) {
       console.error('Error in depart command:', error);
       
-      // Check if reply was already deferred
-      if (interaction.deferred) {
-        await interaction.editReply({
-          content: '❌ An error occurred while departing from the city.'
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while departing from the city.',
-          ephemeral: true
-        });
+      const errorMessage = {
+        content: '❌ An error occurred while departing from the city.',
+        ephemeral: true
+      };
+      
+      const replied = await safeInteractionReply(interaction, errorMessage);
+      if (!replied) {
+        handleDiscordError(error, 'depart command');
       }
     }
   }

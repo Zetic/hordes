@@ -3,6 +3,7 @@ import { CityService } from '../models/city';
 import { WorldMapService } from '../services/worldMap';
 import { ZombieService } from '../services/zombieService';
 import { GameEngine } from '../services/gameEngine';
+import { safeInteractionReply, handleDiscordError } from '../utils/discordErrorHandler';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -112,10 +113,16 @@ module.exports = {
       }
     } catch (error) {
       console.error('Error in create command:', error);
-      await interaction.reply({
+      
+      const errorMessage = {
         content: '❌ An error occurred while creating the town.',
         ephemeral: true
-      });
+      };
+      
+      const replied = await safeInteractionReply(interaction, errorMessage);
+      if (!replied) {
+        handleDiscordError(error, 'create command');
+      }
     }
   }
 };

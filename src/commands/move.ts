@@ -8,6 +8,7 @@ import { ZoneContestService } from '../services/zoneContest';
 import { ZombieService } from '../services/zombieService';
 import { Location, Direction, PlayerStatus, isWoundType } from '../types/game';
 import { createAreaEmbed } from '../utils/embedUtils';
+import { safeInteractionReply, handleDiscordError } from '../utils/discordErrorHandler';
 
 // IMPORTANT: No emojis must be added to any part of a command
 
@@ -274,16 +275,14 @@ module.exports = {
     } catch (error) {
       console.error('Error in move command:', error);
       
-      // Check if reply was already deferred
-      if (interaction.deferred) {
-        await interaction.editReply({
-          content: '❌ An error occurred while moving.'
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while moving.',
-          ephemeral: true
-        });
+      const errorMessage = {
+        content: '❌ An error occurred while moving.',
+        ephemeral: true
+      };
+      
+      const replied = await safeInteractionReply(interaction, errorMessage);
+      if (!replied) {
+        handleDiscordError(error, 'move command');
       }
     }
   }
