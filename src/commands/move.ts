@@ -211,13 +211,17 @@ module.exports = {
       const mapImageBuffer = await worldMapService.generateMapView(playerService);
       
       // Create standardized area embed with movement information
+      // Check if player is at town coordinates (center of map) or at gate
+      const isAtTownCoordinates = (updatedPlayer.x === 6 && updatedPlayer.y === 6);
+      const showReturnButton = updatedPlayer.location === Location.GATE || isAtTownCoordinates;
+      
       const { embed, attachment, components } = await createAreaEmbed({
         player: updatedPlayer,
         title: `🚶 Movement: ${directionDisplay}`,
         description: `${player.name} moves ${directionDisplay.toLowerCase()}...`,
         showMovement: true,
         showScavenge: true,
-        showGateOptions: updatedPlayer.location === Location.GATE, // Show bag and return buttons if at gate
+        showGateOptions: showReturnButton, // Show return button if at gate or town coordinates
         mapImageBuffer,
         previousLocation: {
           name: currentLocationDisplay.name,
