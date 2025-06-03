@@ -184,20 +184,31 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
     components.push(scavengeRow);
   }
 
-  // Add gate-specific options if requested and player is at gate
-  if (showGateOptions && player.location === Location.GATE) {
+  // Add navigation buttons for outside town (bag, status, and return when over town)
+  if (player.location !== Location.CITY && player.location !== Location.HOME) {
     const bagButton = new ButtonBuilder()
       .setCustomId('nav_bag')
       .setLabel('🎒 Bag')
       .setStyle(ButtonStyle.Primary);
     
-    const returnButton = new ButtonBuilder()
-      .setCustomId('return_to_city')
-      .setLabel('🏠 Return to City')
-      .setStyle(ButtonStyle.Success);
+    const statusButton = new ButtonBuilder()
+      .setCustomId('nav_status')
+      .setLabel('📊 Status')
+      .setStyle(ButtonStyle.Primary);
     
-    const gateRow = new ActionRowBuilder<ButtonBuilder>().addComponents(bagButton, returnButton);
-    components.push(gateRow);
+    const outsideRow = new ActionRowBuilder<ButtonBuilder>().addComponents(bagButton, statusButton);
+    
+    // Add return button when at gate or when over town (for movement messages)
+    if (player.location === Location.GATE || showGateOptions) {
+      const returnButton = new ButtonBuilder()
+        .setCustomId('return_to_city')
+        .setLabel('🏠 Return to City')
+        .setStyle(ButtonStyle.Success);
+      
+      outsideRow.addComponents(returnButton);
+    }
+    
+    components.push(outsideRow);
   }
 
   return {

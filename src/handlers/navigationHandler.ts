@@ -404,8 +404,7 @@ async function handleBuildNavigation(interaction: ButtonInteraction, player: any
       .setTimestamp();
 
     // Get available construction projects
-    const constructionService = require('../services/construction').ConstructionService;
-    const projects = await constructionService.prototype.getAvailableProjects.call(new constructionService(), city.id);
+    const projects = await constructionService.getAvailableProjects(city.id);
 
     const components: any[] = [];
 
@@ -1463,8 +1462,7 @@ export async function handleBuildProjectSelect(interaction: StringSelectMenuInte
     }
 
     // Get project details
-    const constructionService = require('../services/construction').ConstructionService;
-    const project = await constructionService.prototype.getProjectById.call(new constructionService(), projectId);
+    const project = await constructionService.getProject(projectId);
     
     if (!project) {
       await interaction.update({
@@ -1598,8 +1596,7 @@ async function handleBuildProjectContribution(interaction: ButtonInteraction, pl
     }
 
     // Get project details
-    const constructionService = require('../services/construction').ConstructionService;
-    const project = await constructionService.prototype.getProjectById.call(new constructionService(), projectId);
+    const project = await constructionService.getProject(projectId);
     
     if (!project) {
       await interaction.update({
@@ -1621,11 +1618,11 @@ async function handleBuildProjectContribution(interaction: ButtonInteraction, pl
     }
 
     // Contribute AP to the project
-    const contributionResult = await constructionService.prototype.contributeToProject.call(new constructionService(), projectId, player.id, apAmount);
+    const contributionResult = await constructionService.addApToProject(projectId, apAmount);
     
-    if (!contributionResult.success) {
+    if (!contributionResult) {
       await interaction.update({
-        content: `❌ ${contributionResult.message || 'Failed to contribute to project.'}`,
+        content: `❌ Failed to contribute to project.`,
         embeds: [],
         components: []
       });
@@ -1636,7 +1633,16 @@ async function handleBuildProjectContribution(interaction: ButtonInteraction, pl
     await playerService.updatePlayerActionPoints(discordId, player.actionPoints - apAmount);
 
     // Get updated project details
-    const updatedProject = await constructionService.prototype.getProjectById.call(new constructionService(), projectId);
+    const updatedProject = await constructionService.getProject(projectId);
+    
+    if (!updatedProject) {
+      await interaction.update({
+        content: '❌ Failed to get updated project details.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
     
     if (updatedProject.isCompleted) {
       // Project is now completed
