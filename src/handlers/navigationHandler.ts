@@ -5,6 +5,7 @@ import { CityService } from '../models/city';
 import { BankService } from '../models/bank';
 import { ItemService } from '../models/item';
 import { GameEngine } from '../services/gameEngine';
+import { ConstructionService } from '../services/construction';
 import { Location } from '../types/game';
 
 const playerService = new PlayerService();
@@ -13,6 +14,7 @@ const cityService = new CityService();
 const bankService = new BankService();
 const itemService = new ItemService();
 const gameEngine = GameEngine.getInstance();
+const constructionService = new ConstructionService();
 
 export async function handleNavigationButton(interaction: ButtonInteraction) {
   const customId = interaction.customId;
@@ -716,33 +718,93 @@ async function handleWellNavigation(interaction: ButtonInteraction, player: any)
       return;
     }
 
-    // Use existing well visit logic
-    const wellCommand = require('../commands/well');
+    // Initialize well if needed
+    await constructionService.initializeWell(city.id);
     
-    // Create a mock interaction for the well command
-    const mockInteraction = {
-      ...interaction,
-      reply: async (options: any) => {
-        // Add back button to the well interface
-        const backButton = new ButtonBuilder()
-          .setCustomId('nav_back_play')
-          .setLabel('🏠 Back to Town')
-          .setStyle(ButtonStyle.Secondary);
-        
-        const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-        
-        // Add back button to existing components or create new ones
-        const existingComponents = options.components || [];
-        const newComponents = [...existingComponents, backRow];
-        
-        await interaction.update({
-          ...options,
-          components: newComponents
-        });
-      }
-    };
+    // Get well water info
+    const wellWater = await constructionService.getWellWater(city.id);
+    if (!wellWater) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('❌ Well Error')
+        .setDescription('Unable to access well information.');
+      
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_back_play')
+        .setLabel('🏠 Back to Town')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+      
+      await interaction.update({ embeds: [embed], components: [backRow] });
+      return;
+    }
 
-    await wellCommand.visitWell(mockInteraction, player, city.id);
+    // Check water ration status without taking water
+    const { canTake, message, rationsTaken } = await constructionService.checkWaterRationStatus(player.id, city.id);
+
+    const embed = new EmbedBuilder()
+      .setColor('#4ecdc4')
+      .setTitle('💧 Town Well')
+      .setDescription('The town\'s water source. Clean, fresh water is available for all survivors.')
+      .addFields([
+        {
+          name: '💧 Water Available',
+          value: `${wellWater.currentWater} rations`,
+          inline: true
+        },
+        {
+          name: '🚰 Daily Limit',
+          value: 'You can take 1 ration per day', // TODO: Update this based on pump
+          inline: true
+        },
+        {
+          name: '📅 Today\'s Usage',
+          value: `You have taken ${rationsTaken} ration(s) today`,
+          inline: true
+        }
+      ]);
+
+    const components: any[] = [];
+
+    // Create take water button
+    if (wellWater.currentWater > 0 && canTake) {
+      const takeWaterButton = new ButtonBuilder()
+        .setCustomId('take_water_ration')
+        .setLabel('💧 Take Water Ration')
+        .setStyle(ButtonStyle.Primary);
+      
+      const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(takeWaterButton);
+      components.push(actionRow);
+    }
+
+    if (wellWater.currentWater <= 0) {
+      embed.addFields([{
+        name: '⚠️ No Water Available',
+        value: 'The well is currently empty. Wait for it to refill or for someone to build a pump.',
+        inline: false
+      }]);
+    } else {
+      embed.addFields([{
+        name: '💧 Fresh Water',
+        value: 'Press the button below to take a water ration if you haven\'t already taken your daily allowance.',
+        inline: false
+      }]);
+    }
+
+    // Add back button
+    const backButton = new ButtonBuilder()
+      .setCustomId('nav_back_play')
+      .setLabel('🏠 Back to Town')
+      .setStyle(ButtonStyle.Secondary);
+    
+    const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+    components.push(backRow);
+
+    await interaction.update({ 
+      embeds: [embed], 
+      components: components
+    });
 
   } catch (error) {
     console.error('Error in well navigation:', error);
@@ -806,33 +868,44 @@ async function handleTowerNavigation(interaction: ButtonInteraction, player: any
       return;
     }
 
-    // Use existing tower visit logic
-    const towerCommand = require('../commands/tower');
-    
-    // Create a mock interaction for the tower command
-    const mockInteraction = {
-      ...interaction,
-      reply: async (options: any) => {
-        // Add back button to the tower interface
-        const backButton = new ButtonBuilder()
-          .setCustomId('nav_back_play')
-          .setLabel('🏠 Back to Town')
-          .setStyle(ButtonStyle.Secondary);
-        
-        const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-        
-        // Add back button to existing components or create new ones
-        const existingComponents = options.components || [];
-        const newComponents = [...existingComponents, backRow];
-        
-        await interaction.update({
-          ...options,
-          components: newComponents
-        });
-      }
-    };
+    // Show tower interface directly
+    const embed = new EmbedBuilder()
+      .setColor('#8b4513')
+      .setTitle('🗼 Watch Tower')
+      .setDescription('From this elevated position, you can observe the surrounding wasteland and estimate the size of approaching hordes.')
+      .addFields([
+        {
+          name: '👁️ Horde Size Estimate',
+          value: 'Scanning the horizon for zombie activity...',
+          inline: false
+        },
+        {
+          name: '📊 Estimate Accuracy',
+          value: 'Visit more often to improve accuracy (12 visits for 100% accuracy)',
+          inline: false
+        }
+      ]);
 
-    await towerCommand.visitWatchTower(mockInteraction, player, city.id);
+    // Create observation button
+    const observeButton = new ButtonBuilder()
+      .setCustomId('observe_horde')
+      .setLabel('🔭 Observe Horde Activity')
+      .setStyle(ButtonStyle.Secondary);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(observeButton);
+
+    // Add back button
+    const backButton = new ButtonBuilder()
+      .setCustomId('nav_back_play')
+      .setLabel('🏠 Back to Town')
+      .setStyle(ButtonStyle.Secondary);
+    
+    const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+
+    await interaction.update({ 
+      embeds: [embed], 
+      components: [actionRow, backRow]
+    });
 
   } catch (error) {
     console.error('Error in tower navigation:', error);
