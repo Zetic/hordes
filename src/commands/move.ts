@@ -132,17 +132,27 @@ module.exports = {
             }
           ]);
 
-        // Add flee button if player is not wounded
+        // Add flee and stay buttons
         const components: any[] = [];
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>();
+        
         if (!hasWound) {
           const fleeButton = new ButtonBuilder()
             .setCustomId(`flee_${direction}_${player.x}_${player.y}`)
             .setLabel('🏃 Flee!')
             .setStyle(ButtonStyle.Danger);
           
-          const row = new ActionRowBuilder<ButtonBuilder>().addComponents(fleeButton);
-          components.push(row);
+          buttonRow.addComponents(fleeButton);
         }
+        
+        // Add stay button to allow player to decide not to move
+        const stayButton = new ButtonBuilder()
+          .setCustomId('nav_back_map')
+          .setLabel('🛑 Stay Here')
+          .setStyle(ButtonStyle.Secondary);
+        
+        buttonRow.addComponents(stayButton);
+        components.push(buttonRow);
 
         await interaction.reply({ 
           embeds: [embed], 

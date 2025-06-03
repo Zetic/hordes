@@ -520,7 +520,7 @@ async function handleCraftNavigation(interaction: ButtonInteraction, player: any
       .addFields([
         {
           name: '🔧 Available Recipes',
-          value: '• **Rotten Log → Twisted Plank**: Convert decaying wood into useful planks\n• **Scrap Metal → Wrought Iron**: Refine metal scraps into sturdy iron',
+          value: '• **Rotten Log → Twisted Plank**: Convert decaying wood into useful planks\n• **Scrap Metal → Wrought Metal**: Refine metal scraps into sturdy iron',
           inline: false
         },
         {
@@ -539,8 +539,8 @@ async function handleCraftNavigation(interaction: ButtonInteraction, player: any
         value: 'craft_rotten_log_to_twisted_plank'
       },
       {
-        label: 'Scrap Metal → Wrought Iron',
-        description: 'Convert Scrap Metal into sturdy Wrought Iron',
+        label: 'Scrap Metal → Wrought Metal',
+        description: 'Convert Scrap Metal into sturdy Wrought Metal',
         value: 'craft_scrap_metal_to_wrought_metal'
       }
     ];
@@ -1242,25 +1242,6 @@ async function handleGateOpen(interaction: ButtonInteraction, player: any) {
   try {
     const discordId = interaction.user.id;
 
-    // Check if player can perform action (1 AP required for gate control)
-    const actionCheck = await gameEngine.canPerformAction(discordId, 1);
-    if (!actionCheck.canAct) {
-      const embed = new EmbedBuilder()
-        .setColor('#ff6b6b')
-        .setTitle('Cannot Control Gate')
-        .setDescription(actionCheck.reason || 'Unknown error');
-
-      const backButton = new ButtonBuilder()
-        .setCustomId('nav_gate')
-        .setLabel('🚪 Back to Gate')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-
-      await interaction.update({ embeds: [embed], components: [backRow] });
-      return;
-    }
-
     // Check if player is in city
     if (player.location !== Location.CITY) {
       await interaction.update({
@@ -1332,25 +1313,6 @@ async function handleGateOpen(interaction: ButtonInteraction, player: any) {
 async function handleGateClose(interaction: ButtonInteraction, player: any) {
   try {
     const discordId = interaction.user.id;
-
-    // Check if player can perform action (1 AP required for gate control)
-    const actionCheck = await gameEngine.canPerformAction(discordId, 1);
-    if (!actionCheck.canAct) {
-      const embed = new EmbedBuilder()
-        .setColor('#ff6b6b')
-        .setTitle('Cannot Control Gate')
-        .setDescription(actionCheck.reason || 'Unknown error');
-
-      const backButton = new ButtonBuilder()
-        .setCustomId('nav_gate')
-        .setLabel('🚪 Back to Gate')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-
-      await interaction.update({ embeds: [embed], components: [backRow] });
-      return;
-    }
 
     // Check if player is in city
     if (player.location !== Location.CITY) {

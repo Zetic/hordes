@@ -184,9 +184,9 @@ export async function handleWorkshopRecipeSelect(interaction: StringSelectMenuIn
       };
     } else if (selectedRecipe === 'scrap_metal_to_wrought_metal') {
       inputItemName = 'Scrap Metal';
-      outputItemName = 'Wrought Iron';
+      outputItemName = 'Wrought Metal';
       recipeDetails = {
-        name: 'Scrap Metal → Wrought Iron',
+        name: 'Scrap Metal → Wrought Metal',
         description: 'Process scrap metal into sturdy wrought metal',
         input: inputItemName,
         output: outputItemName
@@ -444,7 +444,7 @@ export async function handleConfirmCraftButton(interaction: ButtonInteraction) {
       },
       'scrap_metal_to_wrought_metal': {
         input: 'Scrap Metal',
-        output: 'Wrought Iron'
+        output: 'Wrought Metal'
       }
     };
 
@@ -646,7 +646,7 @@ export async function handleCraftRecipeButton(interaction: ButtonInteraction) {
       outputItemName = 'Twisted Plank';
     } else if (selectedRecipe === 'scrap_metal_to_wrought_metal') {
       inputItemName = 'Scrap Metal';
-      outputItemName = 'Wrought Iron';
+      outputItemName = 'Wrought Metal';
     } else {
       const embed = new EmbedBuilder()
         .setColor('#ff6b6b')

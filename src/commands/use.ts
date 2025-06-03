@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { InventoryService } from '../models/inventory';
 import { ItemService } from '../models/item';
@@ -271,5 +271,14 @@ async function constructUseResponse(interaction: CommandInteraction, player: any
   }
 
   embed.setTimestamp();
-  await interaction.editReply({ embeds: [embed] });
+  
+  // Add close bag button to return to bag view
+  const closeBagButton = new ButtonBuilder()
+    .setCustomId('nav_bag')
+    .setLabel('🎒 Close / Back to Bag')
+    .setStyle(ButtonStyle.Secondary);
+  
+  const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(closeBagButton);
+  
+  await interaction.editReply({ embeds: [embed], components: [buttonRow] });
 }

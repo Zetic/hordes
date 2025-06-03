@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { GameEngine } from '../services/gameEngine';
 import { InventoryService } from '../models/inventory';
@@ -162,7 +162,15 @@ module.exports = {
 
       embed.setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      // Add continue button to return to navigation
+      const continueButton = new ButtonBuilder()
+        .setCustomId('nav_back_map')
+        .setLabel('🗺️ Continue Navigation')
+        .setStyle(ButtonStyle.Primary);
+      
+      const continueRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
+
+      await interaction.editReply({ embeds: [embed], components: [continueRow] });
 
     } catch (error) {
       console.error('Error in scavenge command:', error);
