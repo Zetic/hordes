@@ -1,11 +1,14 @@
 import { City, GamePhase, Building, BuildingType } from '../types/game';
 import { DatabaseService } from '../services/database';
+import { ConstructionService } from '../services/construction';
 
 export class CityService {
   private db: DatabaseService;
+  private constructionService: ConstructionService;
 
   constructor() {
     this.db = DatabaseService.getInstance();
+    this.constructionService = new ConstructionService();
   }
 
   async createCity(name: string): Promise<City | null> {
@@ -18,7 +21,12 @@ export class CityService {
       const result = await this.db.pool.query(query, [name]);
       
       if (result.rows.length > 0) {
-        return this.mapRowToCity(result.rows[0]);
+        const city = this.mapRowToCity(result.rows[0]);
+        
+        // Initialize default construction projects for the new city
+        await this.constructionService.initializeDefaultProjects(city.id);
+        
+        return city;
       }
       return null;
     } catch (error) {

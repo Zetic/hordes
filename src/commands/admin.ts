@@ -671,7 +671,13 @@ async function handleBuildAllCommand(interaction: CommandInteraction) {
     const constructionService = new (require('../services/construction')).ConstructionService();
     
     // Get available projects
-    const projects = await constructionService.getAvailableProjects(city.id);
+    let projects = await constructionService.getAvailableProjects(city.id);
+    
+    // If no projects exist, initialize default projects first
+    if (projects.length === 0) {
+      await constructionService.initializeDefaultProjects(city.id);
+      projects = await constructionService.getAvailableProjects(city.id);
+    }
     
     if (projects.length === 0) {
       const embed = new EmbedBuilder()

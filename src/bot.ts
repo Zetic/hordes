@@ -356,11 +356,12 @@ class Die2NiteBot {
         } else if (customId === 'return_to_city') {
           // Handle return to city button
           const returnCommand = this.commands.get('return');
+          const playCommand = this.commands.get('play');
           
-          if (returnCommand) {
+          if (returnCommand && playCommand) {
             try {
               // Create a mock command interaction for the return command
-              const mockInteraction = {
+              const mockReturnInteraction = {
                 ...interaction,
                 isChatInputCommand: () => true,
                 isButton: () => false,
@@ -386,10 +387,38 @@ class Die2NiteBot {
                   } else {
                     return await interaction.reply(content);
                   }
+                },
+                followUp: async (content: any) => {
+                  // Ignore the followUp from return command to avoid extra messages
+                  return;
                 }
               };
               
-              await returnCommand.execute(mockInteraction);
+              // First execute return command to move player back to city
+              await returnCommand.execute(mockReturnInteraction);
+              
+              // Then execute play command to show town interface
+              const mockPlayInteraction = {
+                ...interaction,
+                isChatInputCommand: () => true,
+                isButton: () => false,
+                commandName: 'play',
+                options: {
+                  get: () => null
+                },
+                deferReply: async (options: any = {}) => {
+                  // Already deferred by return command
+                },
+                editReply: async (content: any) => {
+                  return await interaction.editReply(content);
+                },
+                reply: async (content: any) => {
+                  return await interaction.editReply(content);
+                }
+              };
+              
+              await playCommand.execute(mockPlayInteraction);
+              
             } catch (error) {
               console.error('Error handling return to city button:', error);
               
