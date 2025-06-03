@@ -88,8 +88,16 @@ export async function handleTakeWaterRationButton(interaction: ButtonInteraction
         .setTitle('💧 Water Ration')
         .setDescription(`${player.name} ${result.rationsTaken === 2 ? 'took their second water ration of the day' : 'took a water ration from the well'}.`);
 
+      // Add back button
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_back_play')
+        .setLabel('🏠 Back to Town')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+
       // Reply with private success message
-      await interaction.update({ embeds: [embed], components: [] });
+      await interaction.update({ embeds: [embed], components: [backRow] });
       
       // Send public message
       try {
@@ -103,7 +111,15 @@ export async function handleTakeWaterRationButton(interaction: ButtonInteraction
         .setTitle('❌ Cannot Take Water Ration')
         .setDescription(result.message);
 
-      await interaction.update({ embeds: [embed], components: [] });
+      // Add back button for error case too
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_back_play')
+        .setLabel('🏠 Back to Town')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+
+      await interaction.update({ embeds: [embed], components: [backRow] });
     }
 
   } catch (error) {

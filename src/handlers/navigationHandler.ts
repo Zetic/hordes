@@ -72,6 +72,12 @@ export async function handleNavigationButton(interaction: ButtonInteraction) {
       await handleGateDepart(interaction, player);
       break;
     default:
+      // Check for build project contribution buttons
+      if (customId.startsWith('build_project_1ap_') || customId.startsWith('build_project_5ap_')) {
+        await handleBuildProjectContribution(interaction, player);
+        break;
+      }
+      
       await interaction.update({
         content: '❌ Unknown navigation option.',
         embeds: [],
@@ -781,7 +787,7 @@ async function handleTowerNavigation(interaction: ButtonInteraction, player: any
 
     // Check if watch tower exists
     const allBuildings = await cityService.getCityBuildings(city.id);
-    const hasWatchTower = allBuildings.some(b => b.type === 'watch_tower' && b.isVisitable);
+    const hasWatchTower = allBuildings.some(b => b.type === 'watchtower' && b.isVisitable);
 
     if (!hasWatchTower) {
       const embed = new EmbedBuilder()
@@ -1216,37 +1222,8 @@ async function handleGateOpen(interaction: ButtonInteraction, player: any) {
       return;
     }
 
-    const embed = new EmbedBuilder()
-      .setColor('#4ecdc4')
-      .setTitle('🔓 Gate Opened')
-      .setDescription(`${player.name} has opened the city gate!`)
-      .addFields([
-        { 
-          name: '🚪 Gate Status', 
-          value: '🔓 Open', 
-          inline: true 
-        },
-        { 
-          name: '✅ Effect', 
-          value: 'Players can now leave and enter the city', 
-          inline: true 
-        }
-      ])
-      .setTimestamp();
-
-    const backButton = new ButtonBuilder()
-      .setCustomId('nav_gate')
-      .setLabel('🚪 Back to Gate')
-      .setStyle(ButtonStyle.Primary);
-    
-    const playButton = new ButtonBuilder()
-      .setCustomId('nav_back_play')
-      .setLabel('🏠 Back to Town')
-      .setStyle(ButtonStyle.Secondary);
-    
-    const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton, playButton);
-
-    await interaction.update({ embeds: [embed], components: [backRow] });
+    // Update the gate navigation to show the new status
+    await handleGateNavigation(interaction, player);
 
   } catch (error) {
     console.error('Error opening gate:', error);
@@ -1322,37 +1299,8 @@ async function handleGateClose(interaction: ButtonInteraction, player: any) {
       return;
     }
 
-    const embed = new EmbedBuilder()
-      .setColor('#ff6b6b')
-      .setTitle('🔒 Gate Closed')
-      .setDescription(`${player.name} has closed the city gate!`)
-      .addFields([
-        { 
-          name: '🚪 Gate Status', 
-          value: '🔒 Closed', 
-          inline: true 
-        },
-        { 
-          name: '⚠️ Effect', 
-          value: 'Players cannot leave or enter the city', 
-          inline: true 
-        }
-      ])
-      .setTimestamp();
-
-    const backButton = new ButtonBuilder()
-      .setCustomId('nav_gate')
-      .setLabel('🚪 Back to Gate')
-      .setStyle(ButtonStyle.Primary);
-    
-    const playButton = new ButtonBuilder()
-      .setCustomId('nav_back_play')
-      .setLabel('🏠 Back to Town')
-      .setStyle(ButtonStyle.Secondary);
-    
-    const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton, playButton);
-
-    await interaction.update({ embeds: [embed], components: [backRow] });
+    // Update the gate navigation to show the new status
+    await handleGateNavigation(interaction, player);
 
   } catch (error) {
     console.error('Error closing gate:', error);
@@ -1374,6 +1322,21 @@ async function handleGateDepart(interaction: ButtonInteraction, player: any) {
       ...interaction,
       reply: async (options: any) => {
         await interaction.update(options);
+      },
+      deferReply: async (options: any = {}) => {
+        if (!interaction.deferred && !interaction.replied) {
+          await interaction.deferUpdate();
+        }
+      },
+      editReply: async (options: any) => {
+        if (interaction.deferred || interaction.replied) {
+          return await interaction.editReply(options);
+        } else {
+          return await interaction.update(options);
+        }
+      },
+      followUp: async (options: any) => {
+        return await interaction.followUp(options);
       }
     };
 
@@ -1515,6 +1478,208 @@ export async function handleBuildProjectSelect(interaction: StringSelectMenuInte
     console.error('Error in build project select:', error);
     await interaction.update({
       content: '❌ An error occurred while selecting the project.',
+      embeds: [],
+      components: []
+    });
+  }
+}
+
+async function handleBuildProjectContribution(interaction: ButtonInteraction, player: any) {
+  try {
+    const customId = interaction.customId;
+    const projectId = customId.split('_').slice(-1)[0]; // Get project ID from end
+    const apAmount = customId.includes('1ap') ? 1 : 5;
+    const discordId = interaction.user.id;
+
+    // Check if player can perform action
+    const actionCheck = await gameEngine.canPerformAction(discordId, apAmount);
+    if (!actionCheck.canAct) {
+      const embed = new EmbedBuilder()
+        .setColor('#ff6b6b')
+        .setTitle('Cannot Contribute')
+        .setDescription(actionCheck.reason || 'Unknown error');
+
+      await interaction.update({ embeds: [embed], components: [] });
+      return;
+    }
+
+    // Check if player is in town
+    if (player.location !== Location.CITY) {
+      await interaction.update({
+        content: '❌ You must be in town to contribute to construction projects.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Get city
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      await interaction.update({
+        content: '❌ City not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Get project details
+    const constructionService = require('../services/construction').ConstructionService;
+    const project = await constructionService.prototype.getProjectById.call(new constructionService(), projectId);
+    
+    if (!project) {
+      await interaction.update({
+        content: '❌ Project not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Check if project is already completed
+    if (project.isCompleted) {
+      await interaction.update({
+        content: '❌ This project has already been completed.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Contribute AP to the project
+    const contributionResult = await constructionService.prototype.contributeToProject.call(new constructionService(), projectId, player.id, apAmount);
+    
+    if (!contributionResult.success) {
+      await interaction.update({
+        content: `❌ ${contributionResult.message || 'Failed to contribute to project.'}`,
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Deduct action points
+    await playerService.updatePlayerActionPoints(discordId, player.actionPoints - apAmount);
+
+    // Get updated project details
+    const updatedProject = await constructionService.prototype.getProjectById.call(new constructionService(), projectId);
+    
+    if (updatedProject.isCompleted) {
+      // Project is now completed
+      const embed = new EmbedBuilder()
+        .setColor('#00ff00')
+        .setTitle('🎉 Project Completed!')
+        .setDescription(`**${updatedProject.projectName}** has been completed!`)
+        .addFields([
+          {
+            name: '✅ Contribution',
+            value: `You contributed ${apAmount} AP to complete this project`,
+            inline: true
+          },
+          {
+            name: '🏗️ Status',
+            value: 'Project is now complete and operational',
+            inline: true
+          }
+        ])
+        .setTimestamp();
+
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_build')
+        .setLabel('🔨 Back to Projects')
+        .setStyle(ButtonStyle.Primary);
+
+      const playButton = new ButtonBuilder()
+        .setCustomId('nav_back_play')
+        .setLabel('🏠 Back to Town')
+        .setStyle(ButtonStyle.Secondary);
+
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton, playButton);
+
+      await interaction.update({ embeds: [embed], components: [backRow] });
+      
+      // Send public completion message
+      const publicEmbed = new EmbedBuilder()
+        .setColor('#00ff00')
+        .setTitle('🎉 Construction Complete')
+        .setDescription(`**${updatedProject.projectName}** has been completed by ${player.name}!`);
+
+      await interaction.followUp({ embeds: [publicEmbed] });
+    } else {
+      // Project still in progress, show updated status
+      const progressPercent = Math.round((updatedProject.currentApProgress / updatedProject.totalApRequired) * 100);
+      
+      const embed = new EmbedBuilder()
+        .setColor('#95e1d3')
+        .setTitle('⚡ Contribution Successful')
+        .setDescription(`You contributed ${apAmount} AP to **${updatedProject.projectName}**`)
+        .addFields([
+          {
+            name: '📊 Updated Progress',
+            value: `${updatedProject.currentApProgress}/${updatedProject.totalApRequired} AP (${progressPercent}%)`,
+            inline: true
+          },
+          {
+            name: '⚡ Remaining AP',
+            value: `${player.actionPoints - apAmount}/10`,
+            inline: true
+          }
+        ])
+        .setTimestamp();
+
+      // Add contribution buttons if player still has AP and project isn't complete
+      const components: any[] = [];
+      
+      if (player.actionPoints - apAmount >= 1 && updatedProject.currentApProgress < updatedProject.totalApRequired) {
+        const contribute1Button = new ButtonBuilder()
+          .setCustomId(`build_project_1ap_${projectId}`)
+          .setLabel('Contribute 1 AP')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('⚡');
+
+        const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(contribute1Button);
+        
+        if (player.actionPoints - apAmount >= 5) {
+          const contribute5Button = new ButtonBuilder()
+            .setCustomId(`build_project_5ap_${projectId}`)
+            .setLabel('Contribute 5 AP')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('⚡');
+            
+          actionRow.addComponents(contribute5Button);
+        }
+        
+        components.push(actionRow);
+      }
+
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_build')
+        .setLabel('🔨 Back to Projects')
+        .setStyle(ButtonStyle.Secondary);
+
+      const playButton = new ButtonBuilder()
+        .setCustomId('nav_back_play')
+        .setLabel('🏠 Back to Town')
+        .setStyle(ButtonStyle.Secondary);
+
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton, playButton);
+      components.push(backRow);
+
+      await interaction.update({ embeds: [embed], components });
+      
+      // Send public contribution message
+      const publicEmbed = new EmbedBuilder()
+        .setColor('#95e1d3')
+        .setDescription(`${player.name} contributed ${apAmount} AP to **${updatedProject.projectName}** (${progressPercent}% complete)`);
+
+      await interaction.followUp({ embeds: [publicEmbed] });
+    }
+
+  } catch (error) {
+    console.error('Error in build project contribution:', error);
+    await interaction.update({
+      content: '❌ An error occurred while contributing to the project.',
       embeds: [],
       components: []
     });
