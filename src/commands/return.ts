@@ -133,14 +133,6 @@ module.exports = {
 
       await interaction.reply({ embeds: [embed], ephemeral: true });
 
-      // Send public message
-      const publicEmbed = new EmbedBuilder()
-        .setColor('#4ecdc4')
-        .setTitle(`${player.name} returns to the safety of the city!`)
-        .setTimestamp();
-
-      await interaction.followUp({ embeds: [publicEmbed] });
-
     } catch (error) {
       console.error('Error in return command:', error);
       await interaction.reply({

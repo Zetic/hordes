@@ -1,4 +1,4 @@
-import { ButtonInteraction, EmbedBuilder } from 'discord.js';
+import { ButtonInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../models/player';
 import { WorldMapService } from '../services/worldMap';
 import { ZoneContestService } from '../services/zoneContest';
@@ -124,7 +124,15 @@ export async function handleFleeButton(interaction: ButtonInteraction) {
       ])
       .setTimestamp();
 
-    await interaction.editReply({ embeds: [embed] });
+    // Add continue button to return to navigation
+    const continueButton = new ButtonBuilder()
+      .setCustomId('nav_back_map')
+      .setLabel('🗺️ Continue Navigation')
+      .setStyle(ButtonStyle.Primary);
+    
+    const continueRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
+
+    await interaction.editReply({ embeds: [embed], components: [continueRow] });
 
   } catch (error) {
     console.error('Error handling flee button:', error);

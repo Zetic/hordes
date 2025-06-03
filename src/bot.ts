@@ -138,7 +138,7 @@ class Die2NiteBot {
                 },
                 deferReply: async () => {
                   if (!interaction.deferred && !interaction.replied) {
-                    await interaction.deferReply();
+                    await interaction.deferReply({ ephemeral: true });
                   }
                 },
                 editReply: async (content: any) => {

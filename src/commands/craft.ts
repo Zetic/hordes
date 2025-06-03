@@ -21,10 +21,10 @@ const RECIPES = {
     output: 'Twisted Plank'
   },
   'scrap_metal_to_wrought_metal': {
-    name: 'Scrap Metal → Wrought Iron', 
-    description: 'Convert Scrap Metal into sturdy Wrought Iron',
+    name: 'Scrap Metal → Wrought Metal', 
+    description: 'Convert Scrap Metal into sturdy Wrought Metal',
     input: 'Scrap Metal',
-    output: 'Wrought Iron'
+    output: 'Wrought Metal'
   }
 };
 
@@ -38,7 +38,7 @@ module.exports = {
         .setRequired(false)
         .addChoices(
           { name: 'Rotten Log → Twisted Plank', value: 'rotten_log_to_twisted_plank' },
-          { name: 'Scrap Metal → Wrought Iron', value: 'scrap_metal_to_wrought_metal' }
+          { name: 'Scrap Metal → Wrought Metal', value: 'scrap_metal_to_wrought_metal' }
         )
     ),
     
@@ -134,7 +134,7 @@ module.exports = {
         },
         {
           name: '🔄 Available Recipes',
-          value: '• Rotten Log → Twisted Plank\n• Scrap Metal → Wrought Iron',
+          value: '• Rotten Log → Twisted Plank\n• Scrap Metal → Wrought Metal',
           inline: false
         },
         {
@@ -155,8 +155,8 @@ module.exports = {
           value: 'rotten_log_to_twisted_plank'
         },
         {
-          label: 'Scrap Metal → Wrought Iron',
-          description: 'Convert Scrap Metal into sturdy Wrought Iron',
+          label: 'Scrap Metal → Wrought Metal',
+          description: 'Convert Scrap Metal into sturdy Wrought Metal',
           value: 'scrap_metal_to_wrought_metal'
         }
       ]);

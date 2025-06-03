@@ -242,7 +242,7 @@ export class ConstructionService {
             defenseBonus: 30,
             materials: [
               { itemName: 'Twisted Plank', requiredQuantity: 8 },
-              { itemName: 'Wrought Iron', requiredQuantity: 4 }
+              { itemName: 'Wrought Metal', requiredQuantity: 4 }
             ]
           },
           {
@@ -255,7 +255,7 @@ export class ConstructionService {
             isVisitable: false,
             defenseBonus: 0,
             materials: [
-              { itemName: 'Wrought Iron', requiredQuantity: 8 },
+              { itemName: 'Wrought Metal', requiredQuantity: 8 },
               { itemName: 'Copper Pipe', requiredQuantity: 1 }
             ]
           },
@@ -270,7 +270,7 @@ export class ConstructionService {
             defenseBonus: 0,
             materials: [
               { itemName: 'Twisted Plank', requiredQuantity: 10 },
-              { itemName: 'Wrought Iron', requiredQuantity: 8 }
+              { itemName: 'Wrought Metal', requiredQuantity: 8 }
             ]
           },
           {
@@ -285,7 +285,7 @@ export class ConstructionService {
             materials: [
               { itemName: 'Twisted Plank', requiredQuantity: 3 },
               { itemName: 'Patchwork Beam', requiredQuantity: 1 },
-              { itemName: 'Wrought Iron', requiredQuantity: 1 }
+              { itemName: 'Wrought Metal', requiredQuantity: 1 }
             ]
           },
           {
@@ -298,7 +298,7 @@ export class ConstructionService {
             isVisitable: false,
             defenseBonus: 0,
             materials: [
-              { itemName: 'Wrought Iron', requiredQuantity: 2 }
+              { itemName: 'Wrought Metal', requiredQuantity: 2 }
             ]
           }
         ];
