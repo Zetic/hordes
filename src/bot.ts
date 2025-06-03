@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { GameEngine } from './services/gameEngine';
 import { ScavengingService } from './services/scavenging';
+import { safeInteractionReply, safeInteractionFollowUp, handleDiscordError } from './utils/discordErrorHandler';
 
 config();
 
@@ -23,6 +24,7 @@ class Die2NiteBot {
     
     this.setupEventHandlers();
     this.loadCommands();
+    this.setupGlobalErrorHandlers();
   }
 
   private setupEventHandlers(): void {
@@ -60,10 +62,10 @@ class Die2NiteBot {
             ephemeral: true
           };
 
-          if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(errorMessage);
-          } else {
-            await interaction.reply(errorMessage);
+          // Use safe error handling to prevent crashes
+          const replied = await safeInteractionReply(interaction, errorMessage);
+          if (!replied) {
+            handleDiscordError(error, `command execution (${interaction.commandName})`);
           }
         }
       } else if (interaction.isAutocomplete()) {
@@ -91,10 +93,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'flee button interaction');
             }
           }
         } else if (customId.startsWith('move_')) {
@@ -109,10 +110,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'move button interaction');
             }
           }
         } else if (customId.startsWith('use_item_')) {
@@ -166,10 +166,9 @@ class Die2NiteBot {
                 ephemeral: true
               };
 
-              if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(errorMessage);
-              } else {
-                await interaction.reply(errorMessage);
+              const replied = await safeInteractionReply(interaction, errorMessage);
+              if (!replied) {
+                handleDiscordError(error, 'use item button interaction');
               }
             }
           }
@@ -185,10 +184,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'build project button interaction');
             }
           }
         } else if (customId === 'take_water_ration') {
@@ -203,10 +201,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'take water ration button interaction');
             }
           }
         } else if (customId === 'observe_horde') {
@@ -221,10 +218,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'observe horde button interaction');
             }
           }
         } else if (customId.startsWith('craft_recipe_')) {
@@ -239,10 +235,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'craft recipe button interaction');
             }
           }
         } else if (customId.startsWith('confirm_craft_')) {
@@ -257,10 +252,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'confirm craft button interaction');
             }
           }
         } else if (customId === 'scavenge_area') {
@@ -308,10 +302,9 @@ class Die2NiteBot {
                 ephemeral: true
               };
 
-              if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(errorMessage);
-              } else {
-                await interaction.reply(errorMessage);
+              const replied = await safeInteractionReply(interaction, errorMessage);
+              if (!replied) {
+                handleDiscordError(error, 'scavenge button interaction');
               }
             }
           }
@@ -328,10 +321,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'navigation button interaction');
             }
           }
         } else if (customId.startsWith('gate_')) {
@@ -347,10 +339,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'gate button interaction');
             }
           }
         } else if (customId === 'return_to_city') {
@@ -427,10 +418,9 @@ class Die2NiteBot {
                 ephemeral: true
               };
 
-              if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(errorMessage);
-              } else {
-                await interaction.reply(errorMessage);
+              const replied = await safeInteractionReply(interaction, errorMessage);
+              if (!replied) {
+                handleDiscordError(error, 'return to city button interaction');
               }
             }
           }
@@ -451,10 +441,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'workshop recipe select interaction');
             }
           }
         } else if (customId === 'craft_recipe_select') {
@@ -469,10 +458,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'craft recipe select interaction');
             }
           }
         } else if (customId === 'bank_deposit_select') {
@@ -487,10 +475,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'bank deposit select interaction');
             }
           }
         } else if (customId === 'bank_withdraw_select') {
@@ -505,10 +492,9 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'bank withdraw select interaction');
             }
           }
         } else if (customId === 'build_project_select') {
@@ -523,14 +509,44 @@ class Die2NiteBot {
               ephemeral: true
             };
 
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(errorMessage);
-            } else {
-              await interaction.reply(errorMessage);
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'build project select interaction');
             }
           }
         }
       }
+    });
+  }
+
+  private setupGlobalErrorHandlers(): void {
+    // Handle unhandled Discord API errors to prevent crashes
+    this.client.on('error', (error) => {
+      handleDiscordError(error, 'Discord client error');
+    });
+
+    // Handle unhandled promise rejections that could be Discord errors
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('❌ Unhandled Promise Rejection at:', promise, 'reason:', reason);
+      
+      // If it's a Discord API error, handle it gracefully
+      if (typeof reason === 'object' && reason !== null) {
+        handleDiscordError(reason, 'unhandled promise rejection');
+      }
+    });
+
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (error) => {
+      console.error('❌ Uncaught Exception:', error);
+      
+      // If it's a Discord API error, log it but don't exit
+      if (typeof error === 'object' && error !== null) {
+        handleDiscordError(error, 'uncaught exception');
+        return; // Don't exit for Discord errors
+      }
+      
+      // For non-Discord errors, exit as usual
+      process.exit(1);
     });
   }
 
