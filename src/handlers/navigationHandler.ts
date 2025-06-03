@@ -187,7 +187,7 @@ async function handleBagNavigation(interaction: ButtonInteraction, player: any) 
     // Add back button based on location
     const backButton = new ButtonBuilder()
       .setCustomId(player.location === Location.CITY ? 'nav_back_play' : 'nav_back_map')
-      .setLabel(player.location === Location.CITY ? '🏠 Back to Town' : '🗺️ Back to Map')
+      .setLabel(player.location === Location.CITY ? '🏠 Back to Town' : '📦 Close Bag / Return')
       .setStyle(ButtonStyle.Secondary);
     
     const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
@@ -224,7 +224,7 @@ async function handleStatusNavigation(interaction: ButtonInteraction, player: an
         // Add back button to the status embed
         const backButton = new ButtonBuilder()
           .setCustomId(player.location === Location.CITY ? 'nav_back_play' : 'nav_back_map')
-          .setLabel(player.location === Location.CITY ? '🏠 Back to Town' : '🗺️ Back to Map')
+          .setLabel(player.location === Location.CITY ? '🏠 Back to Town' : '📊 Close Status / Return')
           .setStyle(ButtonStyle.Secondary);
         
         const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
@@ -404,7 +404,13 @@ async function handleBuildNavigation(interaction: ButtonInteraction, player: any
       .setTimestamp();
 
     // Get available construction projects
-    const projects = await constructionService.getAvailableProjects(city.id);
+    let projects = await constructionService.getAvailableProjects(city.id);
+    
+    // If no projects exist, initialize default projects
+    if (projects.length === 0) {
+      await constructionService.initializeDefaultProjects(city.id);
+      projects = await constructionService.getAvailableProjects(city.id);
+    }
 
     const components: any[] = [];
 
@@ -949,8 +955,24 @@ async function handleBackToMap(interaction: ButtonInteraction) {
     // Create a mock interaction for the map command
     const mockInteraction = {
       ...interaction,
+      deferReply: async (options: any = {}) => {
+        if (!interaction.deferred && !interaction.replied) {
+          await interaction.deferReply(options);
+        }
+      },
+      editReply: async (content: any) => {
+        if (interaction.deferred || interaction.replied) {
+          return await interaction.editReply(content);
+        } else {
+          return await interaction.update(content);
+        }
+      },
       reply: async (options: any) => {
-        await interaction.update(options);
+        if (interaction.deferred || interaction.replied) {
+          return await interaction.editReply(options);
+        } else {
+          return await interaction.update(options);
+        }
       }
     };
 

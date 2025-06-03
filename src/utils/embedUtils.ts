@@ -173,18 +173,7 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
     components.push(movementRow);
   }
 
-  // Add scavenging button if requested and location allows it
-  if (showScavenge && player.location !== Location.GATE && player.location !== Location.CITY && player.location !== Location.HOME) {
-    const scavengeButton = new ButtonBuilder()
-      .setCustomId('scavenge_area')
-      .setLabel('🔍 Scavenge')
-      .setStyle(ButtonStyle.Primary);
-    
-    const scavengeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(scavengeButton);
-    components.push(scavengeRow);
-  }
-
-  // Add navigation buttons for outside town (bag, status, and return when over town)
+  // Add navigation buttons for outside town (bag, status, scavenge, and return when over town)
   if (player.location !== Location.CITY && player.location !== Location.HOME) {
     const bagButton = new ButtonBuilder()
       .setCustomId('nav_bag')
@@ -197,6 +186,16 @@ export async function createAreaEmbed(options: AreaEmbedOptions): Promise<{
       .setStyle(ButtonStyle.Primary);
     
     const outsideRow = new ActionRowBuilder<ButtonBuilder>().addComponents(bagButton, statusButton);
+    
+    // Add scavenge button to the same row if scavenging is available
+    if (showScavenge && player.location !== Location.GATE) {
+      const scavengeButton = new ButtonBuilder()
+        .setCustomId('scavenge_area')
+        .setLabel('🔍 Scavenge')
+        .setStyle(ButtonStyle.Primary);
+      
+      outsideRow.addComponents(scavengeButton);
+    }
     
     // Add return button when at gate or when over town (for movement messages)
     if (player.location === Location.GATE || showGateOptions) {

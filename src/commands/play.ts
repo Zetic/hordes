@@ -31,10 +31,9 @@ module.exports = {
 
       // Check if player is in town
       if (player.location !== Location.CITY) {
-        await interaction.reply({
-          content: '❌ You must be in town to access the main menu. Use `/return` to go back to town.',
-          ephemeral: true
-        });
+        // If player is outside, show map view instead of error message
+        const mapCommand = require('./map');
+        await mapCommand.execute(interaction);
         return;
       }
 
