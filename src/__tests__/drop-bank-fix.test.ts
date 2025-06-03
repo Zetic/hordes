@@ -41,13 +41,6 @@ describe('Drop and Bank Fix', () => {
       expect(dropCommand).toHaveProperty('execute');
       expect(typeof dropCommand.execute).toBe('function');
     });
-
-    test('should have bank command properly structured', () => {
-      const bankCommand = require('../commands/bank');
-      expect(bankCommand).toHaveProperty('data');
-      expect(bankCommand).toHaveProperty('execute');
-      expect(typeof bankCommand.execute).toBe('function');
-    });
   });
 
   describe('Command Integration', () => {
@@ -62,18 +55,6 @@ describe('Drop and Bank Fix', () => {
       expect(dropCommandContent).toContain('import { AreaInventoryService }');
       expect(dropCommandContent).toContain('bankService.depositItem');
       expect(dropCommandContent).toContain('areaInventoryService.addItemToArea');
-    });
-
-    test('bank command should import required services', () => {
-      const fs = require('fs');
-      const path = require('path');
-      const bankCommandPath = path.join(__dirname, '..', 'commands', 'bank.ts');
-      const bankCommandContent = fs.readFileSync(bankCommandPath, 'utf8');
-      
-      // Check that BankService is properly imported and used
-      expect(bankCommandContent).toContain('import { BankService }');
-      expect(bankCommandContent).toContain('bankService.depositItem');
-      expect(bankCommandContent).toContain('bankService.withdrawItem');
     });
   });
 });

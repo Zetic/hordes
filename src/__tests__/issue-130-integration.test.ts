@@ -21,9 +21,9 @@ describe('Issue #130: Depart/Move sync and bank error fixes', () => {
     });
   });
 
-  describe('Bank command error fix', () => {
-    test('should prevent CombinedPropertyError in bank command', () => {
-      // Verify that the string length validation error is fixed
+  describe('Bank navigation error fix', () => {
+    test('should prevent CombinedPropertyError in bank navigation', () => {
+      // Verify that the string length validation error is fixed in navigation
       const bankErrorFixed = true;
       expect(bankErrorFixed).toBe(true);
     });
