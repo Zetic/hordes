@@ -31,9 +31,47 @@ module.exports = {
 
       // Check if player is in town
       if (player.location !== Location.CITY) {
-        // If player is outside, show map view instead of error message
-        const mapCommand = require('./map');
-        await mapCommand.execute(interaction);
+        // If player is outside, show map view instead of town interface
+        const WorldMapService = require('../services/worldMap').WorldMapService;
+        const createAreaEmbed = require('../utils/embedUtils').createAreaEmbed;
+        
+        const worldMapService = WorldMapService.getInstance();
+
+        // Check if player has valid coordinates
+        if (player.x === null || player.x === undefined || player.y === null || player.y === undefined) {
+          await interaction.reply({
+            content: '❌ Invalid position. Please contact an administrator.',
+            ephemeral: true
+          });
+          return;
+        }
+
+        // Generate map view
+        const mapImageBuffer = await worldMapService.generateMapView(playerService);
+        
+        // Create standardized area embed
+        const { embed, attachment, components } = await createAreaEmbed({
+          player,
+          title: 'Current Area View',
+          description: `${player.name} surveys the surrounding area...`,
+          showMovement: true,  // Show movement buttons for exploration
+          showScavenge: true,  // Show scavenge button if available
+          showGateOptions: player.location === Location.GATE, // Show return button if at gate
+          mapImageBuffer
+        });
+
+        // Add location-specific information for gate
+        if (player.location === Location.GATE) {
+          embed.addFields([
+            {
+              name: '🚪 Gate Area',
+              value: 'You are at the gate to town. Use the return button to enter the city (if the gate is open).',
+              inline: false
+            }
+          ]);
+        }
+
+        await interaction.reply({ embeds: [embed], files: [attachment], components, ephemeral: true });
         return;
       }
 

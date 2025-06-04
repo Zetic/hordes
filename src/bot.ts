@@ -118,58 +118,21 @@ class Die2NiteBot {
         } else if (customId.startsWith('use_item_')) {
           // Handle inventory use item buttons
           const itemName = customId.replace('use_item_', '');
-          const useCommand = this.commands.get('use');
           
-          if (useCommand) {
-            try {
-              // Create a mock command interaction for the use command
-              const mockInteraction = {
-                ...interaction,
-                isChatInputCommand: () => true,
-                isButton: () => false,
-                commandName: 'use',
-                options: {
-                  get: (name: string) => {
-                    if (name === 'item') {
-                      return { value: itemName };
-                    }
-                    return null;
-                  }
-                },
-                deferReply: async () => {
-                  if (!interaction.deferred && !interaction.replied) {
-                    await interaction.deferReply({ ephemeral: true });
-                  }
-                },
-                editReply: async (content: any) => {
-                  if (interaction.deferred || interaction.replied) {
-                    return await interaction.editReply(content);
-                  } else {
-                    return await interaction.reply(content);
-                  }
-                },
-                reply: async (content: any) => {
-                  if (interaction.deferred || interaction.replied) {
-                    return await interaction.editReply(content);
-                  } else {
-                    return await interaction.reply(content);
-                  }
-                }
-              };
-              
-              await useCommand.execute(mockInteraction);
-            } catch (error) {
-              console.error('Error handling use item button:', error);
-              
-              const errorMessage = {
-                content: 'There was an error using the item!',
-                ephemeral: true
-              };
+          try {
+            const { handleUseItemButton } = require('./handlers/itemHandler');
+            await handleUseItemButton(interaction, itemName);
+          } catch (error) {
+            console.error('Error handling use item button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error using the item!',
+              ephemeral: true
+            };
 
-              const replied = await safeInteractionReply(interaction, errorMessage);
-              if (!replied) {
-                handleDiscordError(error, 'use item button interaction');
-              }
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'use item button interaction');
             }
           }
         } else if (customId.startsWith('build_project_')) {
@@ -259,53 +222,20 @@ class Die2NiteBot {
           }
         } else if (customId === 'scavenge_area') {
           // Handle scavenge button
-          const scavengeCommand = this.commands.get('scavenge');
-          
-          if (scavengeCommand) {
-            try {
-              // Create a mock command interaction for the scavenge command
-              const mockInteraction = {
-                ...interaction,
-                isChatInputCommand: () => true,
-                isButton: () => false,
-                commandName: 'scavenge',
-                options: {
-                  get: () => null
-                },
-                deferReply: async (options: any = {}) => {
-                  if (!interaction.deferred && !interaction.replied) {
-                    await interaction.deferReply(options);
-                  }
-                },
-                editReply: async (content: any) => {
-                  if (interaction.deferred || interaction.replied) {
-                    return await interaction.editReply(content);
-                  } else {
-                    return await interaction.reply(content);
-                  }
-                },
-                reply: async (content: any) => {
-                  if (interaction.deferred || interaction.replied) {
-                    return await interaction.editReply(content);
-                  } else {
-                    return await interaction.reply(content);
-                  }
-                }
-              };
-              
-              await scavengeCommand.execute(mockInteraction);
-            } catch (error) {
-              console.error('Error handling scavenge button:', error);
-              
-              const errorMessage = {
-                content: 'There was an error while scavenging!',
-                ephemeral: true
-              };
+          try {
+            const { handleScavengeButton } = require('./handlers/scavengeHandler');
+            await handleScavengeButton(interaction);
+          } catch (error) {
+            console.error('Error handling scavenge button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error while scavenging!',
+              ephemeral: true
+            };
 
-              const replied = await safeInteractionReply(interaction, errorMessage);
-              if (!replied) {
-                handleDiscordError(error, 'scavenge button interaction');
-              }
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'scavenge button interaction');
             }
           }
         } else if (customId.startsWith('nav_')) {
@@ -346,82 +276,20 @@ class Die2NiteBot {
           }
         } else if (customId === 'return_to_city') {
           // Handle return to city button
-          const returnCommand = this.commands.get('return');
-          const playCommand = this.commands.get('play');
-          
-          if (returnCommand && playCommand) {
-            try {
-              // Create a mock command interaction for the return command
-              const mockReturnInteraction = {
-                ...interaction,
-                isChatInputCommand: () => true,
-                isButton: () => false,
-                commandName: 'return',
-                options: {
-                  get: () => null
-                },
-                deferReply: async (options: any = {}) => {
-                  if (!interaction.deferred && !interaction.replied) {
-                    await interaction.deferReply(options);
-                  }
-                },
-                editReply: async (content: any) => {
-                  if (interaction.deferred || interaction.replied) {
-                    return await interaction.editReply(content);
-                  } else {
-                    return await interaction.reply(content);
-                  }
-                },
-                reply: async (content: any) => {
-                  if (interaction.deferred || interaction.replied) {
-                    return await interaction.editReply(content);
-                  } else {
-                    return await interaction.reply(content);
-                  }
-                },
-                followUp: async (content: any) => {
-                  // Ignore the followUp from return command to avoid extra messages
-                  return;
-                }
-              };
-              
-              // First execute return command to move player back to city
-              await returnCommand.execute(mockReturnInteraction);
-              
-              // Then execute play command to show town interface
-              const mockPlayInteraction = {
-                ...interaction,
-                isChatInputCommand: () => true,
-                isButton: () => false,
-                commandName: 'play',
-                options: {
-                  get: () => null
-                },
-                deferReply: async (options: any = {}) => {
-                  // Already deferred by return command
-                },
-                editReply: async (content: any) => {
-                  return await interaction.editReply(content);
-                },
-                reply: async (content: any) => {
-                  return await interaction.editReply(content);
-                }
-              };
-              
-              await playCommand.execute(mockPlayInteraction);
-              
-            } catch (error) {
-              console.error('Error handling return to city button:', error);
-              
-              const errorMessage = {
-                content: 'There was an error returning to the city!',
-                ephemeral: true
-              };
+          try {
+            const { handleReturnToCityButton } = require('./handlers/returnHandler');
+            await handleReturnToCityButton(interaction);
+          } catch (error) {
+            console.error('Error handling return to city button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error returning to the city!',
+              ephemeral: true
+            };
 
-              const replied = await safeInteractionReply(interaction, errorMessage);
-              if (!replied) {
-                handleDiscordError(error, 'return to city button interaction');
-              }
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'return to city button interaction');
             }
           }
         }

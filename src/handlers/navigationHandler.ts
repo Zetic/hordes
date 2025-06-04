@@ -210,37 +210,130 @@ async function handleBagNavigation(interaction: ButtonInteraction, player: any) 
 
 async function handleStatusNavigation(interaction: ButtonInteraction, player: any) {
   try {
-    // Import the status command logic
-    const statusCommand = require('../commands/status');
-    
-    // Create a mock interaction for the status command
-    const mockInteraction = {
-      ...interaction,
-      user: interaction.user,
-      options: {
-        get: () => null // No target player specified
-      },
-      reply: async (options: any) => {
-        // Add back button to the status embed
-        const backButton = new ButtonBuilder()
-          .setCustomId(player.location === Location.CITY ? 'nav_back_play' : 'nav_back_map')
-          .setLabel(player.location === Location.CITY ? '🏠 Back to Town' : '📊 Close Status / Return')
-          .setStyle(ButtonStyle.Secondary);
-        
-        const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-        
-        // Add back button to existing components or create new ones
-        const existingComponents = options.components || [];
-        const newComponents = [...existingComponents, backRow];
-        
-        await interaction.update({
-          ...options,
-          components: newComponents
-        });
-      }
+    const discordId = interaction.user.id;
+    const targetUser = interaction.user; // Always show own status in navigation
+
+    // Get fresh player data
+    const currentPlayer = await playerService.getPlayer(discordId);
+    if (!currentPlayer) {
+      await interaction.update({
+        content: '❌ Player not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Import game types and services
+    const { PlayerStatus, isWoundType } = require('../types/game');
+    const WorldMapService = require('../services/worldMap').WorldMapService;
+    const worldMapService = WorldMapService.getInstance();
+
+    // Status display mappings
+    const statusEmojis: { [key: string]: string } = {
+      [PlayerStatus.ALIVE]: '❤️',
+      [PlayerStatus.WOUNDED]: '🩸',
+      [PlayerStatus.BADLY_WOUNDED]: '🩸',
+      [PlayerStatus.CRITICALLY_WOUNDED]: '🩸',
+      [PlayerStatus.INFECTED]: '🦠',
+      [PlayerStatus.SCAVENGING]: '🔍',
+      [PlayerStatus.HIDING]: '👁️',
+      [PlayerStatus.DRUNK]: '🍺'
     };
 
-    await statusCommand.execute(mockInteraction);
+    const statusTexts: { [key: string]: string } = {
+      [PlayerStatus.ALIVE]: 'Healthy',
+      [PlayerStatus.WOUNDED]: 'Wounded',
+      [PlayerStatus.BADLY_WOUNDED]: 'Badly Wounded',
+      [PlayerStatus.CRITICALLY_WOUNDED]: 'Critically Wounded',
+      [PlayerStatus.INFECTED]: 'Infected',
+      [PlayerStatus.SCAVENGING]: 'Scavenging',
+      [PlayerStatus.HIDING]: 'Hiding',
+      [PlayerStatus.DRUNK]: 'Drunk'
+    };
+
+    const locationNames: { [key: string]: string } = {
+      [Location.CITY]: 'City',
+      [Location.HOME]: 'Home',
+      [Location.GATE]: 'Gate',
+      [Location.WASTE]: 'Wasteland'
+    };
+
+    // Get location display info
+    const locationDisplay = worldMapService.getLocationDisplay(currentPlayer.location);
+
+    const embed = new EmbedBuilder()
+      .setColor(currentPlayer.isAlive ? '#4ecdc4' : '#ff6b6b')
+      .setTitle(`${currentPlayer.name}'s Status`)
+      .setThumbnail(targetUser.displayAvatarURL())
+      .addFields([
+        { 
+          name: currentPlayer.isAlive ? '❤️ Status' : '💀 Status', 
+          value: currentPlayer.isAlive ? 'Alive' : 'Dead', 
+          inline: true 
+        },
+        ...(currentPlayer.isAlive ? [{ 
+          name: '📊 Conditions', 
+          value: currentPlayer.conditions.length > 0 
+            ? currentPlayer.conditions.map(condition => {
+                const emoji = statusEmojis[condition] || '❓';
+                const text = statusTexts[condition] || condition;
+                return `${emoji} ${text}`;
+              }).join('\n')
+            : (currentPlayer.status !== PlayerStatus.ALIVE ? 
+                `${statusEmojis[currentPlayer.status] || '❓'} ${statusTexts[currentPlayer.status] || currentPlayer.status}` : 
+                'No conditions'), 
+          inline: true 
+        }] : []),
+        { 
+          name: '⚡ Action Points', 
+          value: `${currentPlayer.actionPoints}/${currentPlayer.maxActionPoints}`, 
+          inline: true 
+        },
+        { 
+          name: '📍 Location', 
+          value: `${locationDisplay.emoji} ${locationNames[currentPlayer.location] || locationDisplay.name}${currentPlayer.x !== null && currentPlayer.y !== null ? ` (${currentPlayer.x}, ${currentPlayer.y})` : ''}`, 
+          inline: true 
+        },
+        { 
+          name: '⏰ Last Action', 
+          value: `<t:${Math.floor(currentPlayer.lastActionTime.getTime() / 1000)}:R>`, 
+          inline: true 
+        }
+      ]);
+
+    // Add warnings for own status
+    const warnings = [];
+    
+    // Check if player has any wound type
+    const hasWound = isWoundType(currentPlayer.status) || currentPlayer.conditions.some(condition => isWoundType(condition));
+    if (hasWound) {
+      warnings.push('🩸 You are wounded! Another injury could be fatal.');
+    }
+    
+    if (currentPlayer.water <= 1) warnings.push('🚨 Running out of water!');
+    if (currentPlayer.actionPoints <= 2) warnings.push('💤 Low action points');
+    
+    if (warnings.length > 0) {
+      embed.addFields([
+        { name: '⚠️ Warnings', value: warnings.join('\n') }
+      ]);
+    }
+
+    embed.setTimestamp();
+
+    // Add back button based on location
+    const backButton = new ButtonBuilder()
+      .setCustomId(currentPlayer.location === Location.CITY ? 'nav_back_play' : 'nav_back_map')
+      .setLabel(currentPlayer.location === Location.CITY ? '🏠 Back to Town' : '📊 Close Status / Return')
+      .setStyle(ButtonStyle.Secondary);
+    
+    const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+
+    await interaction.update({
+      embeds: [embed],
+      components: [backRow]
+    });
 
   } catch (error) {
     console.error('Error in status navigation:', error);
@@ -462,108 +555,20 @@ async function handleBuildNavigation(interaction: ButtonInteraction, player: any
 
 async function handleCraftNavigation(interaction: ButtonInteraction, player: any) {
   try {
-    // Check if player is in town
-    if (player.location !== Location.CITY) {
-      const embed = new EmbedBuilder()
-        .setColor('#ff6b6b')
-        .setTitle('❌ Cannot Access Workshop')
-        .setDescription('You must be in town to access the workshop for crafting.');
-      
-      const backButton = new ButtonBuilder()
-        .setCustomId('nav_back_map')
-        .setLabel('🗺️ Back to Map')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-      
-      await interaction.update({ embeds: [embed], components: [backRow] });
-      return;
-    }
-
-    // Get city
-    const city = await cityService.getDefaultCity();
-    if (!city) {
-      await interaction.update({
-        content: '❌ City not found.',
-        embeds: [],
-        components: []
-      });
-      return;
-    }
-
-    // Check if workshop exists
-    const allBuildings = await cityService.getCityBuildings(city.id);
-    const hasWorkshop = allBuildings.some(b => b.type === 'workshop' && b.isVisitable);
-
-    if (!hasWorkshop) {
-      const embed = new EmbedBuilder()
-        .setColor('#ff6b6b')
-        .setTitle('❌ Workshop Not Available')
-        .setDescription('The Workshop has not been built yet. You need a workshop to craft advanced items.');
-      
-      const backButton = new ButtonBuilder()
-        .setCustomId('nav_back_play')
-        .setLabel('🏠 Back to Town')
-        .setStyle(ButtonStyle.Secondary);
-      
-      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-      
-      await interaction.update({ embeds: [embed], components: [backRow] });
-      return;
-    }
-
-    // Show craft interface
+    // Crafting temporarily disabled
     const embed = new EmbedBuilder()
-      .setColor('#8b4513')
-      .setTitle('⚒️ Workshop Crafting')
-      .setDescription('Craft advanced items using raw materials. Select a recipe below to start crafting.')
-      .addFields([
-        {
-          name: '🔧 Available Recipes',
-          value: '• **Rotten Log → Twisted Plank**: Convert decaying wood into useful planks\n• **Scrap Metal → Wrought Metal**: Refine metal scraps into sturdy iron',
-          inline: false
-        },
-        {
-          name: '💡 Instructions',
-          value: '• Select a recipe from the dropdown below\n• Make sure you have the required materials\n• Crafting costs 1 Action Point per item',
-          inline: false
-        }
-      ])
-      .setTimestamp();
-
-    // Create dropdown for recipe selection
-    const recipeOptions = [
-      {
-        label: 'Rotten Log → Twisted Plank',
-        description: 'Convert a decaying log into useful Twisted Plank',
-        value: 'craft_rotten_log_to_twisted_plank'
-      },
-      {
-        label: 'Scrap Metal → Wrought Metal',
-        description: 'Convert Scrap Metal into sturdy Wrought Metal',
-        value: 'craft_scrap_metal_to_wrought_metal'
-      }
-    ];
-
-    const recipeSelect = new StringSelectMenuBuilder()
-      .setCustomId('craft_recipe_select')
-      .setPlaceholder('Select a crafting recipe')
-      .addOptions(recipeOptions);
+      .setColor('#ff6b6b')
+      .setTitle('🚧 Crafting Temporarily Disabled')
+      .setDescription('Crafting functionality has been temporarily disabled during the navigation system overhaul. Please check back later.');
     
-    const recipeRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(recipeSelect);
-
-    // Add back button
     const backButton = new ButtonBuilder()
-      .setCustomId('nav_back_play')
-      .setLabel('🏠 Back to Town')
+      .setCustomId(player.location === Location.CITY ? 'nav_back_play' : 'nav_back_map')
+      .setLabel(player.location === Location.CITY ? '🏠 Back to Town' : '🗺️ Back to Map')
       .setStyle(ButtonStyle.Secondary);
     
     const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
-
-    await interaction.update({ 
-      embeds: [embed], 
-      components: [recipeRow, backRow]
-    });
+    
+    await interaction.update({ embeds: [embed], components: [backRow] });
 
   } catch (error) {
     console.error('Error in craft navigation:', error);
@@ -1408,33 +1413,93 @@ async function handleGateClose(interaction: ButtonInteraction, player: any) {
 
 async function handleGateDepart(interaction: ButtonInteraction, player: any) {
   try {
-    // Use existing depart command logic
-    const departCommand = require('../commands/depart');
-    
-    // Create a mock interaction for the depart command
-    const mockInteraction = {
-      ...interaction,
-      reply: async (options: any) => {
-        await interaction.update(options);
-      },
-      deferReply: async (options: any = {}) => {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferUpdate();
-        }
-      },
-      editReply: async (options: any) => {
-        if (interaction.deferred || interaction.replied) {
-          return await interaction.editReply(options);
-        } else {
-          return await interaction.update(options);
-        }
-      },
-      followUp: async (options: any) => {
-        return await interaction.followUp(options);
-      }
-    };
+    const discordId = interaction.user.id;
 
-    await departCommand.execute(mockInteraction);
+    // Check if player is in city
+    if (player.location !== Location.CITY) {
+      await interaction.update({
+        content: '❌ You must be in the city to depart.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Get city to check gate status
+    const city = await cityService.getDefaultCity();
+    if (!city) {
+      await interaction.update({
+        content: '❌ City not found.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Check if gate is open
+    if (!city.gateOpen) {
+      await interaction.update({
+        content: '❌ The city gate is closed. You cannot leave the city.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Check if player is encumbered
+    const isEncumbered = await inventoryService.isPlayerEncumbered(player.id);
+    if (isEncumbered) {
+      await interaction.update({
+        content: '❌ You are encumbered and cannot depart. Use the bag navigation to drop items first.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Get gate coordinates
+    const WorldMapService = require('../services/worldMap').WorldMapService;
+    const worldMapService = WorldMapService.getInstance();
+    const gateCoords = worldMapService.getGateCoordinates();
+
+    // Update player location to gate
+    await playerService.updatePlayerLocation(discordId, Location.GATE, gateCoords.x, gateCoords.y);
+
+    // Get updated player with new location
+    const updatedPlayer = await playerService.getPlayer(discordId);
+    if (!updatedPlayer) {
+      await interaction.update({
+        content: '❌ Error retrieving updated player data.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Generate map view
+    const mapImageBuffer = await worldMapService.generateMapView(playerService);
+    
+    // Get location display info
+    const createAreaEmbed = require('../utils/embedUtils').createAreaEmbed;
+    const { embed, attachment, components } = await createAreaEmbed({
+      player: updatedPlayer,
+      title: '🚪 Departed from City',
+      description: `${updatedPlayer.name} has left the safety of the city and stands at the gate...`,
+      showMovement: true,
+      showScavenge: false,  // No scavenging at gate
+      showGateOptions: true, // Show return and bag buttons at gate
+      mapImageBuffer
+    });
+
+    await interaction.update({ embeds: [embed], files: [attachment], components });
+
+    // Send public message
+    const publicEmbed = new EmbedBuilder()
+      .setColor('#95e1d3')
+      .setTitle(`${updatedPlayer.name} has departed from the city and heads out into the wasteland...`)
+      .setTimestamp();
+
+    await interaction.followUp({ embeds: [publicEmbed] });
 
   } catch (error) {
     console.error('Error departing through gate:', error);
