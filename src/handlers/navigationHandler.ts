@@ -949,34 +949,72 @@ async function handleBackToPlay(interaction: ButtonInteraction) {
 
 async function handleBackToMap(interaction: ButtonInteraction) {
   try {
-    // Execute the map command
-    const mapCommand = require('../commands/map');
-    
-    // Create a mock interaction for the map command
-    const mockInteraction = {
-      ...interaction,
-      deferReply: async (options: any = {}) => {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferReply(options);
-        }
-      },
-      editReply: async (content: any) => {
-        if (interaction.deferred || interaction.replied) {
-          return await interaction.editReply(content);
-        } else {
-          return await interaction.update(content);
-        }
-      },
-      reply: async (options: any) => {
-        if (interaction.deferred || interaction.replied) {
-          return await interaction.editReply(options);
-        } else {
-          return await interaction.update(options);
-        }
-      }
-    };
+    const discordId = interaction.user.id;
+    const playerService = require('../models/player').PlayerService;
+    const worldMapService = require('../services/worldMap').WorldMapService;
+    const createAreaEmbed = require('../utils/embedUtils').createAreaEmbed;
+    const Location = require('../types/game').Location;
 
-    await mapCommand.execute(mockInteraction);
+    const playerServiceInstance = new playerService();
+    const worldMapServiceInstance = worldMapService.getInstance();
+
+    // Get player
+    const player = await playerServiceInstance.getPlayer(discordId);
+    if (!player) {
+      await interaction.update({
+        content: '❌ Player not found. Use `/join` to start playing.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Check if player is in a location that can be viewed
+    if (player.location === Location.CITY || player.location === Location.HOME) {
+      await interaction.update({
+        content: '❌ You are in a safe location. Use `/depart` to venture outside where you can explore areas.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Check if player has valid coordinates
+    if (player.x === null || player.x === undefined || player.y === null || player.y === undefined) {
+      await interaction.update({
+        content: '❌ Invalid position. Please contact an administrator.',
+        embeds: [],
+        components: []
+      });
+      return;
+    }
+
+    // Generate map view
+    const mapImageBuffer = await worldMapServiceInstance.generateMapView(playerServiceInstance);
+    
+    // Create standardized area embed
+    const { embed, attachment, components } = await createAreaEmbed({
+      player,
+      title: 'Current Area View',
+      description: `${player.name} surveys the surrounding area...`,
+      showMovement: true,  // Map command should show movement buttons for exploration
+      showScavenge: true,  // Show scavenge button if available
+      showGateOptions: player.location === Location.GATE, // Show bag and return buttons if at gate
+      mapImageBuffer
+    });
+
+    // Add location-specific information for gate
+    if (player.location === Location.GATE) {
+      embed.addFields([
+        {
+          name: '🚪 Gate Area',
+          value: 'You are at the gate to town. Use the return button to enter the city (if the gate is open).',
+          inline: false
+        }
+      ]);
+    }
+
+    await interaction.update({ embeds: [embed], files: [attachment], components });
 
   } catch (error) {
     console.error('Error returning to map:', error);

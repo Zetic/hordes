@@ -165,7 +165,7 @@ module.exports = {
       // Add continue button to return to navigation
       const continueButton = new ButtonBuilder()
         .setCustomId('nav_back_map')
-        .setLabel('🗺️ Continue Navigation')
+        .setLabel('🔍 Continue Scavenging')
         .setStyle(ButtonStyle.Primary);
       
       const continueRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
