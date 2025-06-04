@@ -19,20 +19,23 @@ export async function handleFleeButton(interaction: ButtonInteraction) {
     const player = await playerService.getPlayer(discordId);
     
     if (!player) {
-      await interaction.reply({
+      await interaction.update({
         content: '❌ Player not found.',
-        ephemeral: true
+        embeds: [],
+        components: []
       });
       return;
     }
 
-    // Defer reply since this involves complex operations
-    await interaction.deferReply({ ephemeral: true });
+    // Defer update since this involves complex operations
+    await interaction.deferUpdate();
 
     // Verify player is still at the expected location
     if (player.x !== parseInt(fromX) || player.y !== parseInt(fromY)) {
       await interaction.editReply({
-        content: '❌ You are no longer at the original location.'
+        content: '❌ You are no longer at the original location.',
+        embeds: [],
+        components: []
       });
       return;
     }
@@ -44,7 +47,9 @@ export async function handleFleeButton(interaction: ButtonInteraction) {
     // Check if new coordinates are valid
     if (!worldMapService.isValidCoordinate(newCoords.x, newCoords.y)) {
       await interaction.editReply({
-        content: '❌ Cannot flee in that direction - the hordes rest beyond this point...'
+        content: '❌ Cannot flee in that direction - the hordes rest beyond this point...',
+        embeds: [],
+        components: []
       });
       return;
     }
@@ -53,7 +58,9 @@ export async function handleFleeButton(interaction: ButtonInteraction) {
     const success = await playerService.spendActionPoints(discordId, 1);
     if (!success) {
       await interaction.editReply({
-        content: '❌ You need 1 action point to flee.'
+        content: '❌ You need 1 action point to flee.',
+        embeds: [],
+        components: []
       });
       return;
     }
@@ -137,7 +144,9 @@ export async function handleFleeButton(interaction: ButtonInteraction) {
   } catch (error) {
     console.error('Error handling flee button:', error);
     await interaction.editReply({
-      content: '❌ An error occurred while trying to flee.'
+      content: '❌ An error occurred while trying to flee.',
+      embeds: [],
+      components: []
     });
   }
 }

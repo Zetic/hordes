@@ -857,9 +857,11 @@ async function handleTowerNavigation(interaction: ButtonInteraction, player: any
       return;
     }
 
-    // Check if watch tower exists
+    // Check if watch tower exists (check both legacy and new types)
     const allBuildings = await cityService.getCityBuildings(city.id);
-    const hasWatchTower = allBuildings.some(b => b.type === 'watchtower' && b.isVisitable);
+    const hasWatchTower = allBuildings.some(b => 
+      (b.type === 'watchtower' || b.type === 'watch_tower') && b.isVisitable
+    );
 
     if (!hasWatchTower) {
       const embed = new EmbedBuilder()

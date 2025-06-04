@@ -25,7 +25,13 @@ export async function handleBuildProjectButton(interaction: ButtonInteraction) {
 async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
   try {
     const customId = interaction.customId;
-    const projectId = customId.replace('build_project_1ap_', ''); // Extract projectId after build_project_1ap_
+    // Handle both formats: build_project_1ap_${projectId} and build_project_${projectId}
+    let projectId: string;
+    if (customId.startsWith('build_project_1ap_')) {
+      projectId = customId.replace('build_project_1ap_', '');
+    } else {
+      projectId = customId.replace('build_project_', '');
+    }
     
     const discordId = interaction.user.id;
 

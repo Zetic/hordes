@@ -135,6 +135,28 @@ class Die2NiteBot {
               handleDiscordError(error, 'use item button interaction');
             }
           }
+        } else if (customId.startsWith('item_action_')) {
+          // Handle item action buttons (drink, eat, drop, return)
+          const parts = customId.split('_');
+          const action = parts[2]; // action type: drink, eat, drop, return, use
+          const itemName = parts.slice(3).join('_'); // item name (may contain underscores)
+          
+          try {
+            const { handleItemActionButton } = require('./handlers/itemHandler');
+            await handleItemActionButton(interaction, action, itemName);
+          } catch (error) {
+            console.error('Error handling item action button:', error);
+            
+            const errorMessage = {
+              content: 'There was an error processing the item action!',
+              ephemeral: true
+            };
+
+            const replied = await safeInteractionReply(interaction, errorMessage);
+            if (!replied) {
+              handleDiscordError(error, 'item action button interaction');
+            }
+          }
         } else if (customId.startsWith('build_project_')) {
           const { handleBuildProjectButton } = require('./handlers/buildHandler');
           try {
