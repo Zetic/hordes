@@ -381,9 +381,13 @@ export async function handleCraftRecipeSelect(interaction: StringSelectMenuInter
       return;
     }
 
-    // Process recipe like the craft command does
-    const craftCommand = require('../commands/craft');
-    await craftCommand.craftRecipe(interaction, player, city.id, selectedRecipe);
+    // Crafting temporarily disabled - show message
+    const embed = new EmbedBuilder()
+      .setColor('#ff6b6b')
+      .setTitle('🚧 Crafting Temporarily Disabled')
+      .setDescription('Crafting functionality has been temporarily disabled. Please check back later.');
+
+    await interaction.update({ embeds: [embed], components: [] });
 
   } catch (error) {
     console.error('Error handling craft recipe select:', error);
