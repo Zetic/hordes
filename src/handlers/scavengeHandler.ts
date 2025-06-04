@@ -74,10 +74,18 @@ export async function handleScavengeButton(interaction: ButtonInteraction) {
     // Check if player has already scavenged in this area
     const hasScavenged = await scavengingService.hasPlayerScavengedInArea(player.id, player.x, player.y);
     if (hasScavenged) {
+      // Create back button to allow player to continue navigation
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_back_map')
+        .setLabel('🗺️ Back to Map')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+
       await interaction.update({
         content: '❌ You have already scavenged in this area. Move to a different location to scavenge again.',
         embeds: [],
-        components: []
+        components: [backRow]
       });
       return;
     }
@@ -85,10 +93,18 @@ export async function handleScavengeButton(interaction: ButtonInteraction) {
     // Check if there are zombies in this area
     const zombies = await zombieService.getZombiesAtLocation(player.x, player.y);
     if (zombies && zombies.count > 0) {
+      // Create back button to allow player to continue navigation
+      const backButton = new ButtonBuilder()
+        .setCustomId('nav_back_map')
+        .setLabel('🗺️ Back to Map')
+        .setStyle(ButtonStyle.Secondary);
+      
+      const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(backButton);
+
       await interaction.update({
         content: `❌ You cannot scavenge here! There are ${zombies.count} zombies preventing you from scavenging safely.`,
         embeds: [],
-        components: []
+        components: [backRow]
       });
       return;
     }
