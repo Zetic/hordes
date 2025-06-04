@@ -215,9 +215,12 @@ async function handleBuildProject1ApButton(interaction: ButtonInteraction) {
       let materialRequirementsText = 'No materials required';
       if (city) {
         const materialCheck = await constructionService.checkMaterialRequirements(projectId, city.id);
-        materialRequirementsText = materialCheck.details.map(detail => 
-          `${detail.itemName}: ${detail.available}/${detail.required} ${detail.available >= detail.required ? '✅' : '❌'}`
-        ).join('\n') || 'No materials required';
+        materialRequirementsText = materialCheck.details.map(detail => {
+          const itemName = detail.itemName || 'Unknown Item';
+          const available = detail.available !== undefined ? detail.available : 0;
+          const required = detail.required !== undefined ? detail.required : 0;
+          return `${itemName}: ${available}/${required} ${available >= required ? '✅' : '❌'}`;
+        }).join('\n') || 'No materials required';
       }
       
       embed = new EmbedBuilder()
@@ -529,9 +532,12 @@ async function handleBuildProject5ApButton(interaction: ButtonInteraction) {
       let materialRequirementsText = 'No materials required';
       if (city) {
         const materialCheck = await constructionService.checkMaterialRequirements(projectId, city.id);
-        materialRequirementsText = materialCheck.details.map(detail => 
-          `${detail.itemName}: ${detail.available}/${detail.required} ${detail.available >= detail.required ? '✅' : '❌'}`
-        ).join('\n') || 'No materials required';
+        materialRequirementsText = materialCheck.details.map(detail => {
+          const itemName = detail.itemName || 'Unknown Item';
+          const available = detail.available !== undefined ? detail.available : 0;
+          const required = detail.required !== undefined ? detail.required : 0;
+          return `${itemName}: ${available}/${required} ${available >= required ? '✅' : '❌'}`;
+        }).join('\n') || 'No materials required';
       }
       
       embed = new EmbedBuilder()
